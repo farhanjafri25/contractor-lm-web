@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0f;
+  --color-surface: #12121a;
+  --color-surface-2: #1a1a26;
+  --color-border: #1e1e2e;
+  --color-border-subtle: #2a2a3d;
+
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-muted: #6366f120;
+
+  --color-success: #22c55e;
+  --color-success-muted: #22c55e18;
+  --color-warning: #f59e0b;
+  --color-warning-muted: #f59e0b18;
+  --color-danger: #ef4444;
+  --color-danger-muted: #ef444418;
+  --color-info: #3b82f6;
+  --color-info-muted: #3b82f618;
+
+  --color-text-primary: #f1f1f8;
+  --color-text-secondary: #8b8ba8;
+  --color-text-muted: #4a4a6a;
+
+  --font-sans: "Inter", "system-ui", sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--color-background);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border-subtle); border-radius: 4px; }
+
+  input, textarea, select {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-muted);
+  }
+  input::placeholder { color: var(--color-text-muted); }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(18, 18, 26, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-border);
+  }
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+  }
+  .card-hover {
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card-hover:hover {
+    border-color: var(--color-border-subtle);
+    transform: translateY(-1px);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+  }
+  .btn-ghost:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
+  }
+  .btn-danger {
+    background: var(--color-danger-muted);
+    color: var(--color-danger);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+  }
+  .btn-danger:hover { background: var(--color-danger); color: white; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .badge-active   { background: var(--color-success-muted); color: var(--color-success); }
+  .badge-suspended { background: var(--color-warning-muted); color: var(--color-warning); }
+  .badge-expired  { background: var(--color-danger-muted); color: var(--color-danger); }
+  .badge-pending  { background: var(--color-info-muted); color: var(--color-info); }
+  .badge-neutral  { background: var(--color-surface-2); color: var(--color-text-secondary); }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-2) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .page-enter {
+    animation: fadeUp 0.3s ease forwards;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
