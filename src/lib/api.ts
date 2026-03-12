@@ -47,6 +47,10 @@ api.interceptors.response.use(
 
 // ── Typed API helpers ──────────────────────────────────────
 
+export const healthApi = {
+    ping: () => api.get('/'),
+};
+
 export const authApi = {
     login: (email: string, password: string, tenant_id: string) =>
         api.post('/auth/login', { email, password, tenant_id }),

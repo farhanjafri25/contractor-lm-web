@@ -171,7 +171,7 @@ export default function AuditLogPage() {
                                                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta?.color ?? 'var(--color-text-muted)', flexShrink: 0 }} />
                                                 <div>
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{meta?.label ?? type.replace(/\./g, ' › ')}</div>
-                                                    {ev.metadata && typeof ev.metadata === 'object' && Object.keys(ev.metadata as object).length > 0 && (
+                                                    {Boolean(ev.metadata) && typeof ev.metadata === 'object' && Object.keys(ev.metadata as object).length > 0 && (
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
                                                             {Object.entries(ev.metadata as Record<string, unknown>)
                                                                 .slice(0, 2)
