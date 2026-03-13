@@ -2,7 +2,7 @@
 
 import { use, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { contractorsApi, contractsApi, eventsApi, accessApi } from '@/lib/api';
+import { contractorsApi, contractsApi, eventsApi, accessApi, sponsorApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import { ArrowLeft, AlertTriangle, RotateCcw, X, Calendar, ShieldOff } from 'lucide-react';
 import Link from 'next/link';
@@ -97,7 +97,16 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     const doExtend = async () => {
         setActionLoading(true); setActionError('');
         try {
-            await contractsApi.extend(contractorId, contractId, extendDate, extendNote || undefined);
+            if (isAdmin) {
+                await contractsApi.extend(contractorId, contractId, extendDate, extendNote || undefined);
+            } else {
+                await sponsorApi.submit({
+                    contract_id: contractId,
+                    action_type: 'extend',
+                    proposed_end_date: extendDate,
+                    justification: extendNote || 'Extension requested by sponsor',
+                });
+            }
             setModal(null); invalidate();
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
@@ -198,28 +207,30 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                             </div>
 
                             {/* Contract actions */}
-                            {isAdmin && (
-                                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                                    {activeContract.status === 'active' && (
-                                        <>
+                            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                                {activeContract.status === 'active' && (
+                                    <>
+                                        {isAdmin && (
                                             <button className="btn btn-ghost" onClick={() => { setActionError(''); setModal('suspend'); }} style={{ fontSize: '0.8rem' }}>
                                                 <AlertTriangle size={14} /> Suspend
                                             </button>
-                                            <button className="btn btn-ghost" onClick={() => { setActionError(''); setModal('extend'); }} style={{ fontSize: '0.8rem' }}>
-                                                <Calendar size={14} /> Extend
-                                            </button>
+                                        )}
+                                        <button className="btn btn-ghost" onClick={() => { setActionError(''); setModal('extend'); }} style={{ fontSize: '0.8rem' }}>
+                                            <Calendar size={14} /> {isAdmin ? 'Extend' : 'Request Extension'}
+                                        </button>
+                                        {isAdmin && (
                                             <button className="btn btn-danger" onClick={() => { setActionError(''); setModal('terminate'); }} style={{ fontSize: '0.8rem' }}>
                                                 <X size={14} /> Terminate
                                             </button>
-                                        </>
-                                    )}
-                                    {activeContract.status === 'suspended' && (
-                                        <button className="btn btn-primary" onClick={() => { setActionError(''); setModal('reactivate'); }} style={{ fontSize: '0.8rem' }}>
-                                            <RotateCcw size={14} /> Reactivate
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                                        )}
+                                    </>
+                                )}
+                                {isAdmin && activeContract.status === 'suspended' && (
+                                    <button className="btn btn-primary" onClick={() => { setActionError(''); setModal('reactivate'); }} style={{ fontSize: '0.8rem' }}>
+                                        <RotateCcw size={14} /> Reactivate
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -330,7 +341,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                         </div>
                         <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end' }}>
                             <button className="btn btn-ghost" onClick={() => setModal(null)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={doExtend} disabled={actionLoading || !extendDate}>{actionLoading ? 'Extending…' : 'Extend'}</button>
+                            <button className="btn btn-primary" onClick={doExtend} disabled={actionLoading || !extendDate}>{actionLoading ? 'Submitting…' : isAdmin ? 'Extend' : 'Submit Request'}</button>
                         </div>
                     </div>
                 </Modal>
