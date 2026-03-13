@@ -36,11 +36,11 @@ export default function NewContractorPage() {
         try {
             await contractorsApi.create({
                 ...form,
+                notes: contract.notes,
                 contract: {
                     sponsor_id: contract.sponsor_id,
                     start_date: contract.start_date,
                     end_date: contract.end_date,
-                    notes: contract.notes,
                     create_google_account: false,
                     application_access: [],
                 },
