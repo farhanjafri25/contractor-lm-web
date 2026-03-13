@@ -30,7 +30,7 @@ export default function ContractorsPage() {
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.5px' }}>Contractors</h1>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>
-                        {data?.total ?? '…'} total
+                        {data?.pagination?.total ?? '…'} total
                     </p>
                 </div>
                 <Link href="/contractors/new">
