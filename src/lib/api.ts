@@ -91,8 +91,8 @@ export const sponsorApi = {
     list: (params?: Record<string, unknown>) => api.get('/sponsor/actions', { params }),
     get: (id: string) => api.get(`/sponsor/actions/${id}`),
     submit: (data: Record<string, unknown>) => api.post('/sponsor/actions', data),
-    review: (id: string, decision: 'approved' | 'rejected', note?: string) =>
-        api.patch(`/sponsor/actions/${id}/review`, { decision, note }),
+    review: (id: string, decision: 'approved' | 'rejected', review_note?: string) =>
+        api.patch(`/sponsor/actions/${id}/review`, { decision, review_note }),
 };
 
 export const accessApi = {
