@@ -13,7 +13,7 @@ interface AuthState {
     user: User | null;
     tenantId: string | null;
     isLoading: boolean;
-    login: (email: string, password: string, tenantId: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -35,14 +35,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
     }, []);
 
-    const login = async (email: string, password: string, tenantId: string) => {
-        const { data } = await authApi.login(email, password, tenantId);
+    const login = async (email: string, password: string) => {
+        const { data } = await authApi.login(email, password);
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('tenant_id', tenantId);
+        // The backend returns user context which includes tenant_id indirectly or we don't need it.
+        // If we still need global tenantId, we can parse it from JWT or API.
+        // Assuming data.user.tenant_id is provided or implicit going forward.
+        if (data.user?.tenant_id) {
+            localStorage.setItem('tenant_id', data.user.tenant_id);
+            setTenantId(data.user.tenant_id);
+        }
         setUser(data.user);
-        setTenantId(tenantId);
     };
 
     const logout = () => {

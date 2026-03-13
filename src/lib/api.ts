@@ -52,8 +52,12 @@ export const healthApi = {
 };
 
 export const authApi = {
-    login: (email: string, password: string, tenant_id: string) =>
-        api.post('/auth/login', { email, password, tenant_id }),
+    login: (email: string, password: string) =>
+        api.post('/auth/login', { email, password }),
+    signup: (email: string, name: string, password: string) =>
+        api.post('/auth/signup', { email, name, password }),
+    verifyOtp: (email: string, otp: string) =>
+        api.post('/auth/verify-otp', { email, otp }),
 };
 
 export const tenantApi = {
@@ -61,10 +65,13 @@ export const tenantApi = {
     updateProfile: (data: Record<string, unknown>) => api.patch('/tenants/me', data),
     getStats: () => api.get('/tenants/me/stats'),
     listUsers: (params?: Record<string, unknown>) => api.get('/tenants/me/users', { params }),
-    inviteUser: (data: Record<string, unknown>) => api.post('/tenants/me/users', data),
+    getPendingUsers: () => api.get('/tenants/me/pending-users'),
+    inviteUser: (email: string, role: string) => api.post('/tenants/me/users', { email, role }),
     updateRole: (id: string, role: string) => api.patch(`/tenants/me/users/${id}/role`, { role }),
     deactivateUser: (id: string) => api.post(`/tenants/me/users/${id}/deactivate`),
     reactivateUser: (id: string) => api.post(`/tenants/me/users/${id}/reactivate`),
+    approveUser: (id: string) => api.post(`/tenants/me/users/${id}/approve`),
+    rejectUser: (id: string) => api.post(`/tenants/me/users/${id}/reject`),
 };
 
 export const contractorsApi = {

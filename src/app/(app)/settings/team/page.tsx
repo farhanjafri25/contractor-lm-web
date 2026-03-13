@@ -26,7 +26,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
         e.preventDefault();
         setLoading(true); setError('');
         try {
-            await tenantApi.inviteUser({ email: email.toLowerCase(), role });
+            await tenantApi.inviteUser(email.toLowerCase(), role);
             qc.invalidateQueries({ queryKey: ['team-users'] });
             onClose();
         } catch (err: unknown) {
@@ -82,6 +82,12 @@ export default function TeamPage() {
         queryFn: async () => (await tenantApi.listUsers()).data,
     });
 
+    const { data: pendingData, isLoading: isPendingLoading } = useQuery({
+        queryKey: ['pending-users'],
+        queryFn: async () => (await tenantApi.getPendingUsers()).data,
+        enabled: isAdmin,
+    });
+
     const { data: stats } = useQuery({
         queryKey: ['tenant-stats'],
         queryFn: async () => (await tenantApi.getProfile()).data,
@@ -107,6 +113,21 @@ export default function TeamPage() {
         try {
             await tenantApi.reactivateUser(id);
             qc.invalidateQueries({ queryKey: ['team-users'] });
+        } catch { }
+    };
+
+    const handleApprove = async (id: string) => {
+        try {
+            await tenantApi.approveUser(id);
+            qc.invalidateQueries({ queryKey: ['team-users'] });
+            qc.invalidateQueries({ queryKey: ['pending-users'] });
+        } catch { }
+    };
+
+    const handleReject = async (id: string) => {
+        try {
+            await tenantApi.rejectUser(id);
+            qc.invalidateQueries({ queryKey: ['pending-users'] });
         } catch { }
     };
 
@@ -145,6 +166,50 @@ export default function TeamPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pending Approvals Table */}
+            {isAdmin && pendingData?.data?.length > 0 && (
+                <div>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600, paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Pending Approvals
+                        <span className="badge badge-pending" style={{ padding: '0.1rem 0.5rem', borderRadius: 12 }}>{pendingData.data.length}</span>
+                    </h2>
+                    <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--color-warning)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-warning-muted)' }}>
+                                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', color: 'var(--color-warning)', fontWeight: 600, textTransform: 'uppercase' }}>User</th>
+                                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', color: 'var(--color-warning)', fontWeight: 600, textTransform: 'uppercase' }}>Requested Role</th>
+                                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--color-warning)', fontWeight: 600, textTransform: 'uppercase' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pendingData.data.map((user: Record<string, unknown>) => (
+                                    <tr key={String(user._id)} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                        <td style={{ padding: '1rem 1.25rem' }}>
+                                            <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{String(user.email ?? '')}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Auto-joined via domain match</div>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', fontSize: '0.875rem', textTransform: 'capitalize' }}>
+                                            <span className="badge badge-neutral">{String(user.role ?? '')}</span>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                <button className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', color: 'var(--color-danger)' }} onClick={() => handleReject(String(user._id))}>
+                                                    Reject
+                                                </button>
+                                                <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }} onClick={() => handleApprove(String(user._id))}>
+                                                    Approve
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 

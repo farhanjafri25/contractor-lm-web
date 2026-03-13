@@ -11,7 +11,6 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [tenantId, setTenantId] = useState('');
     const [showPw, setShowPw] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -21,7 +20,7 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
         try {
-            await login(email.trim(), password, tenantId.trim());
+            await login(email.trim(), password);
             router.push('/dashboard');
         } catch (err: unknown) {
             const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -87,18 +86,7 @@ export default function LoginPage() {
                             </div>
                         )}
 
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>
-                                Workspace ID (Tenant ID)
-                            </label>
-                            <input
-                                required
-                                value={tenantId}
-                                onChange={(e) => setTenantId(e.target.value)}
-                                placeholder="69b0116223a43eeaeffc449e"
-                                style={{ fontFamily: 'monospace', fontSize: '0.83rem' }}
-                            />
-                        </div>
+                        {/* Removed Workspace ID (Tenant ID) input */}
 
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>
@@ -151,8 +139,8 @@ export default function LoginPage() {
                     </form>
                 </div>
 
-                <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '1.5rem' }}>
-                    Contact your admin to get your Workspace ID
+                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '1.5rem' }}>
+                    Don't have an account? <a href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>Sign up</a>
                 </p>
             </div>
         </div>
