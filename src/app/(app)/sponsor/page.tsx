@@ -123,9 +123,11 @@ export default function SponsorPage() {
                             <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>No requests found</td></tr>
                         ) : (
                             data?.data?.map((req: Record<string, unknown>) => {
-                                const contractor = req.contractor_id as Record<string, unknown> | undefined;
-                                const submitter = req.submitted_by as Record<string, unknown> | undefined;
+                                const contract = req.contract_id as Record<string, unknown> | undefined;
+                                const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
+                                const submitter = req.sponsor_id as Record<string, unknown> | undefined;
                                 const status = String(req.status ?? 'pending');
+                                const reqDate = req.createdAt || req.created_at;
                                 return (
                                     <tr key={String(req._id)} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                         <td style={{ padding: '1rem 1.25rem' }}>
@@ -139,7 +141,7 @@ export default function SponsorPage() {
                                             {submitter ? String(submitter.email ?? '—') : '—'}
                                         </td>
                                         <td style={{ padding: '1rem 1.25rem', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                            {req.created_at ? formatDistanceToNow(new Date(String(req.created_at)), { addSuffix: true }) : '—'}
+                                            {reqDate ? formatDistanceToNow(new Date(String(reqDate)), { addSuffix: true }) : '—'}
                                         </td>
                                         <td style={{ padding: '1rem 1.25rem' }}>
                                             <span className={`badge ${STATUS_BADGE[status] ?? 'badge-neutral'}`} style={{ gap: 4 }}>
