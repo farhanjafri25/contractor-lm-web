@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { authApi } from '@/lib/api';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import { useState, useEffect } from 'react';
 
 function parseJwt(token: string) {
     try {
@@ -23,6 +24,12 @@ function parseJwt(token: string) {
 export default function SignupPage() {
     const router = useRouter();
     const { login } = useAuth(); // for auto-login after OTP success, though the backend does return tokens
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [step, setStep] = useState<1 | 2 | 3>(1);
     
@@ -120,7 +127,7 @@ export default function SignupPage() {
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '1rem',
                     }}>
-                        <img src="/tenurio-logo-white.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
+                        <img src={mounted && resolvedTheme === 'dark' ? '/tenurio-logo-white.svg' : '/tenurio-logo-black.svg'} alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
                     </div>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
                         Create a workspace or join an existing one

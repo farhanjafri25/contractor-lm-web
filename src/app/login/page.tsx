@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -52,7 +59,7 @@ export default function LoginPage() {
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '1rem',
                     }}>
-                        <img src="/tenurio-logo-white.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
+                        <img src={mounted && resolvedTheme === 'dark' ? '/tenurio-logo-white.svg' : '/tenurio-logo-black.svg'} alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
                     </div>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
                         Sign in to your workspace

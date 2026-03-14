@@ -10,10 +10,14 @@ import {
     Settings,
     LogOut,
     Activity,
+    Moon,
+    Sun,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api';
+import { useTheme } from 'next-themes';
+import { useState, useEffect } from 'react';
 
 const NAV = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +32,12 @@ export function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
     const isAdmin = user?.role === 'admin';
+    const { resolvedTheme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const { data: pendingData } = useQuery({
         queryKey: ['pending-users'],
@@ -53,7 +63,7 @@ export function Sidebar() {
         }}>
             {/* Logo */}
             <div style={{ padding: '0 1.25rem 2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <img src="/tenurio-logo-white.svg" alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
+                <img src={mounted && resolvedTheme === 'dark' ? '/tenurio-logo-white.svg' : '/tenurio-logo-black.svg'} alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
             </div>
 
             {/* Nav items */}
@@ -104,6 +114,10 @@ export function Sidebar() {
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: 12, textTransform: 'capitalize' }}>
                         {user.role}
                     </div>
+                    <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.8rem', marginBottom: 6 }} onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
+                        {mounted && resolvedTheme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                        {mounted && resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    </button>
                     <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.8rem' }} onClick={logout}>
                         <LogOut size={14} />
                         Sign out
