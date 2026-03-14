@@ -22,6 +22,12 @@ api.interceptors.response.use(
     async (error) => {
         const original = error.config;
         if (error.response?.status === 401 && !original._retry) {
+            // Do not intercept 401s for login/signup/otp because those are credential/validation errors, 
+            // not an expired session that requires a redirect
+            if (original.url?.includes('/auth/')) {
+                return Promise.reject(error);
+            }
+
             original._retry = true;
             try {
                 const refreshToken = localStorage.getItem('refresh_token');
