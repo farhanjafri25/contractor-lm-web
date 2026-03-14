@@ -54,9 +54,6 @@ export function Sidebar() {
             {/* Logo */}
             <div style={{ padding: '0 1.25rem 2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
-                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text-primary)', letterSpacing: '-0.3px' }}>
-                    Tenurio
-                </span>
             </div>
 
             {/* Nav items */}

@@ -122,9 +122,6 @@ export default function SignupPage() {
                     }}>
                         <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
                     </div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, letterSpacing: '-0.5px' }}>
-                        Join Tenurio
-                    </h1>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
                         Create a workspace or join an existing one
                     </p>
