@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi, tenantApi } from '@/lib/api';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from '@/components/icons';
 import Link from 'next/link';
 
 export default function NewContractorPage() {

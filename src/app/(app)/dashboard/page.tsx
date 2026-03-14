@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi, eventsApi } from '@/lib/api';
 import {
     Users, AlertTriangle, Clock, ShieldOff, TrendingUp, RefreshCw,
-} from 'lucide-react';
+} from '@/components/icons';
 import { formatDistanceToNow } from 'date-fns';
 
 function StatCard({

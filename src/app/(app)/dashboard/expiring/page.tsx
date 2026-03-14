@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { format, differenceInDays } from 'date-fns';
 import Link from 'next/link';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock } from '@/components/icons';
 
 export default function ExpiringPage() {
     const [days, setDays] = useState(30);

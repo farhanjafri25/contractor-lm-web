@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { UserPlus, ShieldCheck, Users } from 'lucide-react';
+import { UserPlus, ShieldCheck, Users } from '@/components/icons';
 
 const ROLE_BADGE: Record<string, string> = {
     admin: 'badge-pending',

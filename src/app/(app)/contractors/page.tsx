@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Users } from '@/components/icons';
 import Link from 'next/link';
 
 const STATUS_BADGE: Record<string, string> = {

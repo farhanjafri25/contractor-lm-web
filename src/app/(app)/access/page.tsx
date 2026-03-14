@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { accessApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { RotateCcw, CheckCheck } from 'lucide-react';
+import { RotateCcw, CheckCheck } from '@/components/icons';
 
 const STATUS_BADGE: Record<string, string> = {
     provisioned: 'badge-active',

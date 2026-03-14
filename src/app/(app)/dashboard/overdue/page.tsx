@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from '@/components/icons';
 
 export default function OverduePage() {
     const { data, isLoading } = useQuery({
