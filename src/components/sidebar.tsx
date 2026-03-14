@@ -12,7 +12,7 @@ import {
     Activity,
     Moon,
     Sun,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api';

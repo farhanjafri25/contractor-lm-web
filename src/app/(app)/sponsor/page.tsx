@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sponsorApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Clock } from '@/components/icons';
 import { formatDistanceToNow } from 'date-fns';
 
 const STATUS_BADGE: Record<string, string> = {

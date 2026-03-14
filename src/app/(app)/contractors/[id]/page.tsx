@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contractorsApi, contractsApi, eventsApi, accessApi, sponsorApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { ArrowLeft, AlertTriangle, RotateCcw, X, Calendar, ShieldOff } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, RotateCcw, X, Calendar, ShieldOff } from '@/components/icons';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 

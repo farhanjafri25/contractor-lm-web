@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from '@/components/icons';
 
 export default function AtRiskPage() {
     const { data, isLoading } = useQuery({
