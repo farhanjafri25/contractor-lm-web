@@ -10,7 +10,6 @@ import {
     Settings,
     LogOut,
     Activity,
-    Zap,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useQuery } from '@tanstack/react-query';
@@ -54,15 +53,9 @@ export function Sidebar() {
         }}>
             {/* Logo */}
             <div style={{ padding: '0 1.25rem 2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                    width: 32, height: 32, borderRadius: 8,
-                    background: 'var(--color-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                    <Zap size={16} color="white" />
-                </div>
-                <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text-primary)', letterSpacing: '-0.3px' }}>
-                    CLM
+                <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text-primary)', letterSpacing: '-0.3px' }}>
+                    Tenurio
                 </span>
             </div>
 

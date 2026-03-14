@@ -6,7 +6,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'CLM — Contractor Lifecycle Management',
+  title: 'Tenurio — Contractor Lifecycle Management',
   description: 'Non-employee identity lifecycle management platform',
 };
 

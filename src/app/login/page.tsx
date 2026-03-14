@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { Zap, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -49,20 +49,13 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 52,
-                        height: 52,
-                        borderRadius: 14,
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '1rem',
                     }}>
-                        <Zap size={26} color="white" />
+                        <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
                     </div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, letterSpacing: '-0.5px' }}>
-                        Contractor LM
+                        Tenurio
                     </h1>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
                         Sign in to your workspace
