@@ -13,6 +13,8 @@ import {
     Zap,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useQuery } from '@tanstack/react-query';
+import { tenantApi } from '@/lib/api';
 
 const NAV = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,6 +28,14 @@ const NAV = [
 export function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
+    const isAdmin = user?.role === 'admin';
+
+    const { data: pendingData } = useQuery({
+        queryKey: ['pending-users'],
+        queryFn: async () => (await tenantApi.getPendingUsers()).data,
+        enabled: isAdmin,
+    });
+    const pendingCount = pendingData?.data?.length || 0;
 
     const visible = NAV.filter((n) => !n.roles || n.roles.includes(user?.role ?? ''));
 
@@ -60,12 +70,14 @@ export function Sidebar() {
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: '0 0.75rem' }}>
                 {visible.map(({ href, label, icon: Icon }) => {
                     const active = pathname.startsWith(href);
+                    const showBadge = (href === '/settings/team' && pendingCount > 0);
+                    
                     return (
                         <Link
                             key={href}
                             href={href}
                             style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                 padding: '0.6rem 0.75rem',
                                 borderRadius: 8,
                                 fontSize: '0.875rem',
@@ -76,8 +88,18 @@ export function Sidebar() {
                                 transition: 'all 0.15s',
                             }}
                         >
-                            <Icon size={16} />
-                            {label}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Icon size={16} />
+                                {label}
+                            </div>
+                            
+                            {showBadge && (
+                                <span style={{
+                                    background: 'var(--color-danger)', color: 'white',
+                                    padding: '0.1rem 0.4rem', borderRadius: 10,
+                                    fontSize: '0.65rem', fontWeight: 700,
+                                }}>{pendingCount}</span>
+                            )}
                         </Link>
                     );
                 })}

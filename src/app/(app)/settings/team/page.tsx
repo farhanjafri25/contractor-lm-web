@@ -236,6 +236,8 @@ export default function TeamPage() {
                             data?.data?.map((member: Record<string, unknown>) => {
                                 const isSelf = member._id === user?._id;
                                 const isActive = member.status === 'active';
+                                const isPending = member.status === 'pending_approval';
+                                const isInvited = member.status === 'invited';
                                 return (
                                     <tr key={String(member._id)} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                         <td style={{ padding: '1rem 1.25rem' }}>
@@ -261,8 +263,8 @@ export default function TeamPage() {
                                             )}
                                         </td>
                                         <td style={{ padding: '1rem 1.25rem' }}>
-                                            <span className={`badge ${isActive ? 'badge-active' : 'badge-expired'}`}>
-                                                {isActive ? 'Active' : 'Inactive'}
+                                            <span className={`badge ${isActive ? 'badge-active' : isPending ? 'badge-pending' : isInvited ? 'badge-neutral' : 'badge-expired'}`} style={{ textTransform: 'capitalize' }}>
+                                                {isActive ? 'Active' : isPending ? 'Pending' : isInvited ? 'Invited' : 'Inactive'}
                                             </span>
                                         </td>
                                         {isAdmin && (
