@@ -120,7 +120,7 @@ export default function SignupPage() {
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '1rem',
                     }}>
-                        <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
+                        <img src="/tenurio-logo-white.svg" alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
                     </div>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
                         Create a workspace or join an existing one

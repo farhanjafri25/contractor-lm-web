@@ -53,7 +53,7 @@ export function Sidebar() {
         }}>
             {/* Logo */}
             <div style={{ padding: '0 1.25rem 2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <img src="/tenurio-logo-black.svg" alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
+                <img src="/tenurio-logo-white.svg" alt="Tenurio Logo" style={{ height: 28, width: 'auto' }} />
             </div>
 
             {/* Nav items */}
