@@ -1,80 +1,30 @@
 'use client';
 
-import { CentralIcon } from '@central-icons-react/all';
-import type { ComponentProps } from 'react';
+export { IconLiveActivity as Activity } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLiveActivity';
+export { IconArrowLeft as ArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
+export { IconCalendar1 as Calendar } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCalendar1';
+export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeOpen';
+export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeSlash';
+export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFileText';
+export { IconLayoutDashboard as LayoutDashboard } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutDashboard';
+export { IconArrowBoxLeft as LogOut } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowBoxLeft';
+export { IconMoon as Moon } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMoon';
+export { IconArrowRotateLeftRight as RefreshCw } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateLeftRight';
+export { IconArrowRotateCounterClockwise as RotateCcw } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateCounterClockwise';
+export { IconMagnifyingGlass as Search } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
+export { IconSettingsGear2 as Settings } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsGear2';
+export { IconShieldCheck as ShieldCheck } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShieldCheck';
+export { IconSun as Sun } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSun';
+export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTeam';
+export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconX';
 
-type CentralGlyphName =
-    | 'IconArrowBoxLeft'
-    | 'IconArrowLeft'
-    | 'IconArrowRotateCounterClockwise'
-    | 'IconArrowRotateLeftRight'
-    | 'IconCalendar1'
-    | 'IconCircleCheck'
-    | 'IconCirclePlus'
-    | 'IconCircleX'
-    | 'IconClock'
-    | 'IconExclamationTriangle'
-    | 'IconEyeOpen'
-    | 'IconEyeSlash'
-    | 'IconFileText'
-    | 'IconLayoutDashboard'
-    | 'IconLiveActivity'
-    | 'IconMagnifyingGlass'
-    | 'IconMoon'
-    | 'IconSettingsGear2'
-    | 'IconShieldBreak'
-    | 'IconShieldCheck'
-    | 'IconShieldCrossed'
-    | 'IconSun'
-    | 'IconTeam'
-    | 'IconTrending1'
-    | 'IconUserAdd'
-    | 'IconX';
-
-type AppIconProps = Omit<ComponentProps<typeof CentralIcon>, 'name' | 'join' | 'fill' | 'radius' | 'stroke'>;
-
-function createIcon(name: CentralGlyphName) {
-    function AppIcon(props: AppIconProps) {
-        return (
-            <CentralIcon
-                name={name}
-                join="round"
-                fill="outlined"
-                radius="1"
-                stroke="1.5"
-                {...props}
-            />
-        );
-    }
-
-    AppIcon.displayName = name;
-    return AppIcon;
-}
-
-export const Activity = createIcon('IconLiveActivity');
-export const AlertTriangle = createIcon('IconExclamationTriangle');
-export const ArrowLeft = createIcon('IconArrowLeft');
-export const Calendar = createIcon('IconCalendar1');
-export const CheckCheck = createIcon('IconCircleCheck');
-export const CheckCircle = createIcon('IconCircleCheck');
-export const Clock = createIcon('IconClock');
-export const Eye = createIcon('IconEyeOpen');
-export const EyeOff = createIcon('IconEyeSlash');
-export const FileText = createIcon('IconFileText');
-export const LayoutDashboard = createIcon('IconLayoutDashboard');
-export const LogOut = createIcon('IconArrowBoxLeft');
-export const Moon = createIcon('IconMoon');
-export const Plus = createIcon('IconCirclePlus');
-export const RefreshCw = createIcon('IconArrowRotateLeftRight');
-export const RotateCcw = createIcon('IconArrowRotateCounterClockwise');
-export const Search = createIcon('IconMagnifyingGlass');
-export const Settings = createIcon('IconSettingsGear2');
-export const ShieldAlert = createIcon('IconShieldBreak');
-export const ShieldCheck = createIcon('IconShieldCheck');
-export const ShieldOff = createIcon('IconShieldCrossed');
-export const Sun = createIcon('IconSun');
-export const TrendingUp = createIcon('IconTrending1');
-export const UserPlus = createIcon('IconUserAdd');
-export const Users = createIcon('IconTeam');
-export const X = createIcon('IconX');
-export const XCircle = createIcon('IconCircleX');
+export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconExclamationTriangle';
+export { IconCircleCheck as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconCircleCheck';
+export { IconCircleCheck as CheckCircle } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconCircleCheck';
+export { IconClock as Clock } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconClock';
+export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconCirclePlus';
+export { IconShieldBreak as ShieldAlert } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconShieldBreak';
+export { IconShieldCrossed as ShieldOff } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconShieldCrossed';
+export { IconTrending1 as TrendingUp } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconTrending1';
+export { IconUserAdd as UserPlus } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconUserAdd';
+export { IconCircleX as XCircle } from '@central-icons-react/round-filled-radius-3-stroke-1.5/IconCircleX';
