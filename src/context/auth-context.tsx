@@ -3,6 +3,19 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authApi } from '@/lib/api';
 
+function parseJwt(token: string) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
+
 interface User {
     _id: string;
     email: string;
@@ -37,15 +50,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string) => {
         const { data } = await authApi.login(email, password);
+        
+        let tId = data.user?.tenant_id;
+        if (!tId && data.access_token) {
+            const decoded = parseJwt(data.access_token);
+            if (decoded && decoded.tenant_id) {
+                tId = decoded.tenant_id;
+            }
+        }
+
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        // The backend returns user context which includes tenant_id indirectly or we don't need it.
-        // If we still need global tenantId, we can parse it from JWT or API.
-        // Assuming data.user.tenant_id is provided or implicit going forward.
-        if (data.user?.tenant_id) {
-            localStorage.setItem('tenant_id', data.user.tenant_id);
-            setTenantId(data.user.tenant_id);
+        
+        if (tId) {
+            localStorage.setItem('tenant_id', tId);
+            setTenantId(tId);
         }
         setUser(data.user);
     };

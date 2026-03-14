@@ -7,6 +7,19 @@ import { authApi } from '@/lib/api';
 import { Zap, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
+function parseJwt(token: string) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
+
 export default function SignupPage() {
     const router = useRouter();
     const { login } = useAuth(); // for auto-login after OTP success, though the backend does return tokens
@@ -61,8 +74,17 @@ export default function SignupPage() {
                 localStorage.setItem('access_token', res.data.access_token);
                 localStorage.setItem('refresh_token', res.data.refresh_token);
                 localStorage.setItem('user', JSON.stringify(res.data.user));
-                if (res.data.user?.tenant_id) {
-                    localStorage.setItem('tenant_id', res.data.user.tenant_id);
+                
+                let tId = res.data.user?.tenant_id;
+                if (!tId && res.data.access_token) {
+                    const decoded = parseJwt(res.data.access_token);
+                    if (decoded && decoded.tenant_id) {
+                        tId = decoded.tenant_id;
+                    }
+                }
+
+                if (tId) {
+                    localStorage.setItem('tenant_id', tId);
                 }
                 
                 // Force reload to pick up the new auth state properly
