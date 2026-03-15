@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import { CheckCircle, Clock, Eye, XCircle } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -24,10 +26,12 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
     try {
       await sponsorApi.review(id, decision, note || undefined);
       queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] });
+      toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
       onOpenChange(false);
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Review failed. Try again.'));
+      const message = getApiErrorMessage(err, 'Review failed. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

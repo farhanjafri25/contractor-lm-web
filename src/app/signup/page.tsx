@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { AuthPageLayout, AuthWelcomeAside } from '@/components/auth-page-layout';
 import {
   Activity,
@@ -26,6 +28,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { authApi, tenantApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 
 type SignupStep = 'account' | 'verify' | 'workspace' | 'approval';
@@ -55,16 +58,6 @@ function parseJwt(token: string) {
   } catch {
     return null;
   }
-}
-
-function getErrorMessage(err: unknown, fallback: string) {
-  const message = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
-
-  if (Array.isArray(message)) {
-    return message.join(', ');
-  }
-
-  return typeof message === 'string' ? message : fallback;
 }
 
 function slugify(value: string) {
@@ -200,6 +193,7 @@ function WorkspacePreview({ workspaceName }: { workspaceName: string }) {
 }
 
 export default function SignupPage() {
+  const router = useRouter();
   const [step, setStep] = useState<SignupStep>('account');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -238,7 +232,9 @@ export default function SignupPage() {
       await authApi.signup(email.trim(), name.trim(), password);
       setStep('verify');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Sign-up failed. Try again.'));
+      const message = getApiErrorMessage(err, 'Sign-up failed. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -278,7 +274,9 @@ export default function SignupPage() {
       seedWorkspaceDetails(email);
       setStep('workspace');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Code did not match. Try again.'));
+      const message = getApiErrorMessage(err, 'Code did not match. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -350,9 +348,12 @@ export default function SignupPage() {
 
     try {
       await tenantApi.updateProfile({ tenant_name: workspaceName.trim() });
-      window.location.href = '/dashboard';
+      toast.success('Workspace details saved.');
+      router.push('/dashboard');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'We couldn’t save your workspace details. Try again.'));
+      const message = getApiErrorMessage(err, 'We couldn’t save your workspace details. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

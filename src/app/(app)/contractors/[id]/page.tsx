@@ -3,7 +3,9 @@
 import { use, useState } from 'react';
 import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { accessApi, contractorsApi, contractsApi, eventsApi, sponsorApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import {
   Activity,
@@ -259,15 +261,18 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const canReactivate = activeContract?.status === 'suspended' && isAdmin;
   const hasManageActions = Boolean(canSuspend || canExtend || canTerminate || canReactivate);
 
-  function refresh() {
-    queryClient.invalidateQueries({ queryKey: ['contractor', id] });
-    queryClient.invalidateQueries({ queryKey: ['timeline', id] });
-    queryClient.invalidateQueries({ queryKey: ['access', contractId] });
+  async function refresh() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['contractor', id] }),
+      queryClient.invalidateQueries({ queryKey: ['timeline', id] }),
+      queryClient.invalidateQueries({ queryKey: ['access', contractId] }),
+    ]);
   }
 
   function handleError(err: unknown) {
-    const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-    setActionError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.'));
+    const message = getApiErrorMessage(err, 'Action failed. Try again.');
+    setActionError(message);
+    toast.error(message);
   }
 
   function closeDialog() {
@@ -281,8 +286,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionError('');
     try {
       await contractsApi.suspend(contractorId, contractId, suspendReason, suspendNote || undefined);
+      await refresh();
       closeDialog();
-      refresh();
+      toast.success('Contract suspended.');
     } catch (err) {
       handleError(err);
       setActionLoading(false);
@@ -294,8 +300,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionError('');
     try {
       await contractsApi.reactivate(contractorId, contractId, reactivateNote || undefined);
+      await refresh();
       closeDialog();
-      refresh();
+      toast.success('Contract reactivated.');
     } catch (err) {
       handleError(err);
       setActionLoading(false);
@@ -316,8 +323,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           justification: extendNote || 'Extension requested by sponsor',
         });
       }
+      await refresh();
       closeDialog();
-      refresh();
+      toast.success(isAdmin ? 'Contract extended.' : 'Extension request submitted.');
     } catch (err) {
       handleError(err);
       setActionLoading(false);
@@ -329,8 +337,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionError('');
     try {
       await contractsApi.terminate(contractorId, contractId);
+      await refresh();
       closeDialog();
-      refresh();
+      toast.success('Contract ended.');
     } catch (err) {
       handleError(err);
       setActionLoading(false);

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { tenantApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import { CheckCheck, IconCrossLarge, ShieldCheck, UserPlus, Users, XCircle } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,11 +14,6 @@ import { DataTableShell, FieldBlock, FilterSelect, MetricCard, PageHeader, Statu
 import { Input } from '@/components/ui/input';
 
 const roles = ['owner', 'admin', 'sponsor'];
-
-function getErrorMessage(err: unknown) {
-  const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.');
-}
 
 function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [email, setEmail] = useState('');
@@ -32,10 +29,14 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     try {
       await tenantApi.inviteUser(email.toLowerCase(), role);
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
+      toast.success('Invite sent.');
+      setEmail('');
+      setRole('sponsor');
       onOpenChange(false);
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Invite failed. Try again.'));
+      const message = getApiErrorMessage(err, 'Invite failed. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -115,37 +116,41 @@ export default function TeamPage() {
   const runMemberAction = async (
     action: { type: 'role' | 'deactivate' | 'reactivate' | 'approve' | 'reject'; memberId: string },
     request: () => Promise<unknown>,
+    successMessage: string,
   ) => {
     setActionError('');
     setActiveAction(action);
     try {
       await request();
       await refresh();
+      toast.success(successMessage);
     } catch (err) {
-      setActionError(getErrorMessage(err));
+      const message = getApiErrorMessage(err, 'Action failed. Try again.');
+      setActionError(message);
+      toast.error(message);
     } finally {
       setActiveAction(null);
     }
   };
 
   const handleDeactivate = async (id: string) => {
-    await runMemberAction({ type: 'deactivate', memberId: id }, () => tenantApi.deactivateUser(id));
+    await runMemberAction({ type: 'deactivate', memberId: id }, () => tenantApi.deactivateUser(id), 'Member deactivated.');
   };
 
   const handleReactivate = async (id: string) => {
-    await runMemberAction({ type: 'reactivate', memberId: id }, () => tenantApi.reactivateUser(id));
+    await runMemberAction({ type: 'reactivate', memberId: id }, () => tenantApi.reactivateUser(id), 'Member reactivated.');
   };
 
   const handleApprove = async (id: string) => {
-    await runMemberAction({ type: 'approve', memberId: id }, () => tenantApi.approveUser(id));
+    await runMemberAction({ type: 'approve', memberId: id }, () => tenantApi.approveUser(id), 'Member approved.');
   };
 
   const handleReject = async (id: string) => {
-    await runMemberAction({ type: 'reject', memberId: id }, () => tenantApi.rejectUser(id));
+    await runMemberAction({ type: 'reject', memberId: id }, () => tenantApi.rejectUser(id), 'Member request rejected.');
   };
 
   const handleRoleChange = async (id: string, role: string) => {
-    await runMemberAction({ type: 'role', memberId: id }, () => tenantApi.updateRole(id, role));
+    await runMemberAction({ type: 'role', memberId: id }, () => tenantApi.updateRole(id, role), 'Role updated.');
   };
 
   const isBusy = (memberId: string) => activeAction?.memberId === memberId;
