@@ -1,146 +1,300 @@
 'use client';
 
+import { format, isValid, parseISO } from 'date-fns';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi, tenantApi } from '@/lib/api';
-import { ArrowLeft, Plus } from '@/components/icons';
-import Link from 'next/link';
+import { ChevronBottom } from '@/components/icons';
+import { FieldBlock, FilterSelect, PageBackLink, PageHeader, SectionCard } from '@/components/app-ui';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
+
+const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance', 'Legal', 'Operations', 'Other'];
+
+type FormField = 'name' | 'email' | 'phone' | 'job_title' | 'department' | 'sponsor_id' | 'start_date' | 'end_date';
+type ValidationErrors = Partial<Record<FormField, string>>;
 
 export default function NewContractorPage() {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    department: '',
+    job_title: '',
+  });
+  const [contract, setContract] = useState({
+    sponsor_id: '',
+    start_date: '',
+    end_date: '',
+    notes: '',
+  });
 
-    const [form, setForm] = useState({
-        name: '', email: '', phone: '', department: '', job_title: '', notes: '',
-    });
-    const [contract, setContract] = useState({
-        sponsor_id: '', start_date: '', end_date: '', notes: '',
-    });
+  const { data: usersData } = useQuery({
+    queryKey: ['team'],
+    queryFn: async () => (await tenantApi.listUsers()).data,
+  });
 
-    const { data: usersData } = useQuery({
-        queryKey: ['team'],
-        queryFn: async () => (await tenantApi.listUsers()).data,
-    });
+  const sponsors =
+    usersData?.data?.filter((user: Record<string, unknown>) => user.role === 'sponsor' || user.role === 'admin') ?? [];
+  const startDate = contract.start_date ? parseISO(contract.start_date) : undefined;
+  const endDate = contract.end_date ? parseISO(contract.end_date) : undefined;
 
-    const sponsors = usersData?.data?.filter((u: Record<string, unknown>) => u.role === 'sponsor' || u.role === 'admin') ?? [];
+  const updateFormField = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    setError('');
+  };
 
-    const set = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
-    const setC = (key: string, val: string) => setContract((c) => ({ ...c, [key]: val }));
+  const updateContractField = (field: keyof typeof contract, value: string) => {
+    setContract((prev) => ({ ...prev, [field]: value }));
+    if (field !== 'notes') {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    setError('');
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            await contractorsApi.create({
-                ...form,
-                notes: contract.notes,
-                contract: {
-                    sponsor_id: contract.sponsor_id,
-                    start_date: contract.start_date,
-                    end_date: contract.end_date,
-                    create_google_account: false,
-                    application_access: [],
-                },
-            });
-            router.push('/contractors');
-        } catch (err: unknown) {
-            const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-            setError(Array.isArray(msg) ? msg.join(', ') : String(msg ?? 'Something went wrong'));
-        } finally {
-            setLoading(false);
-        }
-    };
+  const validateForm = () => {
+    const nextErrors: ValidationErrors = {};
 
-    const DEPARTMENTS = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance', 'Legal', 'Operations', 'Other'];
+    if (!form.name.trim()) nextErrors.name = 'Full name is required.';
+    if (!form.email.trim()) nextErrors.email = 'Work email is required.';
+    if (!form.job_title.trim()) nextErrors.job_title = 'Job title is required.';
+    if (!form.department) nextErrors.department = 'Select a department.';
+    if (!contract.sponsor_id) nextErrors.sponsor_id = 'Select a sponsor.';
+    if (!contract.start_date) nextErrors.start_date = 'Choose a start date.';
+    if (!contract.end_date) nextErrors.end_date = 'Choose an end date.';
 
-    return (
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <Link href="/contractors">
-                    <button className="btn btn-ghost" style={{ padding: '0.4rem 0.6rem' }}><ArrowLeft size={16} /></button>
-                </Link>
-                <div>
-                    <h1 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '-0.5px' }}>New Contractor</h1>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>Create a contractor and their first contract</p>
-                </div>
-            </div>
+    const parsedStartDate = contract.start_date ? parseISO(contract.start_date) : null;
+    const parsedEndDate = contract.end_date ? parseISO(contract.end_date) : null;
 
-            {error && (
-                <div style={{ padding: '0.75rem 1rem', background: 'var(--color-danger-muted)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', borderRadius: 8, color: 'var(--color-danger)', fontSize: '0.85rem' }}>
-                    {error}
-                </div>
-            )}
+    if (parsedStartDate && !isValid(parsedStartDate)) {
+      nextErrors.start_date = 'Enter a valid start date.';
+    }
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Identity section */}
-                <div className="card">
-                    <h2 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Identity</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Full Name *</label>
-                            <input required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Jane Smith" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Work Email *</label>
-                            <input required type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="jane@vendor.com" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Phone</label>
-                            <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1-555-0100" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Department *</label>
-                            <select required value={form.department} onChange={(e) => set('department', e.target.value)}>
-                                <option value="">Select department</option>
-                                {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Job Title *</label>
-                            <input required value={form.job_title} onChange={(e) => set('job_title', e.target.value)} placeholder="Senior Engineer" />
-                        </div>
-                    </div>
-                </div>
+    if (parsedEndDate && !isValid(parsedEndDate)) {
+      nextErrors.end_date = 'Enter a valid end date.';
+    }
 
-                {/* Contract section */}
-                <div className="card">
-                    <h2 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contract</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Start Date *</label>
-                            <input required type="date" value={contract.start_date} onChange={(e) => setC('start_date', e.target.value)} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>End Date *</label>
-                            <input required type="date" value={contract.end_date} onChange={(e) => setC('end_date', e.target.value)} />
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Sponsor *</label>
-                            <select required value={contract.sponsor_id} onChange={(e) => setC('sponsor_id', e.target.value)}>
-                                <option value="">Select sponsor</option>
-                                {sponsors.map((s: Record<string, unknown>) => (
-                                    <option key={String(s._id)} value={String(s._id)}>{String(s.email)} ({String(s.role)})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>Notes</label>
-                            <textarea value={contract.notes} onChange={(e) => setC('notes', e.target.value)} placeholder="Any additional context…" rows={3} style={{ resize: 'vertical' }} />
-                        </div>
-                    </div>
-                </div>
+    if (
+      parsedStartDate &&
+      parsedEndDate &&
+      isValid(parsedStartDate) &&
+      isValid(parsedEndDate) &&
+      parsedEndDate < parsedStartDate
+    ) {
+      nextErrors.end_date = 'End date must be on or after the start date.';
+    }
 
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                    <Link href="/contractors"><button type="button" className="btn btn-ghost">Cancel</button></Link>
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                        <Plus size={15} /> {loading ? 'Creating…' : 'Create Contractor'}
-                    </button>
-                </div>
-            </form>
+    setFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setError('Fill in the required fields and resolve the validation errors before continuing.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (!validateForm()) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await contractorsApi.create({
+        ...form,
+        notes: contract.notes,
+        contract: {
+          sponsor_id: contract.sponsor_id,
+          start_date: contract.start_date,
+          end_date: contract.end_date,
+          create_google_account: false,
+          application_access: [],
+        },
+      });
+      router.push('/contractors');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Something went wrong'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-start gap-4">
+        <PageBackLink href="/contractors">Back to contractors</PageBackLink>
+        <div className="flex-1">
+          <PageHeader
+            title="New contractor"
+            description="Create the identity, define the first contract window, and assign a sponsor in one pass."
+          />
         </div>
-    );
+      </div>
+
+      {error ? (
+        <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <SectionCard title="Identity" description="The core profile fields for the contractor record.">
+          <div className="grid gap-5 md:grid-cols-2">
+            <FieldBlock label="Full name">
+              <Input
+                value={form.name}
+                onChange={(event) => updateFormField('name', event.target.value)}
+                required
+                aria-invalid={Boolean(fieldErrors.name)}
+              />
+              {fieldErrors.name ? <p className="text-xs text-destructive">{fieldErrors.name}</p> : null}
+            </FieldBlock>
+            <FieldBlock label="Work email">
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(event) => updateFormField('email', event.target.value)}
+                required
+                aria-invalid={Boolean(fieldErrors.email)}
+              />
+              {fieldErrors.email ? <p className="text-xs text-destructive">{fieldErrors.email}</p> : null}
+            </FieldBlock>
+            <FieldBlock label="Phone">
+              <Input value={form.phone} onChange={(event) => updateFormField('phone', event.target.value)} />
+            </FieldBlock>
+            <FieldBlock label="Department">
+              <FilterSelect
+                value={form.department}
+                onValueChange={(value) => updateFormField('department', value)}
+                options={[{ label: 'Select department', value: '' }, ...departments.map((value) => ({ label: value, value }))]}
+                placeholder="Select department"
+              />
+              {fieldErrors.department ? <p className="text-xs text-destructive">{fieldErrors.department}</p> : null}
+            </FieldBlock>
+            <div className="md:col-span-2">
+              <FieldBlock label="Job title">
+                <Input
+                  value={form.job_title}
+                  onChange={(event) => updateFormField('job_title', event.target.value)}
+                  placeholder="Senior engineer"
+                  required
+                  aria-invalid={Boolean(fieldErrors.job_title)}
+                />
+                {fieldErrors.job_title ? <p className="text-xs text-destructive">{fieldErrors.job_title}</p> : null}
+              </FieldBlock>
+            </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Contract setup" description="Assign the sponsor and the initial contract window.">
+          <div className="grid gap-5 md:grid-cols-2">
+            <FieldBlock label="Start date">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      data-empty={!startDate}
+                      className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                    >
+                      {startDate ? format(startDate, 'PPP') : <span>Pick a start date</span>}
+                      <ChevronBottom data-icon="inline-end" size={16} />
+                    </Button>
+                  }
+                />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(nextDate) =>
+                      updateContractField('start_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                    }
+                    defaultMonth={startDate}
+                  />
+                </PopoverContent>
+              </Popover>
+              {fieldErrors.start_date ? <p className="text-xs text-destructive">{fieldErrors.start_date}</p> : null}
+            </FieldBlock>
+            <FieldBlock label="End date">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      data-empty={!endDate}
+                      className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                    >
+                      {endDate ? format(endDate, 'PPP') : <span>Pick an end date</span>}
+                      <ChevronBottom data-icon="inline-end" size={16} />
+                    </Button>
+                  }
+                />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(nextDate) =>
+                      updateContractField('end_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                    }
+                    defaultMonth={endDate}
+                  />
+                </PopoverContent>
+              </Popover>
+              {fieldErrors.end_date ? <p className="text-xs text-destructive">{fieldErrors.end_date}</p> : null}
+            </FieldBlock>
+            <div className="md:col-span-2">
+              <FieldBlock label="Sponsor">
+                <FilterSelect
+                  value={contract.sponsor_id}
+                  onValueChange={(value) => updateContractField('sponsor_id', value)}
+                  options={[
+                    { label: 'Select sponsor', value: '' },
+                    ...sponsors.map((sponsor: Record<string, unknown>) => ({
+                      label: `${String(sponsor.email)} (${String(sponsor.role)})`,
+                      value: String(sponsor._id),
+                    })),
+                  ]}
+                  placeholder="Select sponsor"
+                />
+                {fieldErrors.sponsor_id ? <p className="text-xs text-destructive">{fieldErrors.sponsor_id}</p> : null}
+              </FieldBlock>
+            </div>
+            <div className="md:col-span-2">
+              <FieldBlock label="Notes">
+                <Textarea
+                  value={contract.notes}
+                  onChange={(event) => updateContractField('notes', event.target.value)}
+                  placeholder="Any additional context for the sponsor or operations team…"
+                />
+              </FieldBlock>
+            </div>
+          </div>
+        </SectionCard>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Link href="/contractors">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto">
+              Cancel
+            </Button>
+          </Link>
+          <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+            {loading ? 'Creating…' : 'Create contractor'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
 }
