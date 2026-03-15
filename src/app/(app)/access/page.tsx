@@ -22,7 +22,7 @@ function formatStatusLabel(status: string) {
 
 export default function AccessPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'security';
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('');
   const [actionError, setActionError] = useState('');

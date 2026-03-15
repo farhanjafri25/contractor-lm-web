@@ -124,7 +124,7 @@ export default function AuditLogPage() {
                 <Calendar
                   mode="single"
                   selected={fromDate}
-                  onSelect={(nextDate) => {
+                  onSelect={(nextDate: Date | undefined) => {
                     setFrom(nextDate ? format(nextDate, 'yyyy-MM-dd') : '');
                     setPage(1);
                   }}
@@ -149,7 +149,7 @@ export default function AuditLogPage() {
                 <Calendar
                   mode="single"
                   selected={toDate}
-                  onSelect={(nextDate) => {
+                  onSelect={(nextDate: Date | undefined) => {
                     setTo(nextDate ? format(nextDate, 'yyyy-MM-dd') : '');
                     setPage(1);
                   }}

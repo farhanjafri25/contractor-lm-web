@@ -219,7 +219,7 @@ export default function NewContractorPage() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={(nextDate) =>
+                    onSelect={(nextDate: Date | undefined) =>
                       updateContractField('start_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
                     }
                     defaultMonth={startDate}
@@ -246,7 +246,7 @@ export default function NewContractorPage() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={(nextDate) =>
+                    onSelect={(nextDate: Date | undefined) =>
                       updateContractField('end_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
                     }
                     defaultMonth={endDate}

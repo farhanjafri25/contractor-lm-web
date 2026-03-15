@@ -67,7 +67,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const { id } = use(params);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role === 'admin' || user?.role === 'security';
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   const [modal, setModal] = useState<'suspend' | 'reactivate' | 'extend' | 'terminate' | null>(null);
   const [suspendReason, setSuspendReason] = useState('security');
@@ -396,7 +396,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               <Calendar
                 mode="single"
                 selected={parsedExtendDate}
-                onSelect={(nextDate) => setExtendDate(nextDate ? format(nextDate, 'yyyy-MM-dd') : '')}
+                onSelect={(nextDate: Date | undefined) => setExtendDate(nextDate ? format(nextDate, 'yyyy-MM-dd') : '')}
                 defaultMonth={parsedExtendDate}
               />
             </PopoverContent>
