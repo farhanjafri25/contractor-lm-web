@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { contractorsApi, tenantApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { ChevronBottom } from '@/components/icons';
 import { FieldBlock, FilterSelect, PageBackLink, PageHeader, SectionCard } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
@@ -123,10 +125,12 @@ export default function NewContractorPage() {
           application_access: [],
         },
       });
+      toast.success('Contractor added.');
       router.push('/contractors');
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Could not add contractor. Try again.'));
+      const message = getApiErrorMessage(err, 'Could not add contractor. Try again.');
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

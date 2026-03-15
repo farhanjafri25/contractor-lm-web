@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { accessApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { CheckCheck, RotateCcw } from '@/components/icons';
 import { DataTableShell, FilterSelect, PageHeader, StatusBadge, SummaryPill } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
@@ -10,11 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { useAuth } from '@/context/auth-context';
 
 const statuses = ['', 'active', 'pending', 'revoked', 'failed'];
-
-function getErrorMessage(err: unknown) {
-  const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.');
-}
 
 function formatStatusLabel(status: string) {
   return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
@@ -46,25 +43,33 @@ export default function AccessPage() {
     return accumulator;
   }, {});
 
-  const runAccessAction = async (id: string, type: 'retry' | 'resolve', request: () => Promise<unknown>) => {
+  const runAccessAction = async (
+    id: string,
+    type: 'retry' | 'resolve',
+    request: () => Promise<unknown>,
+    successMessage: string,
+  ) => {
     setActionError('');
     setActionLoading({ id, type });
     try {
       await request();
-      queryClient.invalidateQueries({ queryKey: ['access-all'] });
+      await queryClient.invalidateQueries({ queryKey: ['access-all'] });
+      toast.success(successMessage);
     } catch (err) {
-      setActionError(getErrorMessage(err));
+      const message = getApiErrorMessage(err, 'Action failed. Try again.');
+      setActionError(message);
+      toast.error(message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleRetry = async (id: string) => {
-    await runAccessAction(id, 'retry', () => accessApi.retryRevocation(id));
+    await runAccessAction(id, 'retry', () => accessApi.retryRevocation(id), 'Access retry started.');
   };
 
   const handleMarkResolved = async (id: string) => {
-    await runAccessAction(id, 'resolve', () => accessApi.markResolved(id));
+    await runAccessAction(id, 'resolve', () => accessApi.markResolved(id), 'Access issue marked as resolved.');
   };
 
   return (
