@@ -109,11 +109,15 @@ export default function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
           title="Expiring soon"
-          description="These contracts end soon. Extend them before access drifts."
           actions={
-            <Link href="/dashboard/expiring" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+            <Button
+              variant="secondary"
+              size="sm"
+              render={<Link href="/dashboard/expiring" />}
+              nativeButton={false}
+            >
               View queue
-            </Link>
+            </Button>
           }
         >
           {expiringLoading ? (
@@ -152,9 +156,14 @@ export default function DashboardPage() {
         <SectionCard
           title="Activity"
           actions={
-            <Link href="/events" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+            <Button
+              variant="secondary"
+              size="sm"
+              render={<Link href="/events" />}
+              nativeButton={false}
+            >
               View activity
-            </Link>
+            </Button>
           }
         >
           {events?.data?.length ? (
@@ -191,9 +200,14 @@ export default function DashboardPage() {
           title="Needs review"
           description="These records need a decision or manual cleanup."
           actions={
-            <Link href="/dashboard/at-risk" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+            <Button
+              variant="secondary"
+              size="sm"
+              render={<Link href="/dashboard/at-risk" />}
+              nativeButton={false}
+            >
               View queue
-            </Link>
+            </Button>
           }
           className="border-destructive/15"
         >
