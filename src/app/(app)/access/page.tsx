@@ -6,14 +6,18 @@ import { accessApi } from '@/lib/api';
 import { CheckCheck, RotateCcw } from '@/components/icons';
 import { DataTableShell, FilterSelect, PageHeader, StatusBadge, SummaryPill } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 
 const statuses = ['', 'active', 'pending', 'revoked', 'failed'];
 
 function getErrorMessage(err: unknown) {
   const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Something went wrong. Please try again.');
+  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.');
+}
+
+function formatStatusLabel(status: string) {
+  return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
 }
 
 export default function AccessPage() {
@@ -66,8 +70,8 @@ export default function AccessPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Access provisions"
-        description={`${total.toLocaleString()} access records across all contractors, apps, and revocation states.`}
+        title="Access"
+        description={`${total.toLocaleString()} access records across contractors and apps.`}
         actions={
           <FilterSelect
             value={statusFilter}
@@ -92,7 +96,7 @@ export default function AccessPage() {
           {Object.entries(counts).map(([status, count]) => (
             <SummaryPill
               key={status}
-              label={status}
+              label={formatStatusLabel(status)}
               count={count}
               active={statusFilter === status}
               onClick={() => setStatusFilter(statusFilter === status ? '' : status)}
@@ -101,7 +105,7 @@ export default function AccessPage() {
         </div>
       ) : null}
 
-      <DataTableShell title="Access register" description="Provisioning state, external account mapping, and remediation controls in one list.">
+      <DataTableShell title="All access" description="Track status, linked accounts, and manual fixes.">
         <Table>
           <TableHeader>
             <TableRow>
@@ -109,19 +113,13 @@ export default function AccessPage() {
               <TableHead>Application</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>External account</TableHead>
-              <TableHead>Granted by</TableHead>
-              {isAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
+              <TableHead>Assigned by</TableHead>
+              {isAdmin ? <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={isAdmin ? 6 : 5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={5} columns={isAdmin ? 6 : 5} actionColumn={isAdmin} />
               : records.map((record) => {
                   const contractor = record.contractor_id as Record<string, unknown> | undefined;
                   const app = record.tenant_application_id as Record<string, unknown> | undefined;
@@ -146,18 +144,32 @@ export default function AccessPage() {
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {record.external_account_id ? String(record.external_account_id) : '—'}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{grantedBy ? String(grantedBy.email ?? '—') : 'System'}</TableCell>
+                      <TableCell className="text-muted-foreground">{grantedBy ? String(grantedBy.email ?? '—') : 'Tenurio'}</TableCell>
                       {isAdmin ? (
                         <TableCell className="text-right">
                           {status === 'failed' ? (
                             <div className="flex justify-end gap-2">
-                              <Button variant="secondary" size="sm" onClick={() => handleRetry(recordId)} disabled={isActing}>
-                                <RotateCcw size={12} />
-                                {actionLoading?.type === 'retry' && isActing ? 'Retrying…' : 'Retry'}
+                              <Button
+                                variant="secondary"
+                                size="icon-sm"
+                                onClick={() => handleRetry(recordId)}
+                                disabled={isActing}
+                                aria-label={actionLoading?.type === 'retry' && isActing ? 'Retrying access update' : 'Retry access update'}
+                                title={actionLoading?.type === 'retry' && isActing ? 'Retrying access update' : 'Retry access update'}
+                              >
+                                <RotateCcw size={12} className={actionLoading?.type === 'retry' && isActing ? 'animate-spin' : undefined} />
+                                <span className="sr-only">{actionLoading?.type === 'retry' && isActing ? 'Retrying access update' : 'Retry access update'}</span>
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleMarkResolved(recordId)} disabled={isActing}>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleMarkResolved(recordId)}
+                                disabled={isActing}
+                                aria-label={actionLoading?.type === 'resolve' && isActing ? 'Saving resolution' : 'Mark access issue done'}
+                                title={actionLoading?.type === 'resolve' && isActing ? 'Saving resolution' : 'Mark access issue done'}
+                              >
                                 <CheckCheck size={12} />
-                                {actionLoading?.type === 'resolve' && isActing ? 'Resolving…' : 'Resolve'}
+                                <span className="sr-only">{actionLoading?.type === 'resolve' && isActing ? 'Saving resolution' : 'Mark access issue done'}</span>
                               </Button>
                             </div>
                           ) : null}
@@ -169,7 +181,7 @@ export default function AccessPage() {
             {!isLoading && records.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isAdmin ? 6 : 5} className="py-14 text-center text-muted-foreground">
-                  No access records match the current filter.
+                  No access matches this filter. Matching records will show here.
                 </TableCell>
               </TableRow>
             ) : null}

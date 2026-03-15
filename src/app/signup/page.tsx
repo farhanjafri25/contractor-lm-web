@@ -47,7 +47,7 @@ export default function SignupPage() {
       setStep(2);
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(typeof message === 'string' ? message : 'An error occurred during sign up');
+      setError(typeof message === 'string' ? message : 'Sign-up failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function SignupPage() {
       }
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(typeof message === 'string' ? message : 'Invalid OTP code');
+      setError(typeof message === 'string' ? message : 'Code did not match. Try again.');
     } finally {
       setLoading(false);
     }
@@ -102,13 +102,13 @@ export default function SignupPage() {
 
   return (
     <AuthShell
-      title={step === 2 ? 'Verify your email' : step === 3 ? 'Request submitted' : 'Create your workspace'}
+      title={step === 2 ? 'Check your email' : step === 3 ? 'Request sent' : 'Create workspace'}
       subtitle={
         step === 2
-          ? `We sent a six-digit code to ${email}.`
+          ? `Enter the 6-digit code we sent to ${email}.`
           : step === 3
-            ? 'Your request is in motion. We will take it from here.'
-            : 'Set up your tenant or join an existing one using your work email domain.'
+            ? 'Your admin needs to approve your access.'
+            : 'Use your work email to create a workspace or join an existing one.'
       }
       footer={footer}
     >
@@ -120,11 +120,11 @@ export default function SignupPage() {
 
       {step === 1 ? (
         <form className="space-y-5" onSubmit={handleSignup}>
-          <FieldBlock label="Full name">
+          <FieldBlock label="Name">
             <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Jane Doe" required />
           </FieldBlock>
 
-          <FieldBlock label="Work email" description="Your company domain determines whether you create or join a workspace.">
+          <FieldBlock label="Work email" description="Your email domain decides whether you create or join a workspace.">
             <Input
               type="email"
               value={email}
@@ -157,14 +157,14 @@ export default function SignupPage() {
           </FieldBlock>
 
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Sending code…' : 'Continue'}
+            {loading ? 'Sending…' : 'Send code'}
           </Button>
         </form>
       ) : null}
 
       {step === 2 ? (
         <form className="space-y-5" onSubmit={handleVerifyOtp}>
-          <FieldBlock label="Verification code" description="Use the six-digit code from your inbox.">
+          <FieldBlock label="Code" description="Use the 6-digit code from your inbox.">
             <Input
               type="text"
               value={otp}
@@ -178,10 +178,10 @@ export default function SignupPage() {
 
           <div className="space-y-3">
             <Button type="submit" className="w-full" size="lg" disabled={loading || otp.length !== 6}>
-              {loading ? 'Verifying…' : 'Verify and continue'}
+              {loading ? 'Checking…' : 'Verify code'}
             </Button>
             <Button type="button" variant="secondary" className="w-full" onClick={() => setStep(1)}>
-              Back to sign up
+              Back
             </Button>
           </div>
         </form>
@@ -193,7 +193,7 @@ export default function SignupPage() {
             <CheckCircle size={32} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-semibold tracking-tight text-foreground">Success</h3>
+            <h3 className="text-xl font-semibold tracking-tight text-foreground">Approval needed</h3>
             <p className="text-sm leading-6 text-muted-foreground">{successMessage}</p>
           </div>
           <div className="rounded-[28px] border border-border/70 bg-secondary/40 px-5 py-4">
@@ -202,7 +202,7 @@ export default function SignupPage() {
           </div>
           <Link href="/login" className="block">
             <Button className="w-full" size="lg">
-              Return to login
+              Sign in
             </Button>
           </Link>
         </div>

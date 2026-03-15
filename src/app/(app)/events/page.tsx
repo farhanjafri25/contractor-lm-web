@@ -8,23 +8,9 @@ import { ChevronBottom } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { DataTableShell, FilterSelect, PageHeader, SummaryPill } from '@/components/app-ui';
-
-const eventTypeMap: Record<string, { label: string }> = {
-  'contractor.created': { label: 'Contractor created' },
-  'contractor.updated': { label: 'Contractor updated' },
-  'contract.extended': { label: 'Contract extended' },
-  'contract.suspended': { label: 'Contract suspended' },
-  'contract.reactivated': { label: 'Contract reactivated' },
-  'contract.expired': { label: 'Contract expired' },
-  'contract.terminated': { label: 'Contract terminated' },
-  'access.provisioned': { label: 'Access provisioned' },
-  'access.revoked': { label: 'Access revoked' },
-  'sponsor.action.submitted': { label: 'Sponsor request' },
-  'sponsor.action.approved': { label: 'Request approved' },
-  'sponsor.action.rejected': { label: 'Request rejected' },
-};
+import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
 const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
 const pageSize = 25;
@@ -64,8 +50,8 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Audit log"
-        description={`Immutable record of platform activity across ${total.toLocaleString()} events.`}
+        title="Activity"
+        description={`${total.toLocaleString()} events across contractors, access, and requests.`}
         actions={
           hasFilters ? (
             <Button variant="secondary" onClick={() => { setEventType(''); setCategory(''); setFrom(''); setTo(''); setPage(1); }}>
@@ -83,7 +69,7 @@ export default function AuditLogPage() {
             .map(([type, count]) => (
               <SummaryPill
                 key={type}
-                label={eventTypeMap[type]?.label ?? type}
+                label={getEventLabel(type)}
                 count={count}
                 active={eventType === type}
                 onClick={() => {
@@ -96,8 +82,8 @@ export default function AuditLogPage() {
       ) : null}
 
       <DataTableShell
-        title="Event explorer"
-        description="Filter by category, event type, and date range without leaving the main log."
+        title="All activity"
+        description="Filter by category, event type, or date."
         actions={
           <>
             <FilterSelect
@@ -118,7 +104,7 @@ export default function AuditLogPage() {
                 setEventType(value);
                 setPage(1);
               }}
-              options={[{ label: 'All event types', value: '' }, ...Object.entries(eventTypeMap).map(([value, item]) => ({ label: item.label, value }))]}
+              options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
               placeholder="All event types"
             />
             <Popover>
@@ -129,7 +115,7 @@ export default function AuditLogPage() {
                     data-empty={!fromDate}
                     className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                   >
-                    {fromDate ? format(fromDate, 'PPP') : <span>From date</span>}
+                    {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
                     <ChevronBottom data-icon="inline-end" size={16} />
                   </Button>
                 }
@@ -154,7 +140,7 @@ export default function AuditLogPage() {
                     data-empty={!toDate}
                     className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                   >
-                    {toDate ? format(toDate, 'PPP') : <span>To date</span>}
+                    {toDate ? format(toDate, 'PPP') : <span>End date</span>}
                     <ChevronBottom data-icon="inline-end" size={16} />
                   </Button>
                 }
@@ -203,13 +189,7 @@ export default function AuditLogPage() {
             </TableHeader>
             <TableBody>
               {isLoading
-                ? Array.from({ length: 8 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell colSpan={4}>
-                        <div className="h-10 rounded-2xl bg-secondary/40" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                ? <TableLoadingRows rows={8} columns={4} />
                 : events.map((event) => {
                     const type = String(event.event_type ?? '');
                     const contractor = event.contractor_id as Record<string, unknown> | undefined;
@@ -218,7 +198,7 @@ export default function AuditLogPage() {
                     return (
                       <TableRow key={String(event._id)}>
                         <TableCell>
-                          <p className="font-medium text-foreground">{eventTypeMap[type]?.label ?? type.replace(/\./g, ' › ')}</p>
+                          <p className="font-medium text-foreground">{getEventLabel(type)}</p>
                           {event.metadata && typeof event.metadata === 'object' && Object.keys(event.metadata as object).length > 0 ? (
                             <p className="mt-1 text-xs text-muted-foreground">
                               {Object.entries(event.metadata as Record<string, unknown>)
@@ -245,7 +225,7 @@ export default function AuditLogPage() {
                               <p className="text-sm capitalize text-muted-foreground">{String(actor.role ?? '')}</p>
                             </>
                           ) : (
-                            <span className="text-muted-foreground">System</span>
+                            <span className="text-muted-foreground">Tenurio</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -264,7 +244,7 @@ export default function AuditLogPage() {
               {!isLoading && events.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-14 text-center text-muted-foreground">
-                    No events match the current filters.
+                    No activity matches this filter. Matching events will show here.
                   </TableCell>
                 </TableRow>
               ) : null}

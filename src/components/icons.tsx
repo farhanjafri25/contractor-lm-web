@@ -2,11 +2,13 @@
 
 export { IconLiveActivity as Activity } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconLiveActivity';
 export { IconArrowLeft as ArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowLeft';
+export { IconBell as Bell } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconBell';
 export { IconCalendar1 as Calendar } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendar1';
 export { IconChevronBottom as ChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronBottom';
 export { IconChevronGrabberVertical as ChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronGrabberVertical';
 export { IconChevronLeft as ChevronLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeft';
 export { IconChevronRight as ChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRight';
+export { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
 export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeOpen';
 export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeSlash';
 export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFileText';

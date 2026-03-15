@@ -65,9 +65,9 @@ export default function NewContractorPage() {
   const validateForm = () => {
     const nextErrors: ValidationErrors = {};
 
-    if (!form.name.trim()) nextErrors.name = 'Full name is required.';
-    if (!form.email.trim()) nextErrors.email = 'Work email is required.';
-    if (!form.job_title.trim()) nextErrors.job_title = 'Job title is required.';
+    if (!form.name.trim()) nextErrors.name = 'Enter a name.';
+    if (!form.email.trim()) nextErrors.email = 'Enter an email.';
+    if (!form.job_title.trim()) nextErrors.job_title = 'Enter a title.';
     if (!form.department) nextErrors.department = 'Select a department.';
     if (!contract.sponsor_id) nextErrors.sponsor_id = 'Select a sponsor.';
     if (!contract.start_date) nextErrors.start_date = 'Choose a start date.';
@@ -97,7 +97,7 @@ export default function NewContractorPage() {
     setFieldErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
-      setError('Fill in the required fields and resolve the validation errors before continuing.');
+      setError('Complete the required fields.');
       return false;
     }
 
@@ -126,7 +126,7 @@ export default function NewContractorPage() {
       router.push('/contractors');
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Something went wrong'));
+      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Could not add contractor. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -138,8 +138,8 @@ export default function NewContractorPage() {
         <PageBackLink href="/contractors">Back to contractors</PageBackLink>
         <div className="flex-1">
           <PageHeader
-            title="New contractor"
-            description="Create the identity, define the first contract window, and assign a sponsor in one pass."
+            title="Add contractor"
+            description="Add their details, contract dates, and sponsor."
           />
         </div>
       </div>
@@ -151,9 +151,9 @@ export default function NewContractorPage() {
       ) : null}
 
       <form className="space-y-6" onSubmit={handleSubmit}>
-        <SectionCard title="Identity" description="The core profile fields for the contractor record.">
+        <SectionCard title="Details" description="Basic details for this contractor.">
           <div className="grid gap-5 md:grid-cols-2">
-            <FieldBlock label="Full name">
+            <FieldBlock label="Name">
               <Input
                 value={form.name}
                 onChange={(event) => updateFormField('name', event.target.value)}
@@ -162,7 +162,7 @@ export default function NewContractorPage() {
               />
               {fieldErrors.name ? <p className="text-xs text-destructive">{fieldErrors.name}</p> : null}
             </FieldBlock>
-            <FieldBlock label="Work email">
+            <FieldBlock label="Email">
               <Input
                 type="email"
                 value={form.email}
@@ -185,7 +185,7 @@ export default function NewContractorPage() {
               {fieldErrors.department ? <p className="text-xs text-destructive">{fieldErrors.department}</p> : null}
             </FieldBlock>
             <div className="md:col-span-2">
-              <FieldBlock label="Job title">
+            <FieldBlock label="Title">
                 <Input
                   value={form.job_title}
                   onChange={(event) => updateFormField('job_title', event.target.value)}
@@ -199,7 +199,7 @@ export default function NewContractorPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Contract setup" description="Assign the sponsor and the initial contract window.">
+        <SectionCard title="Contract" description="Set dates and assign a sponsor.">
           <div className="grid gap-5 md:grid-cols-2">
             <FieldBlock label="Start date">
               <Popover>
@@ -210,7 +210,7 @@ export default function NewContractorPage() {
                       data-empty={!startDate}
                       className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                     >
-                      {startDate ? format(startDate, 'PPP') : <span>Pick a start date</span>}
+                      {startDate ? format(startDate, 'PPP') : <span>Choose a start date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
                     </Button>
                   }
@@ -237,7 +237,7 @@ export default function NewContractorPage() {
                       data-empty={!endDate}
                       className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                     >
-                      {endDate ? format(endDate, 'PPP') : <span>Pick an end date</span>}
+                      {endDate ? format(endDate, 'PPP') : <span>Choose an end date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
                     </Button>
                   }
@@ -277,7 +277,7 @@ export default function NewContractorPage() {
                 <Textarea
                   value={contract.notes}
                   onChange={(event) => updateContractField('notes', event.target.value)}
-                  placeholder="Any additional context for the sponsor or operations team…"
+                  placeholder="Add context for the sponsor or IT team"
                 />
               </FieldBlock>
             </div>
@@ -291,7 +291,7 @@ export default function NewContractorPage() {
             </Button>
           </Link>
           <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
-            {loading ? 'Creating…' : 'Create contractor'}
+            {loading ? 'Adding…' : 'Add contractor'}
           </Button>
         </div>
       </form>

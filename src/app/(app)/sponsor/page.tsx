@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sponsorApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { CheckCircle, Clock, XCircle } from '@/components/icons';
+import { CheckCircle, Clock, Eye, XCircle } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { DataTableShell, FieldBlock, FilterSelect, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -27,7 +27,7 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
       onOpenChange(false);
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Failed'));
+      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Review failed. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -38,8 +38,8 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
       <DialogContent>
         <DialogHeader>
           <div>
-            <DialogTitle>Review sponsor request</DialogTitle>
-            <DialogDescription>Approve the request or send it back with a clear note.</DialogDescription>
+            <DialogTitle>Review request</DialogTitle>
+            <DialogDescription>Approve it or reject it with a note.</DialogDescription>
           </div>
         </DialogHeader>
         <div className="mt-6 space-y-5">
@@ -62,7 +62,7 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
             ))}
           </div>
           <FieldBlock label="Note">
-            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Reason for your decision…" />
+            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explain your decision" />
           </FieldBlock>
         </div>
         <DialogFooter>
@@ -70,7 +70,7 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
             Cancel
           </Button>
           <Button type="button" variant={decision === 'approved' ? 'default' : 'destructive'} onClick={submit} disabled={loading}>
-            {loading ? 'Submitting…' : decision === 'approved' ? 'Approve request' : 'Reject request'}
+            {loading ? 'Saving…' : decision === 'approved' ? 'Approve' : 'Reject'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -98,8 +98,8 @@ export default function SponsorPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Sponsor requests"
-        description="Extension and change requests routed from sponsor workflows into one approval queue."
+        title="Requests"
+        description="Review extension and change requests from sponsors."
         actions={
           <FilterSelect
             value={statusFilter}
@@ -115,27 +115,21 @@ export default function SponsorPage() {
         }
       />
 
-      <DataTableShell title="Request queue" description="Review incoming sponsor actions and close the loop for teams waiting on a decision.">
+      <DataTableShell title="All requests" description="Review requests and record the decision.">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Contractor</TableHead>
-              <TableHead>Request type</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Submitted by</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
-              {isAdmin ? <TableHead className="text-right">Action</TableHead> : null}
+              {isAdmin ? <TableHead className="text-right"><span className="sr-only">Action</span></TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={isAdmin ? 6 : 5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={4} columns={isAdmin ? 6 : 5} actionColumn={isAdmin} />
               : data?.data?.map((request: Record<string, unknown>) => {
                   const contract = request.contract_id as Record<string, unknown> | undefined;
                   const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
@@ -163,8 +157,15 @@ export default function SponsorPage() {
                       {isAdmin ? (
                         <TableCell className="text-right">
                           {status === 'pending' ? (
-                            <Button variant="ghost" size="sm" onClick={() => setReviewingId(String(request._id))}>
-                              Review
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => setReviewingId(String(request._id))}
+                              aria-label="Review request"
+                              title="Review request"
+                            >
+                              <Eye size={14} />
+                              <span className="sr-only">Review request</span>
                             </Button>
                           ) : null}
                         </TableCell>
@@ -175,7 +176,7 @@ export default function SponsorPage() {
             {!isLoading && !data?.data?.length ? (
               <TableRow>
                 <TableCell colSpan={isAdmin ? 6 : 5} className="py-14 text-center text-muted-foreground">
-                  No requests found.
+                  No requests yet. New requests will show here.
                 </TableCell>
               </TableRow>
             ) : null}

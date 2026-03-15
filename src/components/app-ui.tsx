@@ -104,11 +104,14 @@ export function StatusBadge({
           : normalized.includes('reject') || normalized.includes('expire') || normalized.includes('terminate') || normalized.includes('revoked') || normalized.includes('danger')
             ? 'danger'
             : 'neutral';
+  const label = status
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
   return (
     <Badge variant={variant} className={className}>
       {icon}
-      {status.replace(/_/g, ' ')}
+      {label}
     </Badge>
   );
 }

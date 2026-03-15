@@ -88,7 +88,7 @@ export function TeamSwitcher({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push('/settings/team')}>
           <Users size={14} />
-          Team settings
+          Team
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

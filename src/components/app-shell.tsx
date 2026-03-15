@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
+  Bell,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -31,9 +32,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Sponsor Requests', icon: FileText, roles: ['admin', 'security', 'sponsor'] },
+  { href: '/sponsor', label: 'Requests', icon: FileText, roles: ['admin', 'security', 'sponsor'] },
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin', 'security'] },
-  { href: '/events', label: 'Audit Log', icon: Activity, roles: ['admin', 'security'] },
+  { href: '/events', label: 'Activity', icon: Activity, roles: ['admin', 'security'] },
   { href: '/settings/team', label: 'Team', icon: Settings, roles: ['admin'] },
 ];
 
@@ -63,15 +64,15 @@ function routeLabels(pathname: string) {
   }
 
   if (pathname === '/contractors/new') {
-    return ['Contractors', 'New Contractor'];
+    return ['Contractors', 'Add contractor'];
   }
 
   if (pathname.startsWith('/contractors/')) {
-    return ['Contractors', 'Contractor Details'];
+    return ['Contractors', 'Contractor'];
   }
 
   if (pathname === '/sponsor') {
-    return ['Sponsor Requests'];
+    return ['Requests'];
   }
 
   if (pathname === '/access') {
@@ -79,7 +80,7 @@ function routeLabels(pathname: string) {
   }
 
   if (pathname === '/events') {
-    return ['Audit Log'];
+    return ['Activity'];
   }
 
   if (pathname === '/settings/team') {
@@ -254,6 +255,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
+                Feedback
+              </Button>
+              <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
+                Docs
+              </Button>
+              <Button variant="secondary" size="icon-sm" aria-label="Notifications" title="Notifications">
+                <Bell size={16} />
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                   <span className="flex size-8 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent">
@@ -268,7 +278,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
                     {resolvedTheme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-                    {resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout}>
                     <LogOut size={14} />
@@ -321,8 +331,10 @@ export function AppShellSkeleton() {
               <Skeleton className="h-4 w-44" />
             </div>
             <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="hidden h-8 w-14 sm:block" />
+              <Skeleton className="hidden h-8 w-20 sm:block" />
               <Skeleton className="h-9 w-9" />
-              <Skeleton className="h-9 w-28" />
             </div>
           </header>
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { DataTableShell, PageBackLink, PageHeader, StatusBadge, SurfaceAlert } from '@/components/app-ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 export default function OverduePage() {
   const router = useRouter();
@@ -22,8 +22,8 @@ export default function OverduePage() {
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <div className="flex-1">
           <PageHeader
-            title="Overdue access"
-            description="Expired contracts that still have active access should move immediately into remediation."
+            title="Access overdue"
+            description="These contracts ended, but access is still active."
           />
         </div>
       </div>
@@ -31,12 +31,12 @@ export default function OverduePage() {
       {contracts.length ? (
         <SurfaceAlert
           tone="danger"
-          title={`${contracts.length} contract${contracts.length === 1 ? '' : 's'} expired before access was fully revoked.`}
-          description="Review each record and close the gap between contract state and application access."
+          title={`${contracts.length} expired contract${contracts.length === 1 ? '' : 's'} still ${contracts.length === 1 ? 'has' : 'have'} active access.`}
+          description="Review each record and remove the remaining access."
         />
       ) : null}
 
-      <DataTableShell title="Access drift queue" description="Expired contracts that still require revocation work.">
+      <DataTableShell title="Review queue" description="Expired contracts that still need access removed.">
         <Table>
           <TableHeader>
             <TableRow>
@@ -49,13 +49,7 @@ export default function OverduePage() {
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={4} columns={5} />
               : contracts.map((contract) => {
                   const contractor = contract.contractor_id as Record<string, unknown> | undefined;
                   const endDate = contract.end_date ? new Date(String(contract.end_date)) : null;
@@ -92,7 +86,7 @@ export default function OverduePage() {
             {!isLoading && contracts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-14 text-center text-muted-foreground">
-                  No overdue access found.
+                  No overdue access. Records that need cleanup will show here.
                 </TableCell>
               </TableRow>
             ) : null}

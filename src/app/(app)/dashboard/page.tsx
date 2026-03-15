@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { dashboardApi, eventsApi } from '@/lib/api';
-import { AlertTriangle, Clock, RefreshCw, ShieldOff, TrendingUp, Users } from '@/components/icons';
+import { AlertTriangle, ChevronRight, Clock, RefreshCw, ShieldOff, TrendingUp, Users } from '@/components/icons';
 import { EmptyState, MetricCard, PageHeader, SectionCard, StatusBadge } from '@/components/app-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getEventLabel } from '@/lib/event-labels';
 
 export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -37,42 +38,42 @@ export default function DashboardPage() {
           value: summary.active_contractors,
           icon: Users,
           tone: 'success' as const,
-          subtext: 'Currently engaged and provisioned',
+          subtext: 'Contractors with active work and access',
         },
         {
           label: 'Suspended',
           value: summary.suspended_contractors,
           icon: AlertTriangle,
           tone: 'warning' as const,
-          subtext: 'Paused pending a decision',
+          subtext: 'Contracts paused until someone reviews them',
         },
         {
           label: 'Expiring soon',
           value: summary.expiring_soon,
           icon: Clock,
           tone: 'warning' as const,
-          subtext: `Within ${summary.expiring_within_days} days`,
+          subtext: `Ending in the next ${summary.expiring_within_days} days`,
         },
         {
-          label: 'Overdue access',
+          label: 'Access overdue',
           value: summary.overdue_access,
           icon: ShieldOff,
           tone: 'danger' as const,
-          subtext: 'Expired contracts with live access',
+          subtext: 'Contracts ended, but access is still active',
         },
         {
-          label: 'Failed revocations',
+          label: 'Failed removals',
           value: summary.failed_revocations,
           icon: RefreshCw,
           tone: 'danger' as const,
-          subtext: 'Needs manual remediation',
+          subtext: 'Access changes that need manual work',
         },
         {
-          label: 'Total active',
+          label: 'Open contracts',
           value: summary.active_contractors + summary.suspended_contractors,
           icon: TrendingUp,
           tone: 'info' as const,
-          subtext: 'All non-terminated contractors',
+          subtext: 'Active and suspended contractors',
         },
       ]
     : [];
@@ -88,11 +89,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Operations dashboard"
-        description="A live view of contractor exposure, access drift, and the next set of actions your team should take."
+        title="Dashboard"
+        description="See what needs attention across contractors, access, and requests."
         actions={
           <Link href="/contractors/new" className={buttonVariants({ variant: 'default' })}>
-            New contractor
+            Add contractor
           </Link>
         }
       />
@@ -100,25 +101,25 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {summaryLoading
           ? Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-48 rounded-[28px] border border-border/70 bg-secondary/40" />
+              <div key={index} className="h-48 rounded-[28px] border border-border/70 bg-background" />
             ))
           : metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          title="Expiring contracts"
-          description="Prioritize renewals before they cascade into sponsor requests or access exposure."
+          title="Expiring soon"
+          description="These contracts end soon. Extend them before access drifts."
           actions={
             <Link href="/dashboard/expiring" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-              View all
+              View queue
             </Link>
           }
         >
           {expiringLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-16 rounded-[22px] bg-secondary/50" />
+                <div key={index} className="h-16 rounded-[22px] border border-border/60 bg-background" />
               ))}
             </div>
           ) : expiring?.data?.length ? (
@@ -129,7 +130,7 @@ export default function DashboardPage() {
                   <Link
                     key={String(item._id)}
                     href={`/contractors/${contractor ? String(contractor._id ?? '') : ''}`}
-                    className="flex items-center justify-between rounded-[24px] border border-border/60 bg-secondary/35 px-4 py-4 transition-colors hover:bg-accent/45"
+                    className="flex items-center justify-between rounded-[24px] border border-border/60 bg-background px-4 py-4 transition-colors hover:bg-accent/45"
                   >
                     <div>
                       <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '') : 'Unknown contractor'}</p>
@@ -142,18 +143,18 @@ export default function DashboardPage() {
             </div>
           ) : (
             <EmptyState
-              title="No contracts expiring soon"
-              description="Nothing in the current expiring window needs attention."
+              title="Nothing expires soon"
+              description="Contracts ending in this window will show here."
             />
           )}
         </SectionCard>
 
         <SectionCard
-          title="Recent activity"
-          description="A quick pulse on the events that are shaping risk across the workspace."
+          title="Activity"
+          description="Recent contractor, access, and request changes."
           actions={
             <Link href="/events" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-              Open audit log
+              View activity
             </Link>
           }
         >
@@ -163,14 +164,14 @@ export default function DashboardPage() {
                 const contractor = event.contractor_id as Record<string, unknown> | undefined;
                 const color = eventColors[String(event.event_type)] ?? 'bg-primary';
                 return (
-                  <div key={String(event._id)} className="flex gap-4 rounded-[24px] border border-border/60 bg-secondary/35 px-4 py-4">
+                  <div key={String(event._id)} className="flex gap-4 rounded-[24px] border border-border/60 bg-background px-4 py-4">
                     <div className={`mt-1 size-2.5 shrink-0 rounded-full ${color}`} />
                     <div className="min-w-0">
                       <p className="font-medium text-foreground">
-                        {String(event.event_type ?? '').replace(/\./g, ' › ')}
+                        {getEventLabel(String(event.event_type ?? ''))}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {contractor ? String(contractor.name ?? '') : 'System event'} ·{' '}
+                        {contractor ? String(contractor.name ?? '') : 'Tenurio'} ·{' '}
                         {event.created_at
                           ? formatDistanceToNow(new Date(String(event.created_at)), { addSuffix: true })
                           : ''}
@@ -181,18 +182,18 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <EmptyState title="No events yet" description="The audit trail will appear here as actions happen." />
+            <EmptyState title="No activity yet" description="New activity will show here." />
           )}
         </SectionCard>
       </div>
 
       {atRisk?.data?.length ? (
         <SectionCard
-          title="At-risk contractors"
-          description="These records need action before contracts or access states drift further."
+          title="Needs review"
+          description="These records need a decision or manual cleanup."
           actions={
             <Link href="/dashboard/at-risk" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-              Review risk queue
+              View queue
             </Link>
           }
           className="border-destructive/15"
@@ -203,7 +204,7 @@ export default function DashboardPage() {
                 <TableHead>Contractor</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-right"><span className="sr-only">Action</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -220,7 +221,10 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Link href={`/contractors/${contractor ? String(contractor._id ?? '') : ''}`}>
-                        <Button variant="ghost" size="sm">Open record</Button>
+                        <Button variant="ghost" size="icon-sm" aria-label="View contractor" title="View contractor">
+                          <ChevronRight size={14} />
+                          <span className="sr-only">View contractor</span>
+                        </Button>
                       </Link>
                     </TableCell>
                   </TableRow>

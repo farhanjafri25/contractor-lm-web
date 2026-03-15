@@ -29,7 +29,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(typeof message === 'string' ? message : 'Invalid credentials');
+      setError(typeof message === 'string' ? message : 'Sign-in failed. Check your email and password.');
     } finally {
       setLoading(false);
     }
@@ -37,13 +37,13 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Sign in to your workspace"
-      subtitle="Pick up sponsor approvals, access reviews, and contractor oversight right where you left off."
+      title="Sign in"
+      subtitle="Review contractors, requests, and access changes."
       footer={
         <p>
-          Don&apos;t have an account?{' '}
+          Need an account?{' '}
           <Link href="/signup" className="font-semibold text-primary transition-colors hover:text-primary/80">
-            Create your workspace
+            Create workspace
           </Link>
         </p>
       }

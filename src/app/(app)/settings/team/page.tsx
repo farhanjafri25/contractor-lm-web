@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { ShieldCheck, UserPlus, Users } from '@/components/icons';
+import { CheckCheck, ShieldCheck, UserPlus, Users, X } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { DataTableShell, FieldBlock, FilterSelect, MetricCard, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Input } from '@/components/ui/input';
 
@@ -15,7 +15,7 @@ const roles = ['admin', 'security', 'sponsor', 'viewer'];
 
 function getErrorMessage(err: unknown) {
   const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Something went wrong. Please try again.');
+  return Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.');
 }
 
 function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -35,7 +35,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       onOpenChange(false);
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Failed'));
+      setError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Invite failed. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
         <DialogHeader>
           <div>
             <DialogTitle>Invite team member</DialogTitle>
-            <DialogDescription>Send an invite and assign the initial access role.</DialogDescription>
+            <DialogDescription>Send an invite and choose their role.</DialogDescription>
           </div>
         </DialogHeader>
         <form className="mt-6 space-y-5" onSubmit={submit}>
@@ -59,7 +59,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
           <FieldBlock label="Email">
             <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="user@company.io" required />
           </FieldBlock>
-          <FieldBlock label="Role" description="Admins can manage everything. Security can act on access. Sponsors manage their assigned contractors.">
+          <FieldBlock label="Role" description="Admins manage everything. Security manages access. Sponsors manage their contractors.">
             <FilterSelect
               value={role}
               onValueChange={setRole}
@@ -154,7 +154,7 @@ export default function TeamPage() {
     <div className="space-y-8">
       <PageHeader
         title="Team"
-        description="Manage workspace members, pending approvals, and role changes without leaving the console."
+        description="Manage access for everyone in this workspace."
         actions={
           isAdmin ? (
             <Button onClick={() => setShowInvite(true)}>
@@ -173,20 +173,20 @@ export default function TeamPage() {
 
       {stats ? (
         <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="Plan" value={String(stats.plan ?? '—')} icon={ShieldCheck} tone="info" subtext="Current workspace tier" />
-          <MetricCard label="Billing status" value={String(stats.billing_status ?? '—')} icon={Users} tone="success" subtext="Subscription standing" />
-          <MetricCard label="Contractor limit" value={String(stats.contractor_seat_limit ?? '∞')} icon={Users} tone="warning" subtext="Seat ceiling for managed records" />
+          <MetricCard label="Plan" value={String(stats.plan ?? '—')} icon={ShieldCheck} tone="info" subtext="Current plan" />
+          <MetricCard label="Billing" value={String(stats.billing_status ?? '—')} icon={Users} tone="success" subtext="Current billing status" />
+          <MetricCard label="Contractor limit" value={String(stats.contractor_seat_limit ?? '∞')} icon={Users} tone="warning" subtext="Max contractor records" />
         </div>
       ) : null}
 
       {isAdmin && pendingData?.data?.length ? (
-        <DataTableShell title="Pending approvals" description="Users who joined via a domain match and need an admin decision.">
+        <DataTableShell title="Pending approvals" description="Review people who joined with your company domain.">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Requested role</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,18 +194,33 @@ export default function TeamPage() {
                 <TableRow key={String(member._id)}>
                   <TableCell>
                     <p className="font-medium text-foreground">{String(member.email ?? '')}</p>
-                    <p className="text-sm text-muted-foreground">Auto-joined via domain match</p>
+                    <p className="text-sm text-muted-foreground">Joined with your company domain</p>
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={String(member.role ?? '')} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => handleReject(String(member._id))} disabled={isBusy(String(member._id))}>
-                        {activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting…' : 'Reject'}
+                      <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={() => handleReject(String(member._id))}
+                        disabled={isBusy(String(member._id))}
+                        aria-label={activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}
+                        title={activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}
+                      >
+                        <X size={14} />
+                        <span className="sr-only">{activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}</span>
                       </Button>
-                      <Button size="sm" onClick={() => handleApprove(String(member._id))} disabled={isBusy(String(member._id))}>
-                        {activeAction?.type === 'approve' && isBusy(String(member._id)) ? 'Approving…' : 'Approve'}
+                      <Button
+                        size="icon-sm"
+                        onClick={() => handleApprove(String(member._id))}
+                        disabled={isBusy(String(member._id))}
+                        aria-label={activeAction?.type === 'approve' && isBusy(String(member._id)) ? 'Approving member request' : 'Approve member request'}
+                        title={activeAction?.type === 'approve' && isBusy(String(member._id)) ? 'Approving member request' : 'Approve member request'}
+                      >
+                        <CheckCheck size={14} />
+                        <span className="sr-only">{activeAction?.type === 'approve' && isBusy(String(member._id)) ? 'Approving member request' : 'Approve member request'}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -216,25 +231,19 @@ export default function TeamPage() {
         </DataTableShell>
       ) : null}
 
-      <DataTableShell title="Members" description="Active, pending, invited, and inactive users for this workspace.">
+      <DataTableShell title="Members" description="View active, invited, and inactive members.">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
-              {isAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
+              {isAdmin ? <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={isAdmin ? 4 : 3}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={4} columns={isAdmin ? 4 : 3} actionColumn={isAdmin} />
               : data?.data?.map((member: Record<string, unknown>) => {
                   const isSelf = member._id === user?._id;
                   const isActive = member.status === 'active';
@@ -269,12 +278,28 @@ export default function TeamPage() {
                         <TableCell className="text-right">
                           {!isSelf ? (
                             isActive ? (
-                              <Button variant="destructive" size="sm" onClick={() => handleDeactivate(String(member._id))} disabled={isBusy(String(member._id))}>
-                                {activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating…' : 'Deactivate'}
+                              <Button
+                                variant="destructive"
+                                size="icon-sm"
+                                onClick={() => handleDeactivate(String(member._id))}
+                                disabled={isBusy(String(member._id))}
+                                aria-label={activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}
+                                title={activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}
+                              >
+                                <X size={14} />
+                                <span className="sr-only">{activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}</span>
                               </Button>
                             ) : (
-                              <Button variant="secondary" size="sm" onClick={() => handleReactivate(String(member._id))} disabled={isBusy(String(member._id))}>
-                                {activeAction?.type === 'reactivate' && isBusy(String(member._id)) ? 'Reactivating…' : 'Reactivate'}
+                              <Button
+                                variant="secondary"
+                                size="icon-sm"
+                                onClick={() => handleReactivate(String(member._id))}
+                                disabled={isBusy(String(member._id))}
+                                aria-label={activeAction?.type === 'reactivate' && isBusy(String(member._id)) ? 'Reactivating member' : 'Reactivate member'}
+                                title={activeAction?.type === 'reactivate' && isBusy(String(member._id)) ? 'Reactivating member' : 'Reactivate member'}
+                              >
+                                <CheckCheck size={14} />
+                                <span className="sr-only">{activeAction?.type === 'reactivate' && isBusy(String(member._id)) ? 'Reactivating member' : 'Reactivate member'}</span>
                               </Button>
                             )
                           ) : null}

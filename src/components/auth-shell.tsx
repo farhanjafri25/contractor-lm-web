@@ -20,19 +20,19 @@ export function AuthShell({
             <div className="space-y-4">
               <Logo priority />
               <h1 className="max-w-lg text-2xl font-semibold tracking-tight text-foreground">
-                Contractor lifecycle control with less chaos.
+                Keep contractor access under control.
               </h1>
               <p className="max-w-xl text-base leading-7 text-muted-foreground">
-                Centralize sponsor requests, access remediation, and contract risk in one calm, auditable workspace.
+                Track contractors, access, and requests in one place.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {[
-                { stat: '24h', label: 'faster remediation workflows' },
-                { stat: '100%', label: 'role-aware approval trails' },
-                { stat: '1 view', label: 'for contracts, access, and events' },
-                { stat: 'Fewer gaps', label: 'between expiry and revocation' },
+                { stat: '1 queue', label: 'for contractor requests' },
+                { stat: '1 view', label: 'for access changes' },
+                { stat: 'Clear roles', label: 'for admins and sponsors' },
+                { stat: 'Fewer gaps', label: 'between contract end and access removal' },
               ].map((item) => (
                 <div key={item.label} className="rounded-lg border bg-background p-5">
                   <p className="text-3xl font-semibold tracking-tight text-foreground">{item.stat}</p>
@@ -43,14 +43,14 @@ export function AuthShell({
           </div>
 
           <div className="rounded-lg border bg-muted/40 px-5 py-4 text-sm text-muted-foreground">
-            Built for admin, security, and sponsor teams that need cleaner handoffs and fewer access blind spots.
+            Built for IT admins and hiring managers who need contractor access under control.
           </div>
         </div>
 
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             <div className="border-b border-border/60 px-8 py-8">
-              <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Secure workspace</p>
+              <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Secure sign-in</p>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
               <p className="mt-3 max-w-lg text-sm text-muted-foreground">{subtitle}</p>
             </div>

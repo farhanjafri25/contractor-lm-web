@@ -5,9 +5,10 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
+import { ChevronRight } from '@/components/icons';
 import { DataTableShell, PageBackLink, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 export default function AtRiskPage() {
   const router = useRouter();
@@ -25,13 +26,13 @@ export default function AtRiskPage() {
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <div className="flex-1">
           <PageHeader
-            title="At-risk queue"
-            description="Focus the team on suspended contractors and failed revocations that still need a human decision."
+            title="Needs review"
+            description="Review suspended contracts and failed access removals."
           />
         </div>
       </div>
 
-      <DataTableShell title="Suspended contracts" description="Records currently paused and awaiting action.">
+      <DataTableShell title="Suspended" description="These contractors are suspended and still need a decision.">
         <Table>
           <TableHeader>
             <TableRow>
@@ -44,13 +45,7 @@ export default function AtRiskPage() {
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 3 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={3} columns={5} />
               : suspended.map((contract) => {
                   const contractor = contract.contractor_id as Record<string, unknown> | undefined;
                   const suspendedAt = contract.suspended_at ? new Date(String(contract.suspended_at)) : null;
@@ -82,7 +77,7 @@ export default function AtRiskPage() {
             {!isLoading && suspended.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                  No suspended contracts in the risk queue.
+                  No suspended contracts. Suspended records will show here.
                 </TableCell>
               </TableRow>
             ) : null}
@@ -90,7 +85,7 @@ export default function AtRiskPage() {
         </Table>
       </DataTableShell>
 
-      <DataTableShell title="Failed revocations" description="Access records that still need manual remediation.">
+      <DataTableShell title="Failed removals" description="These access removals still need manual work.">
         <Table>
           <TableHeader>
             <TableRow>
@@ -98,18 +93,12 @@ export default function AtRiskPage() {
               <TableHead>Application</TableHead>
               <TableHead>Attempts</TableHead>
               <TableHead>Failure reason</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="text-right"><span className="sr-only">Action</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 2 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={2} columns={5} actionColumn />
               : failed.map((record) => {
                   const contractor = record.contractor_id as Record<string, unknown> | undefined;
                   const app = record.tenant_application_id as Record<string, unknown> | undefined;
@@ -129,7 +118,10 @@ export default function AtRiskPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Link href="/access">
-                          <Button variant="ghost" size="sm">Go to access</Button>
+                          <Button variant="ghost" size="icon-sm" aria-label="Open access" title="Open access">
+                            <ChevronRight size={14} />
+                            <span className="sr-only">Open access</span>
+                          </Button>
                         </Link>
                       </TableCell>
                     </TableRow>
@@ -138,7 +130,7 @@ export default function AtRiskPage() {
             {!isLoading && failed.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                  No failed revocations in the queue.
+                  No failed removals. Anything that needs manual work will show here.
                 </TableCell>
               </TableRow>
             ) : null}

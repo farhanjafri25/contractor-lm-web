@@ -8,7 +8,7 @@ import { dashboardApi } from '@/lib/api';
 import { Clock } from '@/components/icons';
 import { DataTableShell, PageBackLink, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 export default function ExpiringPage() {
   const router = useRouter();
@@ -27,8 +27,8 @@ export default function ExpiringPage() {
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <div className="flex-1">
           <PageHeader
-            title="Expiring contracts"
-            description="Track contracts approaching their end date before they become renewals, sponsor exceptions, or access drift."
+            title="Expiring soon"
+            description="These contracts end within the selected window."
             actions={
               <div className="flex flex-wrap gap-2">
                 {[7, 14, 30, 60, 90].map((value) => (
@@ -48,7 +48,7 @@ export default function ExpiringPage() {
         </div>
       </div>
 
-      <DataTableShell title="Current window" description={`Showing contracts ending within ${days} days.`}>
+      <DataTableShell title="Contracts" description={`Showing contracts that end in the next ${days} days.`}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -61,13 +61,7 @@ export default function ExpiringPage() {
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={5}>
-                      <div className="h-10 rounded-2xl bg-secondary/40" />
-                    </TableCell>
-                  </TableRow>
-                ))
+              ? <TableLoadingRows rows={5} columns={5} />
               : contracts.map((contract) => {
                   const contractor = contract.contractor_id as Record<string, unknown> | undefined;
                   const endDate = contract.end_date ? new Date(String(contract.end_date)) : null;
@@ -103,7 +97,7 @@ export default function ExpiringPage() {
             {!isLoading && contracts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-14 text-center text-muted-foreground">
-                  No contracts are expiring in this window.
+                  Nothing expires in this window. Contracts that do will show here.
                 </TableCell>
               </TableRow>
             ) : null}

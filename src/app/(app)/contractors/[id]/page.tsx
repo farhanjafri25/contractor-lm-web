@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FieldBlock, PageBackLink, PageHeader, SectionCard, StatusBadge } from '@/components/app-ui';
 import { Textarea } from '@/components/ui/textarea';
 import { FilterSelect } from '@/components/app-ui';
+import { getEventLabel } from '@/lib/event-labels';
 
 const suspendReasons = [
   { value: 'compliance', label: 'Compliance issue' },
@@ -105,7 +106,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
   const handleError = (err: unknown) => {
     const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
-    setActionError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Failed'));
+    setActionError(Array.isArray(message) ? message.join(', ') : String(message ?? 'Action failed. Try again.'));
   };
 
   const closeDialog = () => {
@@ -200,13 +201,13 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
       <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-6">
-          <SectionCard title="Identity" description="Primary details for this contractor record.">
+          <SectionCard title="Details" description="Contact and role details for this contractor.">
             <div className="grid gap-5 md:grid-cols-2">
               {[
                 ['Email', contractor?.email],
                 ['Phone', contractor?.phone || '—'],
                 ['Department', contractor?.department || '—'],
-                ['Job title', contractor?.job_title || '—'],
+                ['Title', contractor?.job_title || '—'],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-[24px] border border-border/60 bg-secondary/35 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
@@ -217,7 +218,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </SectionCard>
 
           {activeContract ? (
-            <SectionCard title="Active contract" description="Current dates, status, and lifecycle actions for this engagement.">
+            <SectionCard title="Contract" description="Current dates, status, and next actions.">
               <div className="grid gap-5 md:grid-cols-2">
                 {[
                   ['Start', new Date(activeContract.start_date).toLocaleDateString()],
@@ -248,7 +249,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                     {isAdmin ? (
                       <Button variant="destructive" onClick={() => setModal('terminate')}>
                         <X size={14} />
-                        Terminate
+                        End contract
                       </Button>
                     ) : null}
                   </>
@@ -264,7 +265,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           ) : null}
 
           {accessData?.length ? (
-            <SectionCard title="Application access" description="Provisioning state across linked apps for the active contract.">
+            <SectionCard title="Access" description="Current app access for this contract.">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -290,7 +291,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           ) : null}
         </div>
 
-        <SectionCard title="Timeline" description="Recent lifecycle and access events for this contractor.">
+        <SectionCard title="Activity" description="Recent changes for this contractor.">
           <div className="space-y-4">
             {timeline?.data?.length ? (
               timeline.data.map((event: Record<string, unknown>, index: number) => {
@@ -303,8 +304,8 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                       {!isLast ? <div className="mt-2 h-full w-px bg-border/80" /> : null}
                     </div>
                     <div className="pb-5">
-                      <p className="font-medium text-foreground">{String(event.event_type ?? '').replace(/\./g, ' › ')}</p>
-                      <p className="text-sm text-muted-foreground">{actor ? String(actor.email ?? '') : 'System'}</p>
+                      <p className="font-medium text-foreground">{getEventLabel(String(event.event_type ?? ''))}</p>
+                      <p className="text-sm text-muted-foreground">{actor ? String(actor.email ?? '') : 'Tenurio'}</p>
                       <p className="text-xs text-muted-foreground">
                         {event.created_at ? formatDistanceToNow(new Date(String(event.created_at)), { addSuffix: true }) : ''}
                       </p>
@@ -313,7 +314,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 );
               })
             ) : (
-              <p className="text-sm text-muted-foreground">No events yet.</p>
+              <p className="text-sm text-muted-foreground">No activity yet. Changes for this contractor will show here.</p>
             )}
           </div>
         </SectionCard>
@@ -323,7 +324,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         open={modal === 'suspend'}
         onOpenChange={(open) => !open && closeDialog()}
         title="Suspend contract"
-        description="Pause the engagement and record the reason for future audit review."
+        description="This pauses the contract until you reactivate it."
         error={actionError}
         footer={
           <>
@@ -338,7 +339,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <FilterSelect value={suspendReason} onValueChange={setSuspendReason} options={suspendReasons} placeholder="Select reason" />
         </FieldBlock>
         <FieldBlock label="Note">
-          <Textarea value={suspendNote} onChange={(event) => setSuspendNote(event.target.value)} placeholder="Additional context…" />
+          <Textarea value={suspendNote} onChange={(event) => setSuspendNote(event.target.value)} placeholder="Add context" />
         </FieldBlock>
       </ActionDialog>
 
@@ -346,7 +347,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         open={modal === 'reactivate'}
         onOpenChange={(open) => !open && closeDialog()}
         title="Reactivate contract"
-        description="Record why this contractor is returning to an active state."
+        description="This returns the contractor to active status."
         error={actionError}
         footer={
           <>
@@ -358,7 +359,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         }
       >
         <FieldBlock label="Note">
-          <Textarea value={reactivateNote} onChange={(event) => setReactivateNote(event.target.value)} placeholder="Reason for reactivation…" />
+          <Textarea value={reactivateNote} onChange={(event) => setReactivateNote(event.target.value)} placeholder="Add context" />
         </FieldBlock>
       </ActionDialog>
 
@@ -366,7 +367,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         open={modal === 'extend'}
         onOpenChange={(open) => !open && closeDialog()}
         title={isAdmin ? 'Extend contract' : 'Request extension'}
-        description="Choose the new end date and add any supporting context for the change."
+        description={isAdmin ? 'This updates the end date for this contract.' : 'This sends an extension request for review.'}
         error={actionError}
         footer={
           <>
@@ -386,7 +387,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   data-empty={!parsedExtendDate}
                   className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                 >
-                  {parsedExtendDate ? format(parsedExtendDate, 'PPP') : <span>Pick a new end date</span>}
+                  {parsedExtendDate ? format(parsedExtendDate, 'PPP') : <span>Choose a new end date</span>}
                   <ChevronBottom data-icon="inline-end" size={16} />
                 </Button>
               }
@@ -402,27 +403,27 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </Popover>
         </FieldBlock>
         <FieldBlock label="Note">
-          <Textarea value={extendNote} onChange={(event) => setExtendNote(event.target.value)} placeholder="Reason for extension…" />
+          <Textarea value={extendNote} onChange={(event) => setExtendNote(event.target.value)} placeholder="Why this needs more time" />
         </FieldBlock>
       </ActionDialog>
 
       <ActionDialog
         open={modal === 'terminate'}
         onOpenChange={(open) => !open && closeDialog()}
-        title="Terminate contract"
-        description="This permanently ends the contract and kicks off access revocation."
+        title="End contract"
+        description="This ends the contract and starts access removal."
         error={actionError}
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
             <Button type="button" variant="destructive" onClick={doTerminate} disabled={actionLoading}>
-              {actionLoading ? 'Terminating…' : 'Terminate contract'}
+              {actionLoading ? 'Ending…' : 'End contract'}
             </Button>
           </>
         }
       >
         <p className="text-sm leading-6 text-muted-foreground">
-          This action cannot be undone. Confirm that the contractor should be fully offboarded and access should be revoked.
+          This can&apos;t be undone. Tenurio will start removing their access.
         </p>
       </ActionDialog>
     </div>

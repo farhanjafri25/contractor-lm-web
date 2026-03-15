@@ -55,7 +55,7 @@
 :root {
   --background: #ffffff;
   --foreground: #1c1d1f;
-  --card: #fafafa;
+  --card: #ffffff;
   --card-foreground: #1c1d1f;
   --popover: #ffffff;
   --popover-foreground: #1c1d1f;
@@ -102,7 +102,7 @@
 .dark {
   --background: #0f0f10;
   --foreground: #fafafa;
-  --card: #1c1c1d;
+  --card: #0f0f10;
   --card-foreground: #fafafa;
   --popover: #262626;
   --popover-foreground: #fafafa;

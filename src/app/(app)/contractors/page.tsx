@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
+import { ChevronRight } from '@/components/icons';
 import { DataTableShell, EmptyState, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { buttonVariants } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 const statusOptions = [
   { label: 'All statuses', value: '' },
@@ -30,31 +31,25 @@ export default function ContractorsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Contractors"
-        description={`${data?.pagination?.total ?? '…'} total records across active contracts, paused work, and completed engagements.`}
+        description={`${data?.pagination?.total ?? '…'} contractor records across active, suspended, and ended work.`}
         actions={
           <Link href="/contractors/new" className={buttonVariants({ variant: 'default' })}>
-            New contractor
+            Add contractor
           </Link>
         }
       />
 
       <DataTableShell
-        title="Roster"
-        description="Search by person or narrow the list by current contract state."
+        title="All contractors"
+        description="Search by name or filter by status."
         actions={
           <>
-            <SearchField value={search} onChange={setSearch} placeholder="Search by name or email…" className="md:w-72" />
+            <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="md:w-72" />
             <FilterSelect value={status} onValueChange={setStatus} options={statusOptions} placeholder="All statuses" />
           </>
         }
       >
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-12 rounded-2xl bg-secondary/40" />
-            ))}
-          </div>
-        ) : data?.data?.length ? (
+        {isLoading || data?.data?.length ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -63,39 +58,47 @@ export default function ContractorsPage() {
                 <TableHead>Sponsor</TableHead>
                 <TableHead>Contract ends</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-right"><span className="sr-only">Action</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.data.map((contractor: Record<string, unknown>) => {
-                const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
-                const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
-                return (
-                  <TableRow key={String(contractor._id)}>
-                    <TableCell>
-                      <p className="font-medium text-foreground">{String(contractor.name ?? '')}</p>
-                      <p className="text-sm text-muted-foreground">{String(contractor.email ?? '')}</p>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{String(contractor.department ?? '—')}</TableCell>
-                    <TableCell className="text-muted-foreground">{sponsor ? String(sponsor.email ?? '—') : '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {activeContract?.end_date ? new Date(String(activeContract.end_date)).toLocaleDateString() : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={String(activeContract?.status ?? 'no contract')} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/contractors/${String(contractor._id)}`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                        View
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {isLoading
+                ? <TableLoadingRows rows={5} columns={6} actionColumn />
+                : data.data.map((contractor: Record<string, unknown>) => {
+                    const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
+                    const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
+                    return (
+                      <TableRow key={String(contractor._id)}>
+                        <TableCell>
+                          <p className="font-medium text-foreground">{String(contractor.name ?? '')}</p>
+                          <p className="text-sm text-muted-foreground">{String(contractor.email ?? '')}</p>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{String(contractor.department ?? '—')}</TableCell>
+                        <TableCell className="text-muted-foreground">{sponsor ? String(sponsor.email ?? '—') : '—'}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {activeContract?.end_date ? new Date(String(activeContract.end_date)).toLocaleDateString() : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={String(activeContract?.status ?? 'no contract')} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            href={`/contractors/${String(contractor._id)}`}
+                            className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                            aria-label="Open contractor"
+                            title="Open contractor"
+                          >
+                            <ChevronRight size={14} />
+                            <span className="sr-only">Open contractor</span>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
             </TableBody>
           </Table>
         ) : (
-          <EmptyState title="No contractors found" description="Try adjusting the filters or create a new contractor to get started." />
+          <EmptyState title="No matches" description="Matching contractors will show here when your filters return results." />
         )}
       </DataTableShell>
     </div>
