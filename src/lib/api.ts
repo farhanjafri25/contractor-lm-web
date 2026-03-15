@@ -64,6 +64,8 @@ export const authApi = {
         api.post('/auth/signup', { email, name, password }),
     verifyOtp: (email: string, otp: string) =>
         api.post('/auth/verify-otp', { email, otp }),
+    acceptInvite: (email: string, token: string, passwordPlain: string) =>
+        api.post('/auth/accept-invite', { email, token, password: passwordPlain }),
 };
 
 export const tenantApi = {

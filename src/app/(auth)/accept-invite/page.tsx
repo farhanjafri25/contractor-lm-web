@@ -8,9 +8,9 @@ import { FieldBlock } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
-import { api } from '@/lib/api';
 
 function AcceptInviteForm() {
+    const { acceptInvite } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     
@@ -34,23 +34,8 @@ function AcceptInviteForm() {
         setLoading(true);
 
         try {
-            // Call the new backend mapped endpoint
-            const res = await api.post('/auth/accept-invite', {
-                email: email.trim(),
-                token: tokenParam,
-                password,
-            });
-
-            // Store token and reload context to push user inside the app
-            if (res.data?.access_token) {
-                localStorage.setItem('access_token', res.data.access_token);
-                if (res.data.refresh_token) {
-                    localStorage.setItem('refresh_token', res.data.refresh_token);
-                }
-                
-                // Trigger a full page reload so auth context fetches the brand new cookies/state
-                window.location.href = '/dashboard';
-            }
+            await acceptInvite(email.trim(), tokenParam, password);
+            router.push('/dashboard');
         } catch (err: unknown) {
             const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
             setError(typeof message === 'string' ? message : 'Failed to accept invitation. The link may have expired.');

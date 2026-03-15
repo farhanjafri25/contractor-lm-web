@@ -27,6 +27,7 @@ interface AuthState {
     tenantId: string | null;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
+    acceptInvite: (email: string, token: string, password: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -66,6 +67,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
     };
 
+    const acceptInvite = async (email: string, token: string, passwordPlain: string) => {
+        const { data } = await authApi.acceptInvite(email, token, passwordPlain);
+
+        let tId = data.user?.tenant_id;
+        if (!tId && data.access_token) {
+            const decoded = parseJwt(data.access_token);
+            if (decoded && decoded.tenant_id) {
+                tId = decoded.tenant_id;
+            }
+        }
+
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        if (tId) {
+            localStorage.setItem('tenant_id', tId);
+            setTenantId(tId);
+        }
+        setUser(data.user);
+    };
+
     const logout = () => {
         localStorage.clear();
         setUser(null);
@@ -74,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, tenantId, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, logout }}>
             {children}
         </AuthContext.Provider>
     );
