@@ -119,7 +119,7 @@ export default function DashboardPage() {
           {expiringLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-16 rounded-[22px] border border-border/60 bg-background" />
+                <div key={index} className="h-16 rounded-[16px] border border-border/60 bg-background" />
               ))}
             </div>
           ) : expiring?.data?.length ? (
@@ -130,7 +130,7 @@ export default function DashboardPage() {
                   <Link
                     key={String(item._id)}
                     href={`/contractors/${contractor ? String(contractor._id ?? '') : ''}`}
-                    className="flex items-center justify-between rounded-[24px] border border-border/60 bg-background px-4 py-4 transition-colors hover:bg-accent/45"
+                    className="flex items-center justify-between rounded-[16px] border border-border/60 bg-background px-4 py-4 transition-colors hover:bg-accent/45"
                   >
                     <div>
                       <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '') : 'Unknown contractor'}</p>
@@ -151,7 +151,6 @@ export default function DashboardPage() {
 
         <SectionCard
           title="Activity"
-          description="Recent contractor, access, and request changes."
           actions={
             <Link href="/events" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
               View activity
@@ -164,7 +163,7 @@ export default function DashboardPage() {
                 const contractor = event.contractor_id as Record<string, unknown> | undefined;
                 const color = eventColors[String(event.event_type)] ?? 'bg-primary';
                 return (
-                  <div key={String(event._id)} className="flex gap-4 rounded-[24px] border border-border/60 bg-background px-4 py-4">
+                  <div key={String(event._id)} className="flex gap-4 rounded-[16px] border border-border/60 bg-background px-4 py-4">
                     <div className={`mt-1 size-2.5 shrink-0 rounded-full ${color}`} />
                     <div className="min-w-0">
                       <p className="font-medium text-foreground">

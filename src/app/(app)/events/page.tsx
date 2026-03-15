@@ -51,7 +51,6 @@ export default function AuditLogPage() {
     <div className="space-y-8">
       <PageHeader
         title="Activity"
-        description={`${total.toLocaleString()} events across contractors, access, and requests.`}
         actions={
           hasFilters ? (
             <Button variant="secondary" onClick={() => { setEventType(''); setCategory(''); setFrom(''); setTo(''); setPage(1); }}>
@@ -83,7 +82,6 @@ export default function AuditLogPage() {
 
       <DataTableShell
         title="All activity"
-        description="Filter by category, event type, or date."
         actions={
           <>
             <FilterSelect

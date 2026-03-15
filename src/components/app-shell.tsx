@@ -6,13 +6,13 @@ import { Fragment, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
   Bell,
-  FileText,
-  LayoutDashboard,
+  Group2,
+  History,
+  HomeCircle,
   LogOut,
   Moon,
-  Settings,
+  PeopleAdd,
   ShieldCheck,
   SidebarHiddenLeftWide,
   Sun,
@@ -30,12 +30,12 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: HomeCircle },
   { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Requests', icon: FileText, roles: ['owner', 'admin', 'sponsor'] },
+  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['owner', 'admin', 'sponsor'] },
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['owner', 'admin'] },
-  { href: '/events', label: 'Activity', icon: Activity, roles: ['owner', 'admin'] },
-  { href: '/settings/team', label: 'Team', icon: Settings, roles: ['owner'] },
+  { href: '/events', label: 'Activity', icon: History, roles: ['owner', 'admin'] },
+  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['owner'] },
 ];
 
 const NAV_GROUPS = [
@@ -54,42 +54,51 @@ function MenuIcon() {
   );
 }
 
-function routeLabels(pathname: string) {
+function routeBreadcrumbs(pathname: string) {
   if (pathname === '/dashboard') {
-    return ['Dashboard'];
+    return [{ label: 'Dashboard' }];
   }
 
   if (pathname === '/contractors') {
-    return ['Contractors'];
+    return [{ label: 'Contractors' }];
   }
 
   if (pathname === '/contractors/new') {
-    return ['Contractors', 'Add contractor'];
+    return [
+      { label: 'Contractors', href: '/contractors' },
+      { label: 'Add contractor' },
+    ];
   }
 
   if (pathname.startsWith('/contractors/')) {
-    return ['Contractors', 'Contractor'];
+    return [
+      { label: 'Contractors', href: '/contractors' },
+      { label: 'Contractor' },
+    ];
   }
 
   if (pathname === '/sponsor') {
-    return ['Requests'];
+    return [{ label: 'Requests' }];
   }
 
   if (pathname === '/access') {
-    return ['Access'];
+    return [{ label: 'Access' }];
   }
 
   if (pathname === '/events') {
-    return ['Activity'];
+    return [{ label: 'Activity' }];
   }
 
   if (pathname === '/settings/team') {
-    return ['Settings', 'Team'];
+    return [
+      { label: 'Settings' },
+      { label: 'Team' },
+    ];
   }
 
   const segments = pathname.split('/').filter(Boolean);
   const last = segments[segments.length - 1] ?? 'dashboard';
-  return [last.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())];
+  return [{ label: last.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()) }];
 }
 
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
@@ -190,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
-  const breadcrumbLabels = routeLabels(pathname);
+  const breadcrumbs = routeBreadcrumbs(pathname);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') {
@@ -242,12 +251,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
               <Separator orientation="vertical" className="hidden !h-4 md:block" />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {breadcrumbLabels.map((label, index) => {
-                  const isCurrent = index === breadcrumbLabels.length - 1;
+                {breadcrumbs.map((item, index) => {
+                  const isCurrent = index === breadcrumbs.length - 1;
                   return (
-                    <Fragment key={`${label}-${index}`}>
+                    <Fragment key={`${item.label}-${index}`}>
                       {index > 0 ? <span aria-hidden="true">›</span> : null}
-                      <span className={cn(isCurrent && 'font-medium text-foreground')}>{label}</span>
+                      {item.href && !isCurrent ? (
+                        <Link
+                          href={item.href}
+                          className="transition-colors hover:text-foreground"
+                        >
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <span className={cn(isCurrent && 'font-medium text-foreground')}>{item.label}</span>
+                      )}
                     </Fragment>
                   );
                 })}
@@ -304,22 +322,22 @@ export function AppShellSkeleton() {
       <div className="flex min-h-screen">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
           <div className="flex h-14 items-center border-b px-4">
-            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-24 rounded-md" />
           </div>
           <div className="p-3">
-            <Skeleton className="mb-6 h-10 w-full" />
+            <Skeleton className="mb-6 h-10 w-full rounded-lg" />
             <div className="space-y-6">
               {Array.from({ length: 3 }).map((_, groupIndex) => (
                 <div key={groupIndex} className="space-y-2">
-                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-20 rounded-full" />
                   {Array.from({ length: groupIndex === 0 ? 3 : 2 }).map((__, itemIndex) => (
-                    <Skeleton key={itemIndex} className="h-9 w-full" />
+                    <Skeleton key={itemIndex} className="h-9 w-full rounded-lg" />
                   ))}
                 </div>
               ))}
             </div>
             <div className="mt-6 border-t pt-3">
-              <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-11 w-full rounded-lg" />
             </div>
           </div>
         </aside>
@@ -327,43 +345,78 @@ export function AppShellSkeleton() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 items-center justify-between border-b px-4 md:px-6">
             <div className="flex items-center gap-2">
-              <Skeleton className="h-8 w-8 md:hidden" />
-              <Skeleton className="h-4 w-44" />
+              <Skeleton className="h-8 w-8 rounded-lg md:hidden" />
+              <Skeleton className="h-4 w-44 rounded-full" />
             </div>
             <div className="flex items-center gap-2">
-              <Skeleton className="h-8 w-8" />
-              <Skeleton className="hidden h-8 w-14 sm:block" />
-              <Skeleton className="hidden h-8 w-20 sm:block" />
-              <Skeleton className="h-9 w-9" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="hidden h-8 w-14 rounded-lg sm:block" />
+              <Skeleton className="hidden h-8 w-20 rounded-lg sm:block" />
+              <Skeleton className="h-9 w-9 rounded-full" />
             </div>
           </header>
 
           <main className="flex-1 p-4 md:p-6">
             <div className="mx-auto w-full max-w-7xl space-y-6">
               <div className="space-y-2">
-                <Skeleton className="h-8 w-56" />
-                <Skeleton className="h-4 w-[32rem]" />
+                <Skeleton className="h-8 w-56 rounded-md" />
+                <Skeleton className="h-4 w-[32rem] max-w-full rounded-full" />
               </div>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton key={index} className="h-32 w-full rounded-xl" />
+                  <div key={index} className="rounded-xl border bg-card p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-3">
+                        <Skeleton className="h-4 w-28 rounded-full" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                      </div>
+                      <Skeleton className="size-10 rounded-lg" />
+                    </div>
+                    <Skeleton className="mt-5 h-4 w-40 rounded-full" />
+                  </div>
                 ))}
               </div>
               <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-                <Skeleton className="h-80 w-full rounded-xl" />
-                <Skeleton className="h-80 w-full rounded-xl" />
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className="rounded-xl border bg-card">
+                    <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-28 rounded-md" />
+                        <Skeleton className="h-4 w-52 rounded-full" />
+                      </div>
+                      <Skeleton className="h-8 w-24 rounded-lg" />
+                    </div>
+                    <div className="space-y-3 p-6">
+                      {Array.from({ length: 4 }).map((__, rowIndex) => (
+                        <div key={rowIndex} className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background px-4 py-4">
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-36 rounded-full" />
+                            <Skeleton className="h-3.5 w-24 rounded-full" />
+                          </div>
+                          <Skeleton className="h-6 w-20 rounded-full" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="rounded-xl border">
                 <div className="flex items-center justify-between border-b px-6 py-4">
                   <div className="space-y-2">
-                    <Skeleton className="h-5 w-36" />
-                    <Skeleton className="h-4 w-72" />
+                    <Skeleton className="h-5 w-36 rounded-md" />
+                    <Skeleton className="h-4 w-72 rounded-full" />
                   </div>
-                  <Skeleton className="h-9 w-28" />
+                  <Skeleton className="h-9 w-28 rounded-lg" />
                 </div>
                 <div className="p-4">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <Skeleton key={index} className="mb-3 h-12 w-full last:mb-0" />
+                    <div key={index} className="mb-3 flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background px-4 py-3 last:mb-0">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40 rounded-full" />
+                        <Skeleton className="h-3.5 w-24 rounded-full" />
+                      </div>
+                      <Skeleton className="h-7 w-7 rounded-lg" />
+                    </div>
                   ))}
                 </div>
               </div>

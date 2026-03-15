@@ -21,12 +21,12 @@ const badgeVariants = cva(
         ghost:
           "border-transparent bg-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        neutral: "border-border/80 bg-muted/60 text-foreground",
-        success: "border-primary/15 bg-primary/10 text-primary",
-        warning: "border-border bg-accent/80 text-accent-foreground",
+        neutral: "border-border/80 bg-muted/70 text-foreground",
+        success: "border-success/20 bg-success/10 text-success",
+        warning: "border-warning/20 bg-warning/10 text-warning",
         danger:
           "border-destructive/15 bg-destructive/10 text-destructive",
-        info: "border-border/80 bg-secondary text-secondary-foreground",
+        info: "border-info/20 bg-info/10 text-info",
       },
     },
     defaultVariants: {

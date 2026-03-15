@@ -46,7 +46,7 @@ function AcceptInviteForm() {
 
     if (!emailParam || !tokenParam) {
         return (
-            <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 Invalid invite link. Please make sure you copied the full URL from your email.
             </div>
         );
@@ -55,7 +55,7 @@ function AcceptInviteForm() {
     return (
         <form className="space-y-5" onSubmit={handleSubmit}>
             {error ? (
-                <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {error}
                 </div>
             ) : null}

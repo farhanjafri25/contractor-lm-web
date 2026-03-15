@@ -145,7 +145,7 @@ export default function NewContractorPage() {
       </div>
 
       {error ? (
-        <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
           {error}
         </div>
       ) : null}
