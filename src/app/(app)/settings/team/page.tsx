@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DataTableShell, EmptyState, FieldBlock, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
-import { CheckCheck, IconCrossLarge, ShieldCheck, UserPlus, XCircle } from '@/components/icons';
+import { Checkmark2, IconCrossLarge, ShieldCheck, UserPlus, XCircle } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -333,7 +333,7 @@ function PendingApprovalsCard({
                       aria-label={activeAction?.type === 'approve' && isBusy(memberId) ? 'Approving member request' : 'Approve member request'}
                       title={activeAction?.type === 'approve' && isBusy(memberId) ? 'Approving member request' : 'Approve member request'}
                     >
-                      <CheckCheck size={14} />
+                      <Checkmark2 className="size-[11px]" />
                       <span className="sr-only">
                         {activeAction?.type === 'approve' && isBusy(memberId) ? 'Approving member request' : 'Approve member request'}
                       </span>
@@ -498,7 +498,7 @@ function MembersTable({
                           onClick={() => onReactivate(memberId)}
                           disabled={isBusy(memberId)}
                         >
-                          <CheckCheck size={14} />
+                          <Checkmark2 className="size-[11px]" />
                           {activeAction?.type === 'reactivate' && isBusy(memberId) ? 'Reactivating…' : 'Reactivate'}
                         </Button>
                       ) : (

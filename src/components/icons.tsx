@@ -35,6 +35,7 @@ export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-
 export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconExclamationTriangle';
 export { IconCheckCircle2 as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
 export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
+export { IconCheckmark2 as Checkmark2 } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2';
 export { IconClock as Clock } from '@central-icons-react/round-filled-radius-3-stroke-2/IconClock';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconShieldBreak as ShieldAlert } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldBreak';
