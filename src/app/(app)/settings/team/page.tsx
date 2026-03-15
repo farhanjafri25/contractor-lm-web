@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { DataTableShell, FieldBlock, FilterSelect, MetricCard, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Input } from '@/components/ui/input';
 
-const roles = ['admin', 'security', 'sponsor', 'viewer'];
+const roles = ['owner', 'admin', 'sponsor'];
 
 function getErrorMessage(err: unknown) {
   const message = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
@@ -59,7 +59,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
           <FieldBlock label="Email">
             <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="user@company.io" required />
           </FieldBlock>
-          <FieldBlock label="Role" description="Admins manage everything. Security manages access. Sponsors manage their contractors.">
+          <FieldBlock label="Role" description="Owners manage workspaces. Admins manage contractors. Sponsors manage their own.">
             <FilterSelect
               value={role}
               onValueChange={setRole}
@@ -83,7 +83,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
 export default function TeamPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isOwner = user?.role === 'owner';
   const [showInvite, setShowInvite] = useState(false);
   const [actionError, setActionError] = useState('');
   const [activeAction, setActiveAction] = useState<{ type: 'role' | 'deactivate' | 'reactivate' | 'approve' | 'reject'; memberId: string } | null>(null);
@@ -97,7 +97,7 @@ export default function TeamPage() {
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
-    enabled: isAdmin,
+    enabled: isOwner,
   });
 
   const { data: stats } = useQuery({
@@ -156,7 +156,7 @@ export default function TeamPage() {
         title="Team"
         description="Manage access for everyone in this workspace."
         actions={
-          isAdmin ? (
+          isOwner ? (
             <Button onClick={() => setShowInvite(true)}>
               <UserPlus size={15} />
               Invite member
@@ -179,7 +179,7 @@ export default function TeamPage() {
         </div>
       ) : null}
 
-      {isAdmin && pendingData?.data?.length ? (
+      {isOwner && pendingData?.data?.length ? (
         <DataTableShell title="Pending approvals" description="Review people who joined with your company domain.">
           <Table>
             <TableHeader>
@@ -238,12 +238,12 @@ export default function TeamPage() {
               <TableHead>Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
-              {isAdmin ? <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead> : null}
+              {isOwner ? <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? <TableLoadingRows rows={4} columns={isAdmin ? 4 : 3} actionColumn={isAdmin} />
+              ? <TableLoadingRows rows={4} columns={isOwner ? 4 : 3} actionColumn={isOwner} />
               : data?.data?.map((member: Record<string, unknown>) => {
                   const isSelf = member._id === user?._id;
                   const isActive = member.status === 'active';
@@ -258,7 +258,7 @@ export default function TeamPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {isAdmin && !isSelf ? (
+                        {isOwner && !isSelf ? (
                           <FilterSelect
                             value={String(member.role ?? '')}
                             onValueChange={(value) => handleRoleChange(String(member._id), value)}
@@ -274,7 +274,7 @@ export default function TeamPage() {
                       <TableCell>
                         <StatusBadge status={isActive ? 'active' : isPending ? 'pending' : isInvited ? 'invited' : 'inactive'} />
                       </TableCell>
-                      {isAdmin ? (
+                      {isOwner ? (
                         <TableCell className="text-right">
                           {!isSelf ? (
                             isActive ? (

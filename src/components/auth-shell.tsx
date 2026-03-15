@@ -31,7 +31,7 @@ export function AuthShell({
               {[
                 { stat: '1 queue', label: 'for contractor requests' },
                 { stat: '1 view', label: 'for access changes' },
-                { stat: 'Clear roles', label: 'for admins and sponsors' },
+                { stat: 'Clear roles', label: 'for owners, admins, and sponsors' },
                 { stat: 'Fewer gaps', label: 'between contract end and access removal' },
               ].map((item) => (
                 <div key={item.label} className="rounded-lg border bg-background p-5">

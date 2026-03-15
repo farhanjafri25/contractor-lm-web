@@ -19,7 +19,7 @@ function parseJwt(token: string) {
 interface User {
     _id: string;
     email: string;
-    role: 'admin' | 'security' | 'sponsor' | 'viewer';
+    role: 'owner' | 'admin' | 'sponsor';
 }
 
 interface AuthState {

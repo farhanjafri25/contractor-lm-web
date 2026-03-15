@@ -32,10 +32,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Requests', icon: FileText, roles: ['admin', 'security', 'sponsor'] },
-  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin', 'security'] },
-  { href: '/events', label: 'Activity', icon: Activity, roles: ['admin', 'security'] },
-  { href: '/settings/team', label: 'Team', icon: Settings, roles: ['admin'] },
+  { href: '/sponsor', label: 'Requests', icon: FileText, roles: ['owner', 'admin', 'sponsor'] },
+  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['owner', 'admin'] },
+  { href: '/events', label: 'Activity', icon: Activity, roles: ['owner', 'admin'] },
+  { href: '/settings/team', label: 'Team', icon: Settings, roles: ['owner'] },
 ];
 
 const NAV_GROUPS = [
@@ -95,11 +95,11 @@ function routeLabels(pathname: string) {
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isOwner = user?.role === 'owner';
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
-    enabled: isAdmin,
+    enabled: isOwner,
   });
   const pendingCount = pendingData?.data?.length || 0;
 
