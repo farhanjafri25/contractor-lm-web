@@ -14,6 +14,7 @@ import {
   CalendarRemove4,
   ChevronBottom,
   RotateCcw,
+  ShieldCheck,
 } from '@/components/icons';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
@@ -364,22 +365,27 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       <section className="py-1">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-[24px] bg-primary/10 text-lg font-semibold text-primary">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-lg font-semibold text-primary">
               {getInitials(profileName)}
             </div>
             <div className="min-w-0 space-y-3">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold tracking-tight text-foreground">{profileName}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">{profileName}</h1>
                   <StatusBadge status={contractStatus} className="shrink-0" />
                 </div>
                 <p className="text-sm text-muted-foreground">{profileSubtitle}</p>
               </div>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                {activeContract
-                  ? `Current contract window: ${contractWindowCopy}. ${accessSummary}`
-                  : 'This record does not currently include an active contract to manage.'}
-              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                <div className="inline-flex items-center gap-2">
+                  <CalendarIcon size={14} />
+                  <span>{activeContract ? `Ends ${formatDateLabel(activeContract.end_date)}` : 'No active contract'}</span>
+                </div>
+                <div className="inline-flex items-center gap-2">
+                  <ShieldCheck size={14} />
+                  <span>{accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -392,7 +398,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           >
             {activeContract ? (
               <div className="space-y-6">
-                <div className="grid gap-px overflow-hidden rounded-[16px] border border-border/60 bg-border/60 md:grid-cols-2">
+                <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
                   {[
                     ['Start date', formatDateLabel(activeContract.start_date)],
                     ['End date', formatDateLabel(activeContract.end_date)],
@@ -406,7 +412,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </div>
 
-                <div className="rounded-[16px] border border-border/60 bg-background p-5">
+                <div className="rounded-[12px] border border-border/60 bg-background p-5">
                   <p className="text-xs font-medium text-muted-foreground">Current timing</p>
                   <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">{contractWindowCopy}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -431,7 +437,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
             }
           >
             {accessEntries.length ? (
-              <div className="overflow-hidden rounded-[16px] border border-border/60">
+              <div className="overflow-hidden rounded-[12px] border border-border/60">
                 {accessEntries.map((entry: Record<string, unknown>, index: number) => {
                   const app = entry.tenant_application_id as Record<string, unknown> | undefined;
 
@@ -501,7 +507,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </SectionCard>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <SectionCard title="Profile details">
             <div>
               <DetailRow label="Email" value={profileEmail} />
