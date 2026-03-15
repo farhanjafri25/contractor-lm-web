@@ -44,7 +44,7 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
         </DialogHeader>
         <div className="mt-6 space-y-5">
           {error ? (
-            <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           ) : null}

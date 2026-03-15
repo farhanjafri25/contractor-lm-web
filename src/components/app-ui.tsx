@@ -95,13 +95,33 @@ export function StatusBadge({
 }) {
   const normalized = status.toLowerCase();
   const variant =
-    normalized.includes('active') || normalized.includes('approved') || normalized.includes('provisioned')
+    normalized.includes('active') ||
+    normalized.includes('approved') ||
+    normalized.includes('provisioned') ||
+    normalized.includes('complete') ||
+    normalized.includes('completed') ||
+    normalized.includes('resolved') ||
+    normalized.includes('done')
       ? 'success'
-      : normalized.includes('pending') || normalized.includes('review')
+      : normalized.includes('pending') ||
+          normalized.includes('review') ||
+          normalized.includes('invited') ||
+          normalized.includes('scheduled') ||
+          normalized.includes('progress')
         ? 'info'
-        : normalized.includes('suspend') || normalized.includes('failed')
+        : normalized.includes('suspend') ||
+            normalized.includes('paused') ||
+            normalized.includes('hold') ||
+            normalized.includes('warning')
           ? 'warning'
-          : normalized.includes('reject') || normalized.includes('expire') || normalized.includes('terminate') || normalized.includes('revoked') || normalized.includes('danger')
+          : normalized.includes('reject') ||
+              normalized.includes('expire') ||
+              normalized.includes('terminate') ||
+              normalized.includes('revoked') ||
+              normalized.includes('deactivate') ||
+              normalized.includes('failed') ||
+              normalized.includes('error') ||
+              normalized.includes('danger')
             ? 'danger'
             : 'neutral';
   const label = status
@@ -252,6 +272,8 @@ export function FilterSelect({
   className?: string;
   disabled?: boolean;
 }) {
+  const selectedOption = options.find((option) => option.value === value);
+
   return (
     <Select
       value={value || null}
@@ -259,7 +281,7 @@ export function FilterSelect({
       disabled={disabled}
     >
       <SelectTrigger className={cn('min-w-[12rem]', className)}>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue>{selectedOption?.label ?? placeholder}</SelectValue>
       </SelectTrigger>
       <SelectContent align="start">
         {options.map((option) => (

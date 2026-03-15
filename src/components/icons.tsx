@@ -4,17 +4,24 @@ export { IconLiveActivity as Activity } from '@central-icons-react/round-outline
 export { IconArrowLeft as ArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowLeft';
 export { IconBell as Bell } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconBell';
 export { IconCalendar1 as Calendar } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendar1';
+export { IconCalendarClock4 as CalendarClock4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarClock4';
+export { IconCalendarRemove4 as CalendarRemove4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarRemove4';
 export { IconChevronBottom as ChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronBottom';
 export { IconChevronGrabberVertical as ChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronGrabberVertical';
 export { IconChevronLeft as ChevronLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeft';
 export { IconChevronRight as ChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRight';
+export { IconCrossLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossLarge';
 export { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
 export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeOpen';
 export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeSlash';
 export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFileText';
+export { IconGroup2 as Group2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconGroup2';
+export { IconHistory as History } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHistory';
+export { IconHomeCircle as HomeCircle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHomeCircle';
 export { IconLayoutDashboard as LayoutDashboard } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconLayoutDashboard';
 export { IconArrowBoxLeft as LogOut } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowBoxLeft';
 export { IconMoon as Moon } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMoon';
+export { IconPeopleAdd as PeopleAdd } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconPeopleAdd';
 export { IconArrowRotateLeftRight as RefreshCw } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRotateLeftRight';
 export { IconArrowRotateCounterClockwise as RotateCcw } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRotateCounterClockwise';
 export { IconMagnifyingGlass as Search } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMagnifyingGlass';
@@ -26,8 +33,8 @@ export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-
 export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconX';
 
 export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconExclamationTriangle';
-export { IconCircleCheck as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCircleCheck';
-export { IconCircleCheck as CheckCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCircleCheck';
+export { IconCheckCircle2 as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
+export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
 export { IconClock as Clock } from '@central-icons-react/round-filled-radius-3-stroke-2/IconClock';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconShieldBreak as ShieldAlert } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldBreak';

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { CheckCheck, ShieldCheck, UserPlus, Users, X } from '@/components/icons';
+import { CheckCheck, IconCrossLarge, ShieldCheck, UserPlus, Users, XCircle } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
@@ -52,7 +52,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
         </DialogHeader>
         <form className="mt-6 space-y-5" onSubmit={submit}>
           {error ? (
-            <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           ) : null}
@@ -166,7 +166,7 @@ export default function TeamPage() {
       />
 
       {actionError ? (
-        <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
           {actionError}
         </div>
       ) : null}
@@ -209,7 +209,7 @@ export default function TeamPage() {
                         aria-label={activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}
                         title={activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}
                       >
-                        <X size={14} />
+                        <IconCrossLarge size={14} />
                         <span className="sr-only">{activeAction?.type === 'reject' && isBusy(String(member._id)) ? 'Rejecting member request' : 'Reject member request'}</span>
                       </Button>
                       <Button
@@ -246,9 +246,11 @@ export default function TeamPage() {
               ? <TableLoadingRows rows={4} columns={isOwner ? 4 : 3} actionColumn={isOwner} />
               : data?.data?.map((member: Record<string, unknown>) => {
                   const isSelf = member._id === user?._id;
-                  const isActive = member.status === 'active';
-                  const isPending = member.status === 'pending_approval';
-                  const isInvited = member.status === 'invited';
+                  const memberStatus = String(member.status ?? '');
+                  const isActive = memberStatus === 'active';
+                  const isPending = memberStatus === 'pending_approval';
+                  const isInvited = memberStatus === 'invited';
+                  const isInactive = memberStatus === 'inactive' || memberStatus === 'deactivated';
                   return (
                     <TableRow key={String(member._id)}>
                       <TableCell>
@@ -258,21 +260,21 @@ export default function TeamPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {isOwner && !isSelf ? (
+                        {isOwner ? (
                           <FilterSelect
                             value={String(member.role ?? '')}
                             onValueChange={(value) => handleRoleChange(String(member._id), value)}
                             options={roles.map((value) => ({ label: value.charAt(0).toUpperCase() + value.slice(1), value }))}
                             placeholder="Select role"
                             className="w-[10rem]"
-                            disabled={isBusy(String(member._id))}
+                            disabled={isSelf || isBusy(String(member._id))}
                           />
                         ) : (
                           <StatusBadge status={String(member.role ?? '')} />
                         )}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={isActive ? 'active' : isPending ? 'pending' : isInvited ? 'invited' : 'inactive'} />
+                        <StatusBadge status={isActive ? 'active' : isPending ? 'pending' : isInvited ? 'invited' : isInactive ? 'inactive' : memberStatus} />
                       </TableCell>
                       {isOwner ? (
                         <TableCell className="text-right">
@@ -286,10 +288,10 @@ export default function TeamPage() {
                                 aria-label={activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}
                                 title={activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}
                               >
-                                <X size={14} />
+                                <XCircle size={14} />
                                 <span className="sr-only">{activeAction?.type === 'deactivate' && isBusy(String(member._id)) ? 'Deactivating member' : 'Deactivate member'}</span>
                               </Button>
-                            ) : (
+                            ) : isInactive ? (
                               <Button
                                 variant="secondary"
                                 size="icon-sm"
@@ -301,7 +303,7 @@ export default function TeamPage() {
                                 <CheckCheck size={14} />
                                 <span className="sr-only">{activeAction?.type === 'reactivate' && isBusy(String(member._id)) ? 'Reactivating member' : 'Reactivate member'}</span>
                               </Button>
-                            )
+                            ) : null
                           ) : null}
                         </TableCell>
                       ) : null}
