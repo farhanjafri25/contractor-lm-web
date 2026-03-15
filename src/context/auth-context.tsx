@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { authApi } from '@/lib/api';
 
 function parseJwt(token: string) {
@@ -11,7 +11,7 @@ function parseJwt(token: string) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
         return JSON.parse(jsonPayload);
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -33,20 +33,16 @@ interface AuthState {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [tenantId, setTenantId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        // Restore session from localStorage on mount
+    const [user, setUser] = useState<User | null>(() => {
+        if (typeof window === 'undefined') return null;
         const stored = localStorage.getItem('user');
-        const storedTenant = localStorage.getItem('tenant_id');
-        if (stored && storedTenant) {
-            setUser(JSON.parse(stored));
-            setTenantId(storedTenant);
-        }
-        setIsLoading(false);
-    }, []);
+        return stored ? JSON.parse(stored) : null;
+    });
+    const [tenantId, setTenantId] = useState<string | null>(() => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('tenant_id');
+    });
+    const [isLoading] = useState(false);
 
     const login = async (email: string, password: string) => {
         const { data } = await authApi.login(email, password);

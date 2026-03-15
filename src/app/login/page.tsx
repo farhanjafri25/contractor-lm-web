@@ -1,145 +1,95 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { useState } from 'react';
 import { Eye, EyeOff } from '@/components/icons';
-import { useTheme } from 'next-themes';
+import { AuthShell } from '@/components/auth-shell';
+import { FieldBlock } from '@/components/app-ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/context/auth-context';
 
 export default function LoginPage() {
-    const { login } = useAuth();
-    const router = useRouter();
-    const { resolvedTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+  const { login } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setLoading(true);
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPw, setShowPw] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    try {
+      await login(email.trim(), password);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(typeof message === 'string' ? message : 'Sign-in failed. Check your email and password.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            await login(email.trim(), password);
-            router.push('/dashboard');
-        } catch (err: unknown) {
-            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-            setError(typeof msg === 'string' ? msg : 'Invalid credentials');
-        } finally {
-            setLoading(false);
-        }
-    };
+  return (
+    <AuthShell
+      title="Sign in"
+      subtitle="Review contractors, requests, and access changes."
+      footer={
+        <p>
+          Need an account?{' '}
+          <Link href="/signup" className="font-semibold text-primary transition-colors hover:text-primary/80">
+            Create workspace
+          </Link>
+        </p>
+      }
+    >
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        {error ? (
+          <div className="rounded-[24px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-    return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: `
-        radial-gradient(ellipse 60% 50% at 50% -10%, rgba(99,102,241,0.15) 0%, transparent 70%),
-        var(--color-background)
-      `,
-        }}>
-            <div style={{
-                width: '100%',
-                maxWidth: 420,
-                padding: '0 1.5rem',
-            }}>
-                {/* Logo */}
-                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: '1rem',
-                    }}>
-                        <img src={mounted && resolvedTheme === 'dark' ? '/tenurio-logo-white.svg' : '/tenurio-logo-black.svg'} alt="Tenurio Logo" style={{ height: 56, width: 'auto', display: 'block' }} />
-                    </div>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                        Sign in to your workspace
-                    </p>
-                </div>
+        <FieldBlock label="Work email">
+          <Input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="admin@company.io"
+            required
+          />
+        </FieldBlock>
 
-                {/* Card */}
-                <div className="card" style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}>
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* Error banner */}
-                        {error && (
-                            <div style={{
-                                padding: '0.75rem 1rem',
-                                background: 'var(--color-danger-muted)',
-                                border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-                                borderRadius: 8,
-                                color: 'var(--color-danger)',
-                                fontSize: '0.85rem',
-                            }}>
-                                {error}
-                            </div>
-                        )}
+        <FieldBlock label="Password">
+          <div className="relative">
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your password"
+              className="pr-12"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </FieldBlock>
 
-                        {/* Removed Workspace ID (Tenant ID) input */}
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@company.io"
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 6, fontWeight: 500 }}>
-                                Password
-                            </label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type={showPw ? 'text' : 'password'}
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    style={{ paddingRight: '2.5rem' }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw(!showPw)}
-                                    style={{
-                                        position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                                        background: 'none', border: 'none', cursor: 'pointer',
-                                        color: 'var(--color-text-muted)', padding: 0,
-                                    }}
-                                >
-                                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading}
-                            style={{ width: '100%', height: 44, marginTop: 4, fontSize: '0.9rem' }}
-                        >
-                            {loading ? 'Signing in…' : 'Sign in'}
-                        </button>
-                    </form>
-                </div>
-
-                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '1.5rem' }}>
-                    Don't have an account? <a href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>Sign up</a>
-                </p>
-            </div>
-        </div>
-    );
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
+    </AuthShell>
+  );
 }

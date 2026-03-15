@@ -1,241 +1,257 @@
 'use client';
 
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { eventsApi } from '@/lib/api';
-import { formatDistanceToNow, format } from 'date-fns';
+import { ChevronBottom } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
+import { DataTableShell, FilterSelect, PageHeader, SummaryPill } from '@/components/app-ui';
+import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
-const EVENT_TYPE_MAP: Record<string, { label: string; color: string }> = {
-    'contractor.created': { label: 'Contractor Created', color: 'var(--color-success)' },
-    'contractor.updated': { label: 'Contractor Updated', color: 'var(--color-info)' },
-    'contract.extended': { label: 'Contract Extended', color: 'var(--color-info)' },
-    'contract.suspended': { label: 'Contract Suspended', color: 'var(--color-warning)' },
-    'contract.reactivated': { label: 'Contract Reactivated', color: 'var(--color-success)' },
-    'contract.expired': { label: 'Contract Expired', color: 'var(--color-danger)' },
-    'contract.terminated': { label: 'Contract Terminated', color: 'var(--color-danger)' },
-    'access.provisioned': { label: 'Access Provisioned', color: 'var(--color-success)' },
-    'access.revoked': { label: 'Access Revoked', color: 'var(--color-danger)' },
-    'sponsor.action.submitted': { label: 'Sponsor Request', color: 'var(--color-info)' },
-    'sponsor.action.approved': { label: 'Request Approved', color: 'var(--color-success)' },
-    'sponsor.action.rejected': { label: 'Request Rejected', color: 'var(--color-danger)' },
-};
-
-const CATEGORIES = ['', 'contractor', 'contract', 'access', 'sponsor'];
-
-const PAGE_SIZE = 25;
+const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
+const pageSize = 25;
 
 export default function AuditLogPage() {
-    const [eventType, setEventType] = useState('');
-    const [category, setCategory] = useState('');
-    const [from, setFrom] = useState('');
-    const [to, setTo] = useState('');
-    const [page, setPage] = useState(1);
+  const [eventType, setEventType] = useState('');
+  const [category, setCategory] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [page, setPage] = useState(1);
 
-    const params: Record<string, unknown> = { page, limit: PAGE_SIZE };
-    if (eventType) params.event_type = eventType;
-    if (category) params.category = category;
-    if (from) params.from = from;
-    if (to) params.to = to;
+  const params: Record<string, unknown> = { page, limit: pageSize };
+  if (eventType) params.event_type = eventType;
+  if (category) params.category = category;
+  if (from) params.from = from;
+  if (to) params.to = to;
 
-    const { data, isLoading, isFetching } = useQuery({
-        queryKey: ['events', params],
-        queryFn: async () => (await eventsApi.list(params)).data,
-        placeholderData: (prev) => prev,
-    });
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['events', params],
+    queryFn: async () => (await eventsApi.list(params)).data,
+    placeholderData: (previous) => previous,
+  });
 
-    const { data: statsData } = useQuery({
-        queryKey: ['event-stats'],
-        queryFn: async () => (await eventsApi.getStats()).data,
-        staleTime: 60_000,
-    });
+  const { data: statsData } = useQuery({
+    queryKey: ['event-stats'],
+    queryFn: async () => (await eventsApi.getStats()).data,
+    staleTime: 60_000,
+  });
 
-    const events: Record<string, unknown>[] = data?.data ?? [];
-    const total: number = data?.total ?? 0;
-    const totalPages = Math.ceil(total / PAGE_SIZE);
+  const events: Record<string, unknown>[] = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  const hasFilters = Boolean(eventType || category || from || to);
+  const fromDate = from ? parseISO(from) : undefined;
+  const toDate = to ? parseISO(to) : undefined;
 
-    const resetFilters = () => {
-        setEventType(''); setCategory(''); setFrom(''); setTo(''); setPage(1);
-    };
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Activity"
+        description={`${total.toLocaleString()} events across contractors, access, and requests.`}
+        actions={
+          hasFilters ? (
+            <Button variant="secondary" onClick={() => { setEventType(''); setCategory(''); setFrom(''); setTo(''); setPage(1); }}>
+              Clear filters
+            </Button>
+          ) : null
+        }
+      />
 
-    const hasFilters = eventType || category || from || to;
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.5px' }}>Audit Log</h1>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>
-                        Immutable record of all platform events&nbsp;·&nbsp;
-                        <span style={{ color: 'var(--color-text-muted)' }}>{total.toLocaleString()} total</span>
-                    </p>
-                </div>
-                {hasFilters && (
-                    <button className="btn btn-ghost" onClick={resetFilters} style={{ fontSize: '0.8rem' }}>
-                        Clear filters
-                    </button>
-                )}
-            </div>
-
-            {/* Stats pills */}
-            {statsData?.by_type && (
-                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                    {Object.entries(statsData.by_type as Record<string, number>)
-                        .sort(([, a], [, b]) => b - a)
-                        .slice(0, 8)
-                        .map(([type, count]) => {
-                            const meta = EVENT_TYPE_MAP[type];
-                            return (
-                                <button key={type} onClick={() => { setEventType(eventType === type ? '' : type); setPage(1); }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 6, padding: '0.35rem 0.75rem',
-                                        borderRadius: 999, fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.15s',
-                                        background: eventType === type ? 'var(--color-primary-muted)' : 'var(--color-surface-2)',
-                                        border: `1px solid ${eventType === type ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                                        color: eventType === type ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                                    }}>
-                                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: meta?.color ?? 'var(--color-text-muted)', flexShrink: 0 }} />
-                                    {meta?.label ?? type.replace(/\./g, ' ')}
-                                    <span style={{ opacity: 0.6 }}>{count}</span>
-                                </button>
-                            );
-                        })}
-                </div>
-            )}
-
-            {/* Filter bar */}
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} style={{ width: 160 }}>
-                    <option value="">All categories</option>
-                    {CATEGORIES.filter(Boolean).map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                </select>
-
-                <select value={eventType} onChange={(e) => { setEventType(e.target.value); setPage(1); }} style={{ width: 220 }}>
-                    <option value="">All event types</option>
-                    {Object.entries(EVENT_TYPE_MAP).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}
-                </select>
-
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} style={{ width: 155 }} placeholder="From" />
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>→</span>
-                    <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} style={{ width: 155 }} placeholder="To" />
-                </div>
-            </div>
-
-            {/* Table */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden', opacity: isFetching ? 0.7 : 1, transition: 'opacity 0.2s' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                            {['Event', 'Contractor', 'Actor', 'Timestamp'].map((h) => (
-                                <th key={h} style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {isLoading ? (
-                            Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                    {[140, 110, 120, 90].map((w, j) => (
-                                        <td key={j} style={{ padding: '1rem 1.25rem' }}>
-                                            <div className="skeleton" style={{ height: 12, width: w }} />
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
-                        ) : events.length === 0 ? (
-                            <tr>
-                                <td colSpan={4} style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                                    No events match the current filters
-                                </td>
-                            </tr>
-                        ) : (
-                            events.map((ev) => {
-                                const type = String(ev.event_type ?? '');
-                                const meta = EVENT_TYPE_MAP[type];
-                                const contractor = ev.contractor_id as Record<string, unknown> | undefined;
-                                const actor = ev.actor_id as Record<string, unknown> | undefined;
-                                const createdAt = ev.created_at ? new Date(String(ev.created_at)) : null;
-
-                                return (
-                                    <tr key={String(ev._id)} style={{
-                                        borderBottom: '1px solid var(--color-border)',
-                                        transition: 'background 0.12s',
-                                    }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-2)')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                                    >
-                                        {/* Event type */}
-                                        <td style={{ padding: '0.9rem 1.25rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta?.color ?? 'var(--color-text-muted)', flexShrink: 0 }} />
-                                                <div>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{meta?.label ?? type.replace(/\./g, ' › ')}</div>
-                                                    {Boolean(ev.metadata) && typeof ev.metadata === 'object' && Object.keys(ev.metadata as object).length > 0 && (
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
-                                                            {Object.entries(ev.metadata as Record<string, unknown>)
-                                                                .slice(0, 2)
-                                                                .map(([k, v]) => `${k}: ${v}`)
-                                                                .join(' · ')}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {/* Contractor */}
-                                        <td style={{ padding: '0.9rem 1.25rem' }}>
-                                            {contractor ? (
-                                                <div>
-                                                    <div style={{ fontSize: '0.85rem' }}>{String(contractor.name ?? '—')}</div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{String(contractor.department ?? '')}</div>
-                                                </div>
-                                            ) : <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>—</span>}
-                                        </td>
-
-                                        {/* Actor */}
-                                        <td style={{ padding: '0.9rem 1.25rem' }}>
-                                            {actor ? (
-                                                <div>
-                                                    <div style={{ fontSize: '0.85rem' }}>{String(actor.email ?? '—')}</div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>{String(actor.role ?? '')}</div>
-                                                </div>
-                                            ) : <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>System</span>}
-                                        </td>
-
-                                        {/* Timestamp */}
-                                        <td style={{ padding: '0.9rem 1.25rem' }}>
-                                            {createdAt ? (
-                                                <div>
-                                                    <div style={{ fontSize: '0.82rem' }}>{formatDistanceToNow(createdAt, { addSuffix: true })}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: 1 }}>
-                                                        {format(createdAt, 'MMM d, yyyy · HH:mm')}
-                                                    </div>
-                                                </div>
-                                            ) : '—'}
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                        Page {page} of {totalPages} · {total.toLocaleString()} events
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-ghost" style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }}
-                            disabled={page === 1} onClick={() => setPage(page - 1)}>← Prev</button>
-                        <button className="btn btn-ghost" style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }}
-                            disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next →</button>
-                    </div>
-                </div>
-            )}
+      {statsData?.by_type ? (
+        <div className="flex flex-wrap gap-3">
+          {Object.entries(statsData.by_type as Record<string, number>)
+            .sort(([, left], [, right]) => right - left)
+            .slice(0, 8)
+            .map(([type, count]) => (
+              <SummaryPill
+                key={type}
+                label={getEventLabel(type)}
+                count={count}
+                active={eventType === type}
+                onClick={() => {
+                  setEventType(eventType === type ? '' : type);
+                  setPage(1);
+                }}
+              />
+            ))}
         </div>
-    );
+      ) : null}
+
+      <DataTableShell
+        title="All activity"
+        description="Filter by category, event type, or date."
+        actions={
+          <>
+            <FilterSelect
+              value={category}
+              onValueChange={(value) => {
+                setCategory(value);
+                setPage(1);
+              }}
+              options={categories.map((value) => ({
+                label: value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : 'All categories',
+                value,
+              }))}
+              placeholder="All categories"
+            />
+            <FilterSelect
+              value={eventType}
+              onValueChange={(value) => {
+                setEventType(value);
+                setPage(1);
+              }}
+              options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
+              placeholder="All event types"
+            />
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    data-empty={!fromDate}
+                    className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                  >
+                    {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
+                    <ChevronBottom data-icon="inline-end" size={16} />
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={fromDate}
+                  onSelect={(nextDate) => {
+                    setFrom(nextDate ? format(nextDate, 'yyyy-MM-dd') : '');
+                    setPage(1);
+                  }}
+                  defaultMonth={fromDate}
+                />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    data-empty={!toDate}
+                    className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                  >
+                    {toDate ? format(toDate, 'PPP') : <span>End date</span>}
+                    <ChevronBottom data-icon="inline-end" size={16} />
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={toDate}
+                  onSelect={(nextDate) => {
+                    setTo(nextDate ? format(nextDate, 'yyyy-MM-dd') : '');
+                    setPage(1);
+                  }}
+                  defaultMonth={toDate}
+                />
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages} · {total.toLocaleString()} events
+              </p>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
+                  Previous
+                </Button>
+                <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null
+        }
+      >
+        <div className={isFetching ? 'opacity-80 transition-opacity' : 'transition-opacity'}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Contractor</TableHead>
+                <TableHead>Actor</TableHead>
+                <TableHead>Timestamp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading
+                ? <TableLoadingRows rows={8} columns={4} />
+                : events.map((event) => {
+                    const type = String(event.event_type ?? '');
+                    const contractor = event.contractor_id as Record<string, unknown> | undefined;
+                    const actor = event.actor_id as Record<string, unknown> | undefined;
+                    const createdAt = event.created_at ? new Date(String(event.created_at)) : null;
+                    return (
+                      <TableRow key={String(event._id)}>
+                        <TableCell>
+                          <p className="font-medium text-foreground">{getEventLabel(type)}</p>
+                          {event.metadata && typeof event.metadata === 'object' && Object.keys(event.metadata as object).length > 0 ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {Object.entries(event.metadata as Record<string, unknown>)
+                                .slice(0, 2)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(' · ')}
+                            </p>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
+                          {contractor ? (
+                            <>
+                              <p className="text-foreground">{String(contractor.name ?? '—')}</p>
+                              <p className="text-sm text-muted-foreground">{String(contractor.department ?? '')}</p>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {actor ? (
+                            <>
+                              <p className="text-foreground">{String(actor.email ?? '—')}</p>
+                              <p className="text-sm capitalize text-muted-foreground">{String(actor.role ?? '')}</p>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">Tenurio</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {createdAt ? (
+                            <>
+                              <p className="text-foreground">{formatDistanceToNow(createdAt, { addSuffix: true })}</p>
+                              <p className="text-xs text-muted-foreground">{format(createdAt, 'MMM d, yyyy · HH:mm')}</p>
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              {!isLoading && events.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-14 text-center text-muted-foreground">
+                    No activity matches this filter. Matching events will show here.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
+        </div>
+      </DataTableShell>
+    </div>
+  );
 }
