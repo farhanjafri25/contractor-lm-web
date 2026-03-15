@@ -222,7 +222,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen">
         <aside
           className={cn(
-            'hidden shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:block',
+            'hidden shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:sticky md:top-0 md:block md:h-screen',
             collapsed ? 'w-16' : 'w-64',
           )}
         >
