@@ -89,7 +89,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Dashboard"
+        title="Overview"
         description="See what needs attention across contractors, access, and requests."
         actions={
           <Link href="/contractors/new" className={buttonVariants({ variant: 'default' })}>
