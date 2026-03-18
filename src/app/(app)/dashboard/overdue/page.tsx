@@ -18,14 +18,12 @@ export default function OverduePage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start gap-4">
+      <div className="space-y-3">
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
-        <div className="flex-1">
-          <PageHeader
-            title="Access overdue"
-            description="These contracts ended, but access is still active."
-          />
-        </div>
+        <PageHeader
+          title="Access overdue"
+          description="These contracts ended, but access is still active."
+        />
       </div>
 
       {contracts.length ? (

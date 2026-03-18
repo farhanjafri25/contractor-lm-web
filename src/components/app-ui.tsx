@@ -38,9 +38,9 @@ export function PageHeader({
 
 export function PageBackLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className={cn(buttonVariants({ variant: 'secondary', size: 'icon' }), 'rounded-2xl')}>
-      <ArrowLeft size={16} />
-      <span className="sr-only">{children}</span>
+    <Link href={href} className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-fit gap-1.5 text-muted-foreground hover:text-foreground px-0 hover:bg-transparent')}>
+      <ArrowLeft size={14} />
+      {children}
     </Link>
   );
 }

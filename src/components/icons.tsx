@@ -32,14 +32,17 @@ export { IconSun as Sun } from '@central-icons-react/round-outlined-radius-3-str
 export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTeam';
 export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconX';
 
-export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconExclamationTriangle';
+export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExclamationTriangle';
 export { IconCheckCircle2 as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
 export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
 export { IconCheckmark2 as Checkmark2 } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2';
-export { IconClock as Clock } from '@central-icons-react/round-filled-radius-3-stroke-2/IconClock';
+export { IconClock as Clock } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClock';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
+export { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconPlusLarge';
 export { IconShieldBreak as ShieldAlert } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldBreak';
-export { IconShieldCrossed as ShieldOff } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldCrossed';
+export { IconShieldCrossed as ShieldOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconShieldCrossed';
 export { IconTrending1 as TrendingUp } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTrending1';
 export { IconUserAdd as UserPlus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd';
 export { IconCircleX as XCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCircleX';
+export { IconGoogle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGoogle';
+export { IconSlack } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSlack';

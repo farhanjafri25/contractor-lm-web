@@ -223,7 +223,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <aside
           className={cn(
             'hidden shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:sticky md:top-0 md:block md:h-screen',
-            collapsed ? 'w-16' : 'w-64',
+            collapsed ? 'w-16' : 'w-56',
           )}
         >
           <SidebarContent collapsed={collapsed} />
@@ -320,7 +320,7 @@ export function AppShellSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
+        <aside className="hidden w-56 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
           <div className="flex h-14 items-center border-b px-4">
             <Skeleton className="h-5 w-24 rounded-md" />
           </div>
@@ -382,7 +382,7 @@ export function AppShellSkeleton() {
                     <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
                       <div className="space-y-2">
                         <Skeleton className="h-5 w-28 rounded-md" />
-                        <Skeleton className="h-4 w-52 rounded-full" />
+                        <Skeleton className="h-4 w-56 rounded-full" />
                       </div>
                       <Skeleton className="h-8 w-24 rounded-lg" />
                     </div>
