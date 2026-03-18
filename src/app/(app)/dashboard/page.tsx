@@ -10,7 +10,7 @@ import activityEmptyLight from '@/assets/activity-empty-light.svg';
 import activityEmptyDark from '@/assets/activity-empty-dark.svg';
 import expiringEmptyLight from '@/assets/expiring-light.svg';
 import expiringEmptyDark from '@/assets/expiring-dark.svg';
-import { AlertTriangle, CheckCircle, ChevronRight, Clock, IconCrossLarge, IconGoogle, IconPlusLarge, IconSlack, RefreshCw, Settings, ShieldOff, Users } from '@/components/icons';
+import { AlertTriangle, CheckCircle, ChevronBottom, ChevronRight, Clock, IconGoogle, IconPlusLarge, IconSlack, RefreshCw, Settings, ShieldOff, Users } from '@/components/icons';
 import { PageHeader, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -58,9 +58,9 @@ function buildDynamicDescription(summary: Record<string, number> | undefined): s
 }
 
 export default function DashboardPage() {
-  const [setupChecklistDismissed, setSetupChecklistDismissed] = useState(() => {
+  const [setupChecklistCollapsed, setSetupChecklistCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return localStorage.getItem('setup-checklist-dismissed') === 'true';
+    return localStorage.getItem('setup-checklist-collapsed') === 'true';
   });
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -117,28 +117,32 @@ export default function DashboardPage() {
   const checklistItems = [
     {
       label: 'Add your first contractor',
+      description: 'Import or add contractors to start managing their access and documents.',
       href: '/contractors/new',
       done: hasAnyContractor,
     },
     {
       label: 'Connect Google Workspace',
+      description: 'Sync your directory to automatically discover and manage contractors.',
       href: '/settings/directory',
       done: isGoogleConnected,
     },
     {
       label: 'Invite a sponsor',
+      description: 'Sponsors approve contractor requests and are notified about expiring agreements.',
       href: '/settings/team?invite=sponsor',
       done: sponsorCount > 0,
     },
     {
       label: 'Configure Slack notifications',
+      description: 'Get notified in Slack when contracts are expiring or need attention.',
       href: '/settings/slack',
       done: isSlackConnected,
     },
   ];
   const completedCount = checklistItems.filter((i) => i.done).length;
   const allChecklistDone = completedCount === checklistItems.length;
-  const showSetupChecklist = !setupChecklistDismissed && !allChecklistDone && !summaryLoading;
+  const showSetupChecklist = !allChecklistDone && !summaryLoading;
 
   const contractorMetrics = summary
     ? [
@@ -215,64 +219,113 @@ export default function DashboardPage() {
 
   const allEvents = (events?.data ?? []) as Record<string, unknown>[];
 
+  const activeItem = checklistItems.find((item) => !item.done) ?? checklistItems[checklistItems.length - 1];
+
   return (
     <div className="space-y-12">
-      <PageHeader
-        title="Overview"
-        description={dynamicDescription || 'See what needs attention across contractors, access, and requests.'}
-      />
+      <div className={cn('space-y-6', showSetupChecklist && 'pb-1')}>
+      {/* Get started checklist */}
+      {showSetupChecklist && (
+        <>
+          {/* Blue strip — adapts to collapsed state */}
+          <div
+            className="absolute inset-x-0 top-0 transition-[height] duration-300 ease-in-out"
+            style={{
+              height: setupChecklistCollapsed ? '192px' : '390px',
+              backgroundColor: '#0071F9',
+              backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
+            }}
+          />
+
+          {/* Card — in normal flow, sits on top of the strip */}
+          <div className="relative z-10 rounded-xl border bg-card px-6 pt-4 pb-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <p className="text-base font-semibold text-foreground">Get started</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton
+                onClick={() => {
+                  const next = !setupChecklistCollapsed;
+                  localStorage.setItem('setup-checklist-collapsed', String(next));
+                  setSetupChecklistCollapsed(next);
+                }}
+                className="text-muted-foreground"
+              >
+                {setupChecklistCollapsed ? 'Show' : 'Hide'} <ChevronBottom size={13} className={cn('transition-transform duration-300', !setupChecklistCollapsed && 'rotate-180')} />
+              </Button>
+            </div>
+
+            {/* Animated body wrapper */}
+            <div
+              className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+              style={{ gridTemplateRows: setupChecklistCollapsed ? '0fr' : '1fr' }}
+            >
+              <div className="overflow-hidden">
+                {/* Two-column body */}
+                <div className="grid grid-cols-[auto_1fr] gap-8 pt-4 pb-2">
+                  {/* Left: step list */}
+                  <div className="flex min-w-44 flex-col gap-1">
+                    {checklistItems.map((item, i) => {
+                      const isActive = item === activeItem;
+                      return (
+                        <div
+                          key={item.label}
+                          className={cn('flex items-center gap-3 rounded-lg px-3 py-2', isActive && 'bg-muted/60')}
+                        >
+                          <div className={cn(
+                            'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                            item.done
+                              ? 'bg-primary/10 text-primary'
+                              : isActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground'
+                          )}>
+                            {item.done ? <CheckCircle size={13} /> : i + 1}
+                          </div>
+                          <p className={cn(
+                            'text-sm',
+                            item.done
+                              ? 'text-muted-foreground line-through'
+                              : isActive
+                                ? 'font-medium text-foreground'
+                                : 'text-muted-foreground'
+                          )}>
+                            {item.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right: active step detail */}
+                  <div className="flex flex-col justify-center rounded-lg bg-muted/50 px-6 py-5">
+                    <p className="text-base font-semibold text-foreground">{activeItem.label}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{activeItem.description}</p>
+                    <Button className="mt-4 self-start" size="sm" render={<Link href={activeItem.href} />} nativeButton={false}>
+                      Get started →
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className={cn('relative z-10', showSetupChecklist && '[&_h1]:text-white [&_p]:text-white/80')}>
+        <PageHeader
+          title="Overview"
+          description={dynamicDescription || 'See what needs attention across contractors, access, and requests.'}
+        />
+      </div>
+      </div>
 
       <div className="grid gap-16 md:grid-cols-[3fr_7fr]">
         {/* Left: Key numbers */}
         <div>
-          {/* Get started checklist */}
-          {showSetupChecklist && (
-            <div className="-mx-4 mb-6 rounded-xl bg-muted/40 px-4 pb-1.5 pt-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-base font-semibold text-foreground">Get started</p>
-                  <span className="text-xs text-muted-foreground">{completedCount} of {checklistItems.length}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  nativeButton
-                  onClick={() => {
-                    localStorage.setItem('setup-checklist-dismissed', 'true');
-                    setSetupChecklistDismissed(true);
-                  }}
-                  className="text-muted-foreground"
-                >
-                  Dismiss <IconCrossLarge size={13} />
-                </Button>
-              </div>
-              <div className="mt-1 space-y-0">
-                {checklistItems.map((item) =>
-                  item.done ? (
-                    <div key={item.label} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                        <CheckCircle size={15} />
-                      </div>
-                      <p className="text-sm text-muted-foreground line-through">{item.label}</p>
-                    </div>
-                  ) : (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/50"
-                    >
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background">
-                        <div className="size-3 rounded-full bg-muted-foreground/25" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                    </Link>
-                  )
-                )}
-              </div>
-            </div>
-          )}
-
-
           {/* Contractors group */}
           <div className="mb-6">
             <div className="flex items-center justify-between">
@@ -478,7 +531,7 @@ export default function DashboardPage() {
                     View queue
                   </Button>
                 </div>
-                <div className="mt-3 flex flex-col items-center rounded-xl py-8" style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23D4D4D8' stroke-width='1.5' stroke-dasharray='6%2c10' stroke-linecap='square'/%3e%3c/svg%3e\")" }}>
+                <div className="mt-3 flex flex-col items-center rounded-xl border border-dashed py-8">
                   <span className="block dark:hidden">
                     <Image src={expiringEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
                   </span>
@@ -544,7 +597,7 @@ export default function DashboardPage() {
                 </div>
               </>
             ) : (
-              <div className="mt-3 flex flex-col items-center rounded-xl py-8" style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23D4D4D8' stroke-width='1.5' stroke-dasharray='6%2c10' stroke-linecap='square'/%3e%3c/svg%3e\")" }}>
+              <div className="mt-3 flex flex-col items-center rounded-xl border border-dashed py-8">
                 <span className="block dark:hidden">
                   <Image src={activityEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
                 </span>
