@@ -22,14 +22,12 @@ export default function AtRiskPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start gap-4">
+      <div className="space-y-3">
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
-        <div className="flex-1">
-          <PageHeader
-            title="Needs review"
-            description="Review suspended contracts and failed access removals."
-          />
-        </div>
+        <PageHeader
+          title="Needs review"
+          description="Review suspended contracts and failed access removals."
+        />
       </div>
 
       <DataTableShell title="Suspended" description="These contractors are suspended and still need a decision.">

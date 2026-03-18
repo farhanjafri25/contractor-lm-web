@@ -23,29 +23,27 @@ export default function ExpiringPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start gap-4">
+      <div className="space-y-3">
         <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
-        <div className="flex-1">
-          <PageHeader
-            title="Expiring soon"
-            description="These contracts end within the selected window."
-            actions={
-              <div className="flex flex-wrap gap-2">
-                {[7, 14, 30, 60, 90].map((value) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={days === value ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setDays(value)}
-                  >
-                    {value}d
-                  </Button>
-                ))}
-              </div>
-            }
-          />
-        </div>
+        <PageHeader
+          title="Expiring soon"
+          description="These contracts end within the selected window."
+          actions={
+            <div className="flex flex-wrap gap-2">
+              {[7, 14, 30, 60, 90].map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={days === value ? 'default' : 'secondary'}
+                  size="sm"
+                  onClick={() => setDays(value)}
+                >
+                  {value}d
+                </Button>
+              ))}
+            </div>
+          }
+        />
       </div>
 
       <DataTableShell title="Contracts" description={`Showing contracts that end in the next ${days} days.`}>

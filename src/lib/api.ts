@@ -130,3 +130,7 @@ export const eventsApi = {
     getContractorTimeline: (contractorId: string) =>
         api.get(`/events/contractor/${contractorId}`),
 };
+
+export const integrationApi = {
+    getStatus: () => api.get('/integrations/status'),
+};

@@ -138,14 +138,12 @@ export default function NewContractorPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start gap-4">
+      <div className="space-y-3">
         <PageBackLink href="/contractors">Back to contractors</PageBackLink>
-        <div className="flex-1">
-          <PageHeader
-            title="Add contractor"
-            description="Add their details, contract dates, and sponsor."
-          />
-        </div>
+        <PageHeader
+          title="Add contractor"
+          description="Add their details, contract dates, and sponsor."
+        />
       </div>
 
       {error ? (
