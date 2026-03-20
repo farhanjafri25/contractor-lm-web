@@ -134,3 +134,7 @@ export const eventsApi = {
 export const integrationApi = {
     getStatus: () => api.get('/integrations/status'),
 };
+
+export const aiApi = {
+    chat: (messages: any[]) => api.post('/ai/chat', { messages }),
+};
