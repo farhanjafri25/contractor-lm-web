@@ -34,7 +34,7 @@ const NAV = [
   { href: '/contractors', label: 'Contractors', icon: Users },
   { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
-  { href: '/events', label: 'Activity', icon: History, roles: ['admin'] },
+  { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
