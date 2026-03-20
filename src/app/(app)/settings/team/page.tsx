@@ -259,7 +259,8 @@ function PendingApprovalsCard({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Requested role</TableHead>
             <TableHead className="text-right">
               <span className="sr-only">Actions</span>
@@ -272,8 +273,11 @@ function PendingApprovalsCard({
             return (
               <TableRow key={memberId}>
                 <TableCell>
-                  <p className="font-medium text-foreground">{getMemberEmail(member)}</p>
-                  <p className="text-sm text-muted-foreground">Joined with your company domain and needs admin approval.</p>
+                  <p className="font-medium text-foreground">{getMemberName(member) || '—'}</p>
+                </TableCell>
+                <TableCell>
+                  <p className="text-muted-foreground">{getMemberEmail(member)}</p>
+                  <p className="text-sm text-muted-foreground">Joined with your company domain.</p>
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={getTextValue(member.role)} />
@@ -368,7 +372,8 @@ function MembersTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               {isAdmin ? (
@@ -379,14 +384,15 @@ function MembersTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableLoadingRows rows={4} columns={isAdmin ? 4 : 3} actionColumn={isAdmin} />
+            <TableLoadingRows rows={4} columns={isAdmin ? 5 : 4} actionColumn={isAdmin} />
           </TableBody>
         </Table>
       ) : members.length ? (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               {isAdmin ? (
@@ -407,13 +413,13 @@ function MembersTable({
               return (
                 <TableRow key={memberId}>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-foreground">{memberName || memberEmail}</p>
-                        {isSelf ? <StatusBadge status="you" /> : null}
-                      </div>
-                      {memberName ? <p className="text-sm text-muted-foreground">{memberEmail}</p> : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-foreground">{memberName || '—'}</p>
+                      {isSelf ? <StatusBadge status="you" /> : null}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <p className="text-muted-foreground">{memberEmail}</p>
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={getTextValue(member.role)} />
