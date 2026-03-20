@@ -35,13 +35,14 @@ const NAV = [
   { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
   { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
+  { href: '/settings/profile', label: 'Profile', icon: Users },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
   { label: 'Overview', items: ['/dashboard', '/contractors', '/sponsor'] },
   { label: 'Operations', items: ['/access', '/events'] },
-  { label: 'Settings', items: ['/settings/team'] },
+  { label: 'Settings', items: ['/settings/profile', '/settings/team'] },
 ];
 
 function MenuIcon() {
