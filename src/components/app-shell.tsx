@@ -32,10 +32,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: HomeCircle },
   { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['owner', 'admin', 'sponsor'] },
-  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['owner', 'admin'] },
-  { href: '/events', label: 'Activity', icon: History, roles: ['owner', 'admin'] },
-  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['owner'] },
+  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
+  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
+  { href: '/events', label: 'Activity', icon: History, roles: ['admin'] },
+  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
@@ -104,11 +104,11 @@ function routeBreadcrumbs(pathname: string) {
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isOwner = user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
-    enabled: isOwner,
+    enabled: isAdmin,
   });
   const pendingCount = pendingData?.data?.length || 0;
 

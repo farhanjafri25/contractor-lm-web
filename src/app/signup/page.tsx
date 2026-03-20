@@ -559,7 +559,7 @@ export default function SignupPage() {
           <FieldBlock label="Country">
             <Select
               value={billingCountry}
-              onValueChange={(value) => setBillingCountry(value ?? BILLING_COUNTRIES[0]?.value ?? 'United States of America')}
+              onValueChange={(value: string) => setBillingCountry(value ?? BILLING_COUNTRIES[0]?.value ?? 'United States of America')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a country" />
