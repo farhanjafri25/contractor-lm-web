@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance', 'Legal', 'Operations', 'Other'];
 
-type FormField = 'name' | 'email' | 'phone' | 'job_title' | 'department' | 'sponsor_id' | 'start_date' | 'end_date';
+type FormField = 'name' | 'email' | 'phone' | 'job_title' | 'department' | 'start_date' | 'end_date';
 type ValidationErrors = Partial<Record<FormField, string>>;
 
 export default function NewContractorPage() {
@@ -34,7 +34,6 @@ export default function NewContractorPage() {
     job_title: '',
   });
   const [contract, setContract] = useState({
-    sponsor_id: '',
     start_date: '',
     end_date: '',
     notes: '',
@@ -45,8 +44,6 @@ export default function NewContractorPage() {
     queryFn: async () => (await tenantApi.listUsers()).data,
   });
 
-  const sponsors =
-    usersData?.data?.filter((user: Record<string, unknown>) => user.role === 'sponsor' || user.role === 'admin') ?? [];
   const startDate = contract.start_date ? parseISO(contract.start_date) : undefined;
   const endDate = contract.end_date ? parseISO(contract.end_date) : undefined;
 
@@ -71,7 +68,6 @@ export default function NewContractorPage() {
     if (!form.email.trim()) nextErrors.email = 'Enter an email.';
     if (!form.job_title.trim()) nextErrors.job_title = 'Enter a title.';
     if (!form.department) nextErrors.department = 'Select a department.';
-    if (!contract.sponsor_id) nextErrors.sponsor_id = 'Select a sponsor.';
     if (!contract.start_date) nextErrors.start_date = 'Choose a start date.';
     if (!contract.end_date) nextErrors.end_date = 'Choose an end date.';
 
@@ -118,7 +114,6 @@ export default function NewContractorPage() {
         ...form,
         notes: contract.notes,
         contract: {
-          sponsor_id: contract.sponsor_id,
           start_date: contract.start_date,
           end_date: contract.end_date,
           create_google_account: false,
@@ -142,7 +137,7 @@ export default function NewContractorPage() {
         <PageBackLink href="/contractors">Back to contractors</PageBackLink>
         <PageHeader
           title="Add contractor"
-          description="Add their details, contract dates, and sponsor."
+          description="Add their details and contract dates."
         />
       </div>
 
@@ -201,7 +196,7 @@ export default function NewContractorPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Contract" description="Set dates and assign a sponsor.">
+        <SectionCard title="Contract" description="Set the contract dates for this contractor.">
           <div className="grid gap-5 md:grid-cols-2">
             <FieldBlock label="Start date">
               <Popover>
@@ -257,23 +252,6 @@ export default function NewContractorPage() {
               </Popover>
               {fieldErrors.end_date ? <p className="text-xs text-destructive">{fieldErrors.end_date}</p> : null}
             </FieldBlock>
-            <div className="md:col-span-2">
-              <FieldBlock label="Sponsor">
-                <FilterSelect
-                  value={contract.sponsor_id}
-                  onValueChange={(value) => updateContractField('sponsor_id', value)}
-                  options={[
-                    { label: 'Select sponsor', value: '' },
-                    ...sponsors.map((sponsor: Record<string, unknown>) => ({
-                      label: `${String(sponsor.email)} (${String(sponsor.role)})`,
-                      value: String(sponsor._id),
-                    })),
-                  ]}
-                  placeholder="Select sponsor"
-                />
-                {fieldErrors.sponsor_id ? <p className="text-xs text-destructive">{fieldErrors.sponsor_id}</p> : null}
-              </FieldBlock>
-            </div>
             <div className="md:col-span-2">
               <FieldBlock label="Notes">
                 <Textarea
