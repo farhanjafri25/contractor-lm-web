@@ -163,7 +163,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
     try {
       // Role is hardcoded to sponsor on the backend now.
-      await tenantApi.inviteUser(email.toLowerCase(), 'sponsor');
+      await tenantApi.inviteUser(email.toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
       toast.success('Invite sent.');
       setEmail('');
