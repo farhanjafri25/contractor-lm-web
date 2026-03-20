@@ -19,6 +19,8 @@ function parseJwt(token: string) {
 interface User {
     _id: string;
     email: string;
+    name?: string;
+    info?: string;
     role: 'admin' | 'sponsor';
 }
 
@@ -28,6 +30,7 @@ interface AuthState {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     acceptInvite: (email: string, token: string, password: string) => Promise<void>;
+    updateUserSession: (data: Partial<User>) => void;
     logout: () => void;
 }
 
@@ -89,6 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
     };
 
+    const updateUserSession = (data: Partial<User>) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, ...data };
+            localStorage.setItem('user', JSON.stringify(next));
+            return next;
+        });
+    };
+
     const logout = () => {
         localStorage.clear();
         setUser(null);
@@ -97,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, logout }}>
+        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, updateUserSession, logout }}>
             {children}
         </AuthContext.Provider>
     );

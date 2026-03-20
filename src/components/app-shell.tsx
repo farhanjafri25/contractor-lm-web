@@ -286,12 +286,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                   <span className="flex size-8 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                    {(user?.email?.[0] ?? 'U').toUpperCase()}
+                    {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
                   </span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-64">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.email}</p>
+                    <p className="text-sm font-medium truncate">{user?.name || user?.email}</p>
                     <p className="text-xs capitalize text-muted-foreground">{user?.role}</p>
                   </div>
                   <DropdownMenuSeparator />

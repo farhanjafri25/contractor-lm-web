@@ -12,9 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
+  const { updateUserSession } = useAuth();
   const [name, setName] = useState('');
   const [info, setInfo] = useState('');
 
@@ -32,9 +34,10 @@ export default function ProfilePage() {
 
   const { mutate: updateProfile, isPending } = useMutation({
     mutationFn: async () => await tenantApi.updateUserProfile({ name, info }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast.success('Profile updated successfully.');
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      updateUserSession({ name: response.data.name, info: response.data.info });
     },
     onError: (err) => {
       toast.error(getApiErrorMessage(err, 'Failed to update profile.'));
