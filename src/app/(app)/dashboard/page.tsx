@@ -553,7 +553,7 @@ export default function DashboardPage() {
             description="Directory connection status and sync state."
           >
           <div className="divide-y divide-border/60">
-            <div className="flex items-start justify-between gap-4 py-4 first:pt-0">
+            <div className="flex items-center justify-between gap-4 py-4 first:pt-0">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">Health</p>
                 <p className="text-sm text-muted-foreground">Current sync status.</p>
