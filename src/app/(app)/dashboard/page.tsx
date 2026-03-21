@@ -102,11 +102,11 @@ const KPI_TEXT_HOVER_STYLES: Record<KpiTone, string> = {
 };
 
 const KPI_INNER_STYLES: Record<KpiTone, string> = {
-  emerald: 'card-surface bg-background text-foreground dark:border-transparent dark:[box-shadow:0_10px_18px_-10px_rgba(0,0,0,0.7),0_1px_2px_0_rgba(0,0,0,0.45)]',
-  blue: 'card-surface bg-background text-foreground dark:border-transparent dark:[box-shadow:0_10px_18px_-10px_rgba(0,0,0,0.7),0_1px_2px_0_rgba(0,0,0,0.45)]',
-  violet: 'card-surface bg-background text-foreground dark:border-transparent dark:[box-shadow:0_10px_18px_-10px_rgba(0,0,0,0.7),0_1px_2px_0_rgba(0,0,0,0.45)]',
-  cyan: 'card-surface bg-background text-foreground dark:border-transparent dark:[box-shadow:0_10px_18px_-10px_rgba(0,0,0,0.7),0_1px_2px_0_rgba(0,0,0,0.45)]',
-  danger: 'card-surface bg-background text-foreground dark:border-transparent dark:[box-shadow:0_10px_18px_-10px_rgba(0,0,0,0.7),0_1px_2px_0_rgba(0,0,0,0.45)]',
+  emerald: 'card-surface-soft bg-background text-foreground',
+  blue: 'card-surface-soft bg-background text-foreground',
+  violet: 'card-surface-soft bg-background text-foreground',
+  cyan: 'card-surface-soft bg-background text-foreground',
+  danger: 'card-surface-soft bg-background text-foreground',
 };
 
 function getGreetingForHour(hour: number) {
