@@ -7,32 +7,8 @@ import { tenantApi } from '@/lib/api';
 import { ChevronGrabberVertical, Users } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
+import { deriveWorkspaceName } from '@/lib/workspace';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-function deriveWorkspaceName(profile: Record<string, unknown> | undefined, email: string | undefined) {
-  const candidates = [
-    profile?.tenant_name,
-    profile?.name,
-    profile?.display_name,
-    profile?.company_name,
-    profile?.organization_name,
-  ];
-
-  const named = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);
-  if (named) {
-    return String(named);
-  }
-
-  if (email?.includes('@')) {
-    const domain = email.split('@')[1] ?? '';
-    const company = domain.split('.')[0] ?? '';
-    if (company) {
-      return company.charAt(0).toUpperCase() + company.slice(1);
-    }
-  }
-
-  return 'Workspace';
-}
 
 export function TeamSwitcher({
   className,

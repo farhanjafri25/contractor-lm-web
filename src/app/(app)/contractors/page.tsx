@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
@@ -22,8 +22,9 @@ const statusOptions = [
 
 export default function ContractorsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(searchParams.get('status') ?? '');
 
   const { data, isLoading } = useQuery({
     queryKey: ['contractors', search, status],
