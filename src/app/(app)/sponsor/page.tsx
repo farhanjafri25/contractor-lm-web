@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
@@ -85,8 +86,9 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
 export default function SponsorPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const searchParams = useSearchParams();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? '');
 
   const { data, isLoading } = useQuery({
     queryKey: ['sponsor-actions', statusFilter],
