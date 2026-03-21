@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
 import { ChevronGrabberVertical, Users } from '@/components/icons';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
@@ -40,7 +41,7 @@ export function TeamSwitcher({
   className?: string;
   collapsed?: boolean;
 }) {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const router = useRouter();
 
   const { data } = useQuery({
@@ -57,6 +58,7 @@ export function TeamSwitcher({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('') || 'W';
+  const workspaceSeed = getAvatarSeed(tenantId, data?._id, data?.tenant_name, workspaceName);
 
   return (
     <DropdownMenu>
@@ -67,9 +69,13 @@ export function TeamSwitcher({
           className,
         )}
       >
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-sm bg-sidebar-primary text-[8px] font-semibold text-sidebar-primary-foreground">
-          {initials}
-        </span>
+        <InitialAvatar
+          seed={workspaceSeed}
+          label={workspaceName || initials}
+          size="sm"
+          shape="rounded"
+          className="size-5 rounded-sm border-0 text-[8px]"
+        />
         {!collapsed ? (
           <>
             <span className="min-w-0 flex-1">

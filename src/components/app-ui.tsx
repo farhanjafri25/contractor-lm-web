@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, Search } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import type { BadgeVariant } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -94,7 +95,7 @@ export function StatusBadge({
   className?: string;
 }) {
   const normalized = status.toLowerCase();
-  const variant =
+  const variant: BadgeVariant =
     normalized.includes('active') ||
     normalized.includes('approved') ||
     normalized.includes('provisioned') ||
@@ -102,18 +103,21 @@ export function StatusBadge({
     normalized.includes('completed') ||
     normalized.includes('resolved') ||
     normalized.includes('done')
-      ? 'success'
+      ? 'emerald'
       : normalized.includes('pending') ||
           normalized.includes('review') ||
-          normalized.includes('invited') ||
-          normalized.includes('scheduled') ||
-          normalized.includes('progress')
-        ? 'info'
+          normalized.includes('invited')
+        ? 'blue'
+        : normalized.includes('scheduled') ||
+            normalized.includes('progress') ||
+            normalized.includes('sync') ||
+            normalized.includes('queued')
+          ? 'cyan'
         : normalized.includes('suspend') ||
             normalized.includes('paused') ||
             normalized.includes('hold') ||
             normalized.includes('warning')
-          ? 'warning'
+          ? 'violet'
           : normalized.includes('reject') ||
               normalized.includes('expire') ||
               normalized.includes('terminate') ||

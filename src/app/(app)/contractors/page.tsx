@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
 import { ChevronRight } from '@/components/icons';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { DataTableShell, EmptyState, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { buttonVariants } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
@@ -18,6 +21,7 @@ const statusOptions = [
 ];
 
 export default function ContractorsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
 
@@ -26,6 +30,16 @@ export default function ContractorsPage() {
     queryFn: async () =>
       (await contractorsApi.list({ search: search || undefined, status: status || undefined })).data,
   });
+
+  const handleRowClick = (event: MouseEvent<HTMLTableRowElement>, href: string) => {
+    const target = event.target as HTMLElement;
+
+    if (target.closest('a, button, input, select, textarea, [role="button"], [role="link"]')) {
+      return;
+    }
+
+    router.push(href);
+  };
 
   return (
     <div className="space-y-8">
@@ -65,13 +79,34 @@ export default function ContractorsPage() {
               {isLoading
                 ? <TableLoadingRows rows={5} columns={6} actionColumn />
                 : data.data.map((contractor: Record<string, unknown>) => {
+                    const contractorId = String(contractor._id);
+                    const contractorHref = `/contractors/${contractorId}`;
                     const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
                     const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
+                    const contractorName = String(contractor.name ?? '');
+                    const contractorEmail = String(contractor.email ?? '');
+                    const contractorSeed = getAvatarSeed(contractor._id, contractorEmail, contractorName);
+
                     return (
-                      <TableRow key={String(contractor._id)}>
+                      <TableRow
+                        key={contractorId}
+                        className="cursor-pointer"
+                        onClick={(event) => handleRowClick(event, contractorHref)}
+                      >
                         <TableCell>
-                          <p className="font-medium text-foreground">{String(contractor.name ?? '')}</p>
-                          <p className="text-sm text-muted-foreground">{String(contractor.email ?? '')}</p>
+                          <Link
+                            href={contractorHref}
+                            className="group flex w-fit items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            aria-label={`Open contractor ${contractorName || contractorEmail}`}
+                          >
+                            <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail} />
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-foreground transition-colors group-hover:text-primary">
+                                {contractorName}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{contractorEmail}</p>
+                            </div>
+                          </Link>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{String(contractor.department ?? '—')}</TableCell>
                         <TableCell className="text-muted-foreground">{sponsor ? String(sponsor.email ?? '—') : '—'}</TableCell>
@@ -83,7 +118,7 @@ export default function ContractorsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Link
-                            href={`/contractors/${String(contractor._id)}`}
+                            href={contractorHref}
                             className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
                             aria-label="Open contractor"
                             title="Open contractor"

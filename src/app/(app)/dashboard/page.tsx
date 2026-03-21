@@ -1,28 +1,29 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
-import { dashboardApi, eventsApi, integrationApi, tenantApi } from '@/lib/api';
+import { dashboardApi, eventsApi } from '@/lib/api';
 import activityEmptyLight from '@/assets/activity-empty-light.svg';
 import activityEmptyDark from '@/assets/activity-empty-dark.svg';
 import expiringEmptyLight from '@/assets/expiring-light.svg';
 import expiringEmptyDark from '@/assets/expiring-dark.svg';
-import { AlertTriangle, CheckCircle, ChevronBottom, ChevronRight, Clock, IconGoogle, IconPlusLarge, IconSlack, RefreshCw, Settings, ShieldOff, Users } from '@/components/icons';
+import { AlertTriangle, ChevronRight, Clock, IconGoogle, IconPlusLarge, IconSlack, RefreshCw, Settings, ShieldOff, Users } from '@/components/icons';
 import { PageHeader, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getEventLabel } from '@/lib/event-labels';
+import { useGettingStarted } from '@/hooks/use-getting-started';
 
-
-const toneIconClasses = {
-  success: 'text-primary',
-  warning: 'text-accent-foreground',
-  danger: 'text-destructive',
-  info: 'text-muted-foreground',
-  neutral: 'text-muted-foreground',
+const dashboardIconStyles = {
+  emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+  violet: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300',
+  cyan: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
+  danger: 'bg-destructive/10 text-destructive dark:bg-destructive/20',
+  muted: 'bg-muted/40 text-muted-foreground',
+  disabled: 'bg-muted/40 text-muted-foreground/50',
 };
 
 // Events that need immediate attention — keep full color
@@ -43,7 +44,12 @@ const eventColors: Record<string, string> = {
 };
 
 
-function buildDynamicDescription(summary: Record<string, number> | undefined): string {
+function buildDynamicDescription(summary: {
+  active_contractors?: number;
+  expiring_soon?: number;
+  overdue_access?: number;
+  failed_revocations?: number;
+} | undefined): string {
   if (!summary) return '';
   const active = summary.active_contractors ?? 0;
   const label = `${active} active contractor${active !== 1 ? 's' : ''}`;
@@ -58,15 +64,16 @@ function buildDynamicDescription(summary: Record<string, number> | undefined): s
 }
 
 export default function DashboardPage() {
-  const [setupChecklistCollapsed, setSetupChecklistCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('setup-checklist-collapsed') === 'true';
-  });
-
-  const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: async () => (await dashboardApi.getSummary()).data,
-  });
+  const {
+    summary,
+    summaryLoading,
+    gettingStartedLoading,
+    isGoogleConnected,
+    googleSyncFailed,
+    isSlackConnected,
+    quickActions,
+    showQuickActions,
+  } = useGettingStarted();
 
   const { data: expiring, isLoading: expiringLoading } = useQuery({
     queryKey: ['dashboard-expiring'],
@@ -78,72 +85,6 @@ export default function DashboardPage() {
     queryFn: async () => (await eventsApi.list({ limit: 5 })).data,
   });
 
-  // Integration status — gracefully degrades if endpoint not yet available
-  const { data: integrationStatus } = useQuery({
-    queryKey: ['integration-status'],
-    queryFn: async () => {
-      try {
-        return (await integrationApi.getStatus()).data;
-      } catch {
-        return null;
-      }
-    },
-  });
-
-  // Team members — used to count sponsors for checklist and quick actions
-  const { data: teamData } = useQuery({
-    queryKey: ['team-members'],
-    queryFn: async () => {
-      try {
-        return (await tenantApi.listUsers()).data;
-      } catch {
-        return null;
-      }
-    },
-  });
-
-  // Derived connection state
-  const googleWorkspace = (integrationStatus as Record<string, unknown> | null)?.google_workspace as Record<string, unknown> | undefined;
-  const slack = (integrationStatus as Record<string, unknown> | null)?.slack as Record<string, unknown> | undefined;
-  const isGoogleConnected = googleWorkspace?.connected === true;
-  const googleSyncFailed = googleWorkspace?.sync_failed === true;
-  const isSlackConnected = slack?.connected === true;
-
-  const teamMembers = (teamData as Record<string, unknown> | null)?.data as Record<string, unknown>[] | undefined ?? [];
-  const sponsorCount = teamMembers.filter((m) => m.role === 'sponsor').length;
-
-  // Setup checklist items
-  const hasAnyContractor = (summary?.active_contractors ?? 0) + (summary?.suspended_contractors ?? 0) > 0;
-  const checklistItems = [
-    {
-      label: 'Add your first contractor',
-      description: 'Import or add contractors to start managing their access and documents.',
-      href: '/contractors/new',
-      done: hasAnyContractor,
-    },
-    {
-      label: 'Connect Google Workspace',
-      description: 'Sync your directory to automatically discover and manage contractors.',
-      href: '/settings/directory',
-      done: isGoogleConnected,
-    },
-    {
-      label: 'Invite a sponsor',
-      description: 'Sponsors approve contractor requests and are notified about expiring agreements.',
-      href: '/settings/team?invite=sponsor',
-      done: sponsorCount > 0,
-    },
-    {
-      label: 'Configure Slack notifications',
-      description: 'Get notified in Slack when contracts are expiring or need attention.',
-      href: '/settings/slack',
-      done: isSlackConnected,
-    },
-  ];
-  const completedCount = checklistItems.filter((i) => i.done).length;
-  const allChecklistDone = completedCount === checklistItems.length;
-  const showSetupChecklist = !allChecklistDone && !summaryLoading;
-
   const contractorMetrics = summary
     ? [
         {
@@ -151,7 +92,7 @@ export default function DashboardPage() {
           secondaryLabel: `${summary.expiring_soon} ending in ${summary.expiring_within_days} days`,
           value: summary.active_contractors,
           icon: Users,
-          tone: 'success' as const,
+          iconTone: 'emerald' as const,
           href: '/contractors?status=active',
         },
         {
@@ -159,7 +100,7 @@ export default function DashboardPage() {
           secondaryLabel: 'Paused until reviewed',
           value: summary.suspended_contractors,
           icon: AlertTriangle,
-          tone: 'warning' as const,
+          iconTone: 'violet' as const,
           href: '/contractors?status=suspended',
         },
         {
@@ -167,7 +108,7 @@ export default function DashboardPage() {
           secondaryLabel: `Ending in the next ${summary.expiring_within_days} days`,
           value: summary.expiring_soon,
           icon: Clock,
-          tone: 'warning' as const,
+          iconTone: 'danger' as const,
           href: '/contractors?status=expiring',
         },
       ]
@@ -182,7 +123,7 @@ export default function DashboardPage() {
           secondaryLabel: 'Contracts ended, access still active',
           value: summary.overdue_access,
           icon: ShieldOff,
-          tone: 'danger' as const,
+          iconTone: 'danger' as const,
           href: '/contractors?status=overdue',
         },
         {
@@ -190,7 +131,7 @@ export default function DashboardPage() {
           secondaryLabel: 'Access changes needing manual work',
           value: summary.failed_revocations,
           icon: RefreshCw,
-          tone: 'danger' as const,
+          iconTone: 'danger' as const,
           href: '/contractors?status=failed',
         },
         {
@@ -198,7 +139,7 @@ export default function DashboardPage() {
           secondaryLabel: "Sponsors haven't responded.",
           value: ((summary as unknown as Record<string, number>).pending_decisions ?? 0),
           icon: Clock,
-          tone: 'danger' as const,
+          iconTone: 'violet' as const,
           href: '/contractors?filter=pending_decisions',
         },
       ]
@@ -209,118 +150,15 @@ export default function DashboardPage() {
   const hasAttention = attentionMetrics.length > 0;
   const dynamicDescription = buildDynamicDescription(summary);
 
-  // Contextual quick actions — hide items that are no longer relevant
-  const quickActions = [
-    !hasAnyContractor && { label: 'Import CSV', href: '/contractors/import' },
-    !isGoogleConnected && { label: 'Connect directory', href: '/settings/directory' },
-    sponsorCount === 0 && { label: 'Invite sponsor', href: '/settings/team?invite=sponsor' },
-  ].filter((x): x is { label: string; href: string } => Boolean(x));
-  const showQuickActions = !summaryLoading && quickActions.length > 0;
-
   const allEvents = (events?.data ?? []) as Record<string, unknown>[];
-
-  const activeItem = checklistItems.find((item) => !item.done) ?? checklistItems[checklistItems.length - 1];
 
   return (
     <div className="space-y-12">
-      <div className={cn('space-y-6', showSetupChecklist && 'pb-1')}>
-      {/* Get started checklist */}
-      {showSetupChecklist && (
-        <>
-          {/* Blue strip — adapts to collapsed state */}
-          <div
-            className="absolute inset-x-0 top-0 transition-[height] duration-300 ease-in-out"
-            style={{
-              height: setupChecklistCollapsed ? '192px' : '390px',
-              backgroundColor: '#0071F9',
-              backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)`,
-              backgroundSize: '20px 20px',
-            }}
-          />
-
-          {/* Card — in normal flow, sits on top of the strip */}
-          <div className="relative z-10 rounded-xl border bg-card px-6 pt-4 pb-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <p className="text-base font-semibold text-foreground">Get started</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                nativeButton
-                onClick={() => {
-                  const next = !setupChecklistCollapsed;
-                  localStorage.setItem('setup-checklist-collapsed', String(next));
-                  setSetupChecklistCollapsed(next);
-                }}
-                className="text-muted-foreground"
-              >
-                {setupChecklistCollapsed ? 'Show' : 'Hide'} <ChevronBottom size={13} className={cn('transition-transform duration-300', !setupChecklistCollapsed && 'rotate-180')} />
-              </Button>
-            </div>
-
-            {/* Animated body wrapper */}
-            <div
-              className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-              style={{ gridTemplateRows: setupChecklistCollapsed ? '0fr' : '1fr' }}
-            >
-              <div className="overflow-hidden">
-                {/* Two-column body */}
-                <div className="grid grid-cols-[auto_1fr] gap-8 pt-4 pb-2">
-                  {/* Left: step list */}
-                  <div className="flex min-w-44 flex-col gap-1">
-                    {checklistItems.map((item, i) => {
-                      const isActive = item === activeItem;
-                      return (
-                        <div
-                          key={item.label}
-                          className={cn('flex items-center gap-3 rounded-lg px-3 py-2', isActive && 'bg-muted/60')}
-                        >
-                          <div className={cn(
-                            'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                            item.done
-                              ? 'bg-primary/10 text-primary'
-                              : isActive
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground'
-                          )}>
-                            {item.done ? <CheckCircle size={13} /> : i + 1}
-                          </div>
-                          <p className={cn(
-                            'text-sm',
-                            item.done
-                              ? 'text-muted-foreground line-through'
-                              : isActive
-                                ? 'font-medium text-foreground'
-                                : 'text-muted-foreground'
-                          )}>
-                            {item.label}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Right: active step detail */}
-                  <div className="flex flex-col justify-center rounded-lg bg-muted/50 px-6 py-5">
-                    <p className="text-base font-semibold text-foreground">{activeItem.label}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{activeItem.description}</p>
-                    <Button className="mt-4 self-start" size="sm" render={<Link href={activeItem.href} />} nativeButton={false}>
-                      Get started →
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className={cn('relative z-10', showSetupChecklist && '[&_h1]:text-white [&_p]:text-white/80')}>
+      <div className="space-y-6">
         <PageHeader
           title="Overview"
           description={dynamicDescription || 'See what needs attention across contractors, access, and requests.'}
         />
-      </div>
       </div>
 
       <div className="grid gap-16 md:grid-cols-[3fr_7fr]">
@@ -355,7 +193,7 @@ export default function DashboardPage() {
                       <div
                         className={cn(
                           'flex size-8 shrink-0 items-center justify-center rounded-md',
-                          metric.value === 0 ? 'bg-muted/40 text-muted-foreground/50' : cn('bg-muted/60', toneIconClasses[metric.tone]),
+                          metric.value === 0 ? dashboardIconStyles.disabled : dashboardIconStyles[metric.iconTone],
                         )}
                       >
                         <metric.icon size={15} />
@@ -389,7 +227,7 @@ export default function DashboardPage() {
                       href={metric.href}
                       className="-mx-2 flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/50"
                     >
-                      <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/60', toneIconClasses[metric.tone])}>
+                      <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-md', dashboardIconStyles[metric.iconTone])}>
                         <metric.icon size={15} />
                       </div>
                       <div className="min-w-0">
@@ -407,7 +245,7 @@ export default function DashboardPage() {
           )}
 
           {/* Directory group — always visible once loaded */}
-          {!summaryLoading && (
+          {!gettingStartedLoading && (
             <>
               <div className="mb-6">
                 <div className="flex items-center justify-between">
@@ -423,7 +261,16 @@ export default function DashboardPage() {
                     href="/settings/directory"
                     className="-mx-2 flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/50"
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                    <div
+                      className={cn(
+                        'flex size-8 shrink-0 items-center justify-center rounded-md',
+                        isGoogleConnected
+                          ? googleSyncFailed
+                            ? dashboardIconStyles.danger
+                            : dashboardIconStyles.blue
+                          : dashboardIconStyles.muted,
+                      )}
+                    >
                       <IconGoogle size={15} />
                     </div>
                     <div className="min-w-0">
@@ -444,7 +291,12 @@ export default function DashboardPage() {
                     href="/settings/slack"
                     className="-mx-2 flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/50"
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                    <div
+                      className={cn(
+                        'flex size-8 shrink-0 items-center justify-center rounded-md',
+                        isSlackConnected ? dashboardIconStyles.violet : dashboardIconStyles.muted,
+                      )}
+                    >
                       <IconSlack size={15} />
                     </div>
                     <div className="min-w-0">
