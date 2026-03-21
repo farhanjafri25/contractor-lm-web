@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Fragment, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -18,6 +19,7 @@ import {
   SidebarHiddenLeftWide,
   Sun,
   Users,
+  User,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -95,16 +97,17 @@ const NAV = [
   { href: '/getting-started', label: 'Getting Started', icon: GettingStartedProgressIcon },
   { href: '/dashboard', label: 'Dashboard', icon: HomeCircle },
   { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['owner', 'admin', 'sponsor'] },
-  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['owner', 'admin'] },
-  { href: '/events', label: 'Activity', icon: History, roles: ['owner', 'admin'] },
-  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['owner'] },
+  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
+  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
+  { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
+  { href: '/settings/profile', label: 'Profile', icon: User },
+  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
   { label: 'Overview', items: ['/getting-started', '/dashboard', '/contractors', '/sponsor'] },
   { label: 'Operations', items: ['/access', '/events'] },
-  { label: 'Settings', items: ['/settings/team'] },
+  { label: 'Settings', items: ['/settings/profile', '/settings/team'] },
 ];
 
 function MenuIcon() {
@@ -171,11 +174,11 @@ function routeBreadcrumbs(pathname: string) {
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isOwner = user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
-    enabled: isOwner,
+    enabled: isAdmin,
   });
   const pendingCount = pendingData?.data?.length || 0;
 
@@ -354,11 +357,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                  <InitialAvatar seed={personalAvatarSeed} label={user?.email ?? 'User'} size="sm" />
+                  {user?.avatar ? (
+                    <div className="relative flex size-8 items-center justify-center overflow-hidden rounded-full border bg-muted">
+                      <Image src={user.avatar} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
+                    </div>
+                  ) : (
+                    <InitialAvatar
+                      seed={personalAvatarSeed}
+                      label={user?.name || user?.email || 'User'}
+                      size="sm"
+                    />
+                  )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-64">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.email}</p>
+                    <p className="text-sm font-medium truncate">{user?.name || user?.email}</p>
                     <p className="text-xs capitalize text-muted-foreground">{user?.role}</p>
                   </div>
                   <DropdownMenuSeparator />

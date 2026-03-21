@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { AppShell, AppShellSkeleton } from '@/components/app-shell';
+import { TenuBotWidget } from '@/components/app-ui/tenu-bot-widget';
 
 function subscribe() {
     return () => {};
@@ -24,6 +25,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!user) return null;
 
     return (
-        <AppShell>{children}</AppShell>
+        <AppShell>
+            {children}
+            <TenuBotWidget />
+        </AppShell>
     );
 }

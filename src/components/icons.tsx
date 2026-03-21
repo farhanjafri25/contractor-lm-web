@@ -22,6 +22,7 @@ export { IconLayoutDashboard as LayoutDashboard } from '@central-icons-react/rou
 export { IconArrowBoxLeft as LogOut } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowBoxLeft';
 export { IconMoon as Moon } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMoon';
 export { IconPeopleAdd as PeopleAdd } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconPeopleAdd';
+export { IconUser as User } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconUser';
 export { IconArrowRotateLeftRight as RefreshCw } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRotateLeftRight';
 export { IconArrowRotateCounterClockwise as RotateCcw } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRotateCounterClockwise';
 export { IconMagnifyingGlass as Search } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMagnifyingGlass';

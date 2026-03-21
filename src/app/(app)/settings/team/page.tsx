@@ -16,17 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
-const roles = ['owner', 'admin', 'sponsor'] as const;
-const roleOptions = roles.map((value) => ({
-  label: value.charAt(0).toUpperCase() + value.slice(1),
-  value,
-}));
 
-const roleDescriptions: Record<(typeof roles)[number], string> = {
-  owner: 'Full workspace control, including approvals, access, and billing visibility.',
-  admin: 'Manages contractor operations and day-to-day workspace setup.',
-  sponsor: 'Owns their contractor decisions and can manage their direct requests.',
-};
 
 const memberStatusOptions = [
   { label: 'All members', value: 'all' },
@@ -95,7 +85,7 @@ function statusMeta(status: string) {
   if (normalized === 'pending') {
     return {
       badge: 'pending',
-      description: 'Waiting for an owner decision.',
+      description: 'Waiting for an admin decision.',
     };
   }
 
@@ -168,7 +158,6 @@ function WorkspaceContextBanner({
 
 function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<(typeof roles)[number]>('sponsor');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
@@ -179,11 +168,11 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     setError('');
 
     try {
-      await tenantApi.inviteUser(email.toLowerCase(), role);
+      // Role is hardcoded to sponsor on the backend now.
+      await tenantApi.inviteUser(email.toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
       toast.success('Invite sent.');
       setEmail('');
-      setRole('sponsor');
       onOpenChange(false);
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Invite failed. Try again.');
@@ -219,29 +208,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
             />
           </FieldBlock>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Role</p>
-            <div className="grid gap-2 rounded-xl border border-border/70 bg-muted/20 p-3">
-            {roles.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setRole(option)}
-                className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                  role === option ? 'border-primary/25 bg-primary/5' : 'border-border/60 bg-background hover:border-border'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </p>
-                  {role === option ? <StatusBadge status="selected" /> : null}
-                </div>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{roleDescriptions[option]}</p>
-              </button>
-            ))}
-          </div>
-          </div>
+
 
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
@@ -259,20 +226,20 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
 function PendingApprovalsCard({
   members,
-  isOwner,
+  isAdmin,
   isBusy,
   activeAction,
   onApprove,
   onReject,
 }: {
   members: TeamMember[];
-  isOwner: boolean;
+  isAdmin: boolean;
   isBusy: (memberId: string) => boolean;
   activeAction: { type: ActionType; memberId: string } | null;
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
 }) {
-  if (!isOwner) {
+  if (!isAdmin) {
     return null;
   }
 
@@ -282,7 +249,7 @@ function PendingApprovalsCard({
         <CardContent className="flex flex-col gap-2 pt-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">Pending approvals</p>
-            <p className="text-sm text-muted-foreground">No join requests are waiting on an owner right now.</p>
+            <p className="text-sm text-muted-foreground">No join requests are waiting on an admin right now.</p>
           </div>
           <StatusBadge status="all clear" />
         </CardContent>
@@ -298,7 +265,8 @@ function PendingApprovalsCard({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Requested role</TableHead>
             <TableHead className="text-right">
               <span className="sr-only">Actions</span>
@@ -317,10 +285,13 @@ function PendingApprovalsCard({
                   <div className="flex items-center gap-3">
                     <InitialAvatar seed={memberSeed} label={memberLabel} />
                     <div className="space-y-0.5">
-                      <p className="font-medium text-foreground">{getMemberEmail(member)}</p>
-                      <p className="text-sm text-muted-foreground">Joined with your company domain and needs owner approval.</p>
+                      <p className="font-medium text-foreground">{getMemberName(member) || '—'}</p>
                     </div>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <p className="text-muted-foreground">{getMemberEmail(member)}</p>
+                  <p className="text-sm text-muted-foreground">Joined with your company domain.</p>
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={getTextValue(member.role)} />
@@ -365,13 +336,12 @@ function PendingApprovalsCard({
 
 function MembersTable({
   members,
-  isOwner,
+  isAdmin,
   isLoading,
   search,
   statusFilter,
   onSearchChange,
   onStatusFilterChange,
-  onRoleChange,
   onDeactivate,
   onReactivate,
   isBusy,
@@ -379,13 +349,12 @@ function MembersTable({
   currentUserId,
 }: {
   members: TeamMember[];
-  isOwner: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   search: string;
   statusFilter: string;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: string) => void;
-  onRoleChange: (id: string, role: string) => Promise<void>;
   onDeactivate: (id: string) => Promise<void>;
   onReactivate: (id: string) => Promise<void>;
   isBusy: (memberId: string) => boolean;
@@ -417,10 +386,11 @@ function MembersTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
-              {isOwner ? (
+              {isAdmin ? (
                 <TableHead className="text-right">
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -428,17 +398,18 @@ function MembersTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableLoadingRows rows={4} columns={isOwner ? 4 : 3} actionColumn={isOwner} />
+            <TableLoadingRows rows={4} columns={isAdmin ? 5 : 4} actionColumn={isAdmin} />
           </TableBody>
         </Table>
       ) : members.length ? (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
-              {isOwner ? (
+              {isAdmin ? (
                 <TableHead className="text-right">
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -465,28 +436,19 @@ function MembersTable({
                           <p className="font-medium text-foreground">{memberLabel}</p>
                           {isSelf ? <StatusBadge status="you" /> : null}
                         </div>
-                        {memberName ? <p className="text-sm text-muted-foreground">{memberEmail}</p> : null}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {isOwner ? (
-                      <FilterSelect
-                        value={getTextValue(member.role)}
-                        onValueChange={(value) => onRoleChange(memberId, value)}
-                        options={roleOptions}
-                        placeholder="Select role"
-                        className="w-[10rem]"
-                        disabled={isSelf || isBusy(memberId)}
-                      />
-                    ) : (
-                      <StatusBadge status={getTextValue(member.role)} />
-                    )}
+                    <p className="text-muted-foreground">{memberEmail}</p>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={getTextValue(member.role)} />
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={statusMeta(normalizedStatus).badge} />
                   </TableCell>
-                  {isOwner ? (
+                  {isAdmin ? (
                     <TableCell className="text-right">
                       {isSelf ? (
                         <span className="text-sm text-muted-foreground">Current user</span>
@@ -548,7 +510,7 @@ function MembersTable({
 
 export default function TeamPage() {
   const { user } = useAuth();
-  const isOwner = user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
   const [showInvite, setShowInvite] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -564,7 +526,7 @@ export default function TeamPage() {
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
-    enabled: isOwner,
+    enabled: isAdmin,
   });
 
   const { data: stats } = useQuery({
@@ -639,9 +601,7 @@ export default function TeamPage() {
     await runMemberAction({ type: 'reject', memberId: id }, () => tenantApi.rejectUser(id), 'Member request rejected.');
   };
 
-  const handleRoleChange = async (id: string, role: string) => {
-    await runMemberAction({ type: 'role', memberId: id }, () => tenantApi.updateRole(id, role), 'Role updated.');
-  };
+
 
   const isBusy = (memberId: string) => activeAction?.memberId === memberId;
 
@@ -651,7 +611,7 @@ export default function TeamPage() {
         title="Team"
         description="Manage workspace members, approvals, and roles."
         actions={
-          isOwner ? (
+          isAdmin ? (
             <Button onClick={() => setShowInvite(true)}>
               <UserPlus size={15} />
               Invite member
@@ -666,7 +626,7 @@ export default function TeamPage() {
         </div>
       ) : null}
 
-      {!isOwner ? (
+      {!isAdmin ? (
         <Card size="sm" className="border-border/70 bg-muted/15">
           <CardContent className="flex items-start gap-3 pt-4">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -694,7 +654,7 @@ export default function TeamPage() {
 
       <PendingApprovalsCard
         members={pendingMembers}
-        isOwner={isOwner}
+        isAdmin={isAdmin}
         isBusy={isBusy}
         activeAction={activeAction}
         onApprove={handleApprove}
@@ -703,13 +663,12 @@ export default function TeamPage() {
 
       <MembersTable
         members={filteredMembers}
-        isOwner={isOwner}
+        isAdmin={isAdmin}
         isLoading={isLoading}
         search={search}
         statusFilter={statusFilter}
         onSearchChange={setSearch}
         onStatusFilterChange={setStatusFilter}
-        onRoleChange={handleRoleChange}
         onDeactivate={handleDeactivate}
         onReactivate={handleReactivate}
         isBusy={isBusy}

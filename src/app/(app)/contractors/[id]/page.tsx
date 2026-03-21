@@ -292,7 +292,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const { id } = use(params);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
 
   const [modal, setModal] = useState<'suspend' | 'reactivate' | 'extend' | 'terminate' | null>(null);
   const [suspendReason, setSuspendReason] = useState('security');

@@ -72,10 +72,11 @@ export const tenantApi = {
     getProfile: () => api.get('/tenants/me'),
     updateProfile: (data: Record<string, unknown>) => api.patch('/tenants/me', data),
     getStats: () => api.get('/tenants/me/stats'),
+    getUserProfile: () => api.get('/tenants/me/user'),
+    updateUserProfile: (data: Record<string, unknown>) => api.patch('/tenants/me/user', data),
     listUsers: (params?: Record<string, unknown>) => api.get('/tenants/me/users', { params }),
     getPendingUsers: () => api.get('/tenants/me/pending-users'),
-    inviteUser: (email: string, role: string) => api.post('/tenants/me/users', { email, role }),
-    updateRole: (id: string, role: string) => api.patch(`/tenants/me/users/${id}/role`, { role }),
+    inviteUser: (email: string) => api.post('/tenants/me/users', { email }),
     deactivateUser: (id: string) => api.post(`/tenants/me/users/${id}/deactivate`),
     reactivateUser: (id: string) => api.post(`/tenants/me/users/${id}/reactivate`),
     approveUser: (id: string) => api.post(`/tenants/me/users/${id}/approve`),
@@ -133,4 +134,13 @@ export const eventsApi = {
 
 export const integrationApi = {
     getStatus: () => api.get('/integrations/status'),
+};
+
+export interface AiChatMessage {
+    role: 'user' | 'assistant' | 'system' | 'tool';
+    content: string;
+}
+
+export const aiApi = {
+    chat: (messages: AiChatMessage[]) => api.post('/ai/chat', { messages }),
 };

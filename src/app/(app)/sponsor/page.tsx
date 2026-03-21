@@ -84,7 +84,7 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
 
 export default function SponsorPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
 
