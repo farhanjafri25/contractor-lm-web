@@ -182,7 +182,7 @@ export default function AuditLogPage() {
                 <TableHead>Event</TableHead>
                 <TableHead>Contractor</TableHead>
                 <TableHead>Actor</TableHead>
-                <TableHead>Timestamp</TableHead>
+                <TableHead>Time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

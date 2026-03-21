@@ -22,11 +22,14 @@ const badgeVariants = cva(
           "border-transparent bg-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
         neutral: "border-border/80 bg-muted/70 text-foreground",
-        success: "border-success/20 bg-success/10 text-success",
-        warning: "border-warning/20 bg-warning/10 text-warning",
-        danger:
-          "border-destructive/15 bg-destructive/10 text-destructive",
-        info: "border-info/20 bg-info/10 text-info",
+        emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        blue: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+        violet: "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-400",
+        cyan: "border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400",
+        success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        warning: "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-400",
+        danger: "border-destructive/15 bg-destructive/10 text-destructive",
+        info: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
       },
     },
     defaultVariants: {
@@ -34,6 +37,8 @@ const badgeVariants = cva(
     },
   }
 );
+
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
 
 function Badge({
   className,
@@ -58,3 +63,4 @@ function Badge({
 }
 
 export { Badge, badgeVariants };
+export type { BadgeVariant };

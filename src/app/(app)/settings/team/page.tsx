@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DataTableShell, EmptyState, FieldBlock, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Checkmark2, IconCrossLarge, ShieldCheck, UserPlus, XCircle } from '@/components/icons';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -39,6 +40,10 @@ function getMemberName(member: TeamMember) {
 
 function getMemberEmail(member: TeamMember) {
   return getTextValue(member.email);
+}
+
+function getMemberLabel(member: TeamMember) {
+  return getMemberName(member) || getMemberEmail(member) || 'User';
 }
 
 function normalizeStatus(status: string) {
@@ -134,16 +139,17 @@ function WorkspaceContextBanner({
   billing: string;
   contractorLimit: string;
 }) {
+  const contractorLimitLabel =
+    contractorLimit === '∞' ? 'Contractors: Unlimited seats' : `Contractors: ${contractorLimit} seat${contractorLimit === '1' ? '' : 's'}`;
+
   return (
     <Card size="sm" className="border-border/70 bg-muted/20">
       <CardContent className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
         <p className="text-sm font-medium text-foreground">Workspace</p>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <StatusBadge status={`plan ${plan}`} />
-          <StatusBadge status={`billing ${billing}`} />
-          <span className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-muted-foreground">
-            Contractor limit {contractorLimit}
-          </span>
+          <StatusBadge status={`Plan: ${plan}`} />
+          <StatusBadge status={`Billing: ${billing}`} />
+          <StatusBadge status={contractorLimitLabel} />
         </div>
       </CardContent>
     </Card>
@@ -270,10 +276,18 @@ function PendingApprovalsCard({
         <TableBody>
           {members.map((member) => {
             const memberId = String(member._id ?? '');
+            const memberLabel = getMemberLabel(member);
+            const memberSeed = getAvatarSeed(member._id, getMemberEmail(member), getMemberName(member));
+
             return (
               <TableRow key={memberId}>
                 <TableCell>
-                  <p className="font-medium text-foreground">{getMemberName(member) || '—'}</p>
+                  <div className="flex items-center gap-3">
+                    <InitialAvatar seed={memberSeed} label={memberLabel} />
+                    <div className="space-y-0.5">
+                      <p className="font-medium text-foreground">{getMemberName(member) || '—'}</p>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <p className="text-muted-foreground">{getMemberEmail(member)}</p>
@@ -407,15 +421,22 @@ function MembersTable({
               const memberId = String(member._id ?? '');
               const memberName = getMemberName(member);
               const memberEmail = getMemberEmail(member);
+              const memberLabel = getMemberLabel(member);
+              const memberSeed = getAvatarSeed(member._id, memberEmail, memberName);
               const normalizedStatus = normalizeStatus(getTextValue(member.status));
               const isSelf = currentUserId === memberId;
 
               return (
                 <TableRow key={memberId}>
                   <TableCell>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-foreground">{memberName || '—'}</p>
-                      {isSelf ? <StatusBadge status="you" /> : null}
+                    <div className="flex items-center gap-3">
+                      <InitialAvatar seed={memberSeed} label={memberLabel} />
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-foreground">{memberLabel}</p>
+                          {isSelf ? <StatusBadge status="you" /> : null}
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>

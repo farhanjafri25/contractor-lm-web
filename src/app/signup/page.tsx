@@ -452,7 +452,7 @@ export default function SignupPage() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">1 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Let's get to know you</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Let&apos;s get to know you</h1>
             <p className="text-sm leading-6 text-muted-foreground">
               Add your profile details so your team can recognize you.
             </p>
@@ -657,7 +657,7 @@ export default function SignupPage() {
             <CheckCircle size={40} />
           </div>
           <div className="space-y-3 max-w-sm">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">You're ready to start securing contractor access</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">You&apos;re ready to start securing contractor access</h1>
             <p className="text-sm leading-6 text-muted-foreground">
                Track identities, assign sponsors, prevent orphan accounts, and get clear visibility across your workforce.
             </p>

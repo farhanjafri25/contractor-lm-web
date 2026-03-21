@@ -9,13 +9,20 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import {
   Activity,
+  CheckCircle,
   Calendar as CalendarIcon,
   CalendarClock4,
   CalendarRemove4,
   ChevronBottom,
+  Clock,
+  FileText,
   RotateCcw,
   ShieldCheck,
+  ShieldOff,
+  UserPlus,
+  XCircle,
 } from '@/components/icons';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -30,6 +37,97 @@ const suspendReasons = [
   { value: 'security', label: 'Security concern' },
   { value: 'other', label: 'Other' },
 ];
+
+function getTimelineEventMeta(type: string) {
+  if (type === 'contractor.created') {
+    return {
+      icon: UserPlus,
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+    };
+  }
+
+  if (type === 'contractor.updated') {
+    return {
+      icon: FileText,
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+    };
+  }
+
+  if (type === 'contract.extended') {
+    return {
+      icon: CalendarIcon,
+      className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
+    };
+  }
+
+  if (type === 'contract.reactivated') {
+    return {
+      icon: RotateCcw,
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    };
+  }
+
+  if (type === 'contract.suspended') {
+    return {
+      icon: CalendarClock4,
+      className: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300',
+    };
+  }
+
+  if (type === 'contract.expired') {
+    return {
+      icon: Clock,
+      className: 'bg-muted/40 text-muted-foreground',
+    };
+  }
+
+  if (type === 'contract.terminated') {
+    return {
+      icon: CalendarRemove4,
+      className: 'bg-muted/40 text-muted-foreground',
+    };
+  }
+
+  if (type === 'access.provisioned') {
+    return {
+      icon: ShieldCheck,
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    };
+  }
+
+  if (type === 'access.revoked') {
+    return {
+      icon: ShieldOff,
+      className: 'bg-muted/40 text-muted-foreground',
+    };
+  }
+
+  if (type === 'sponsor.action.submitted') {
+    return {
+      icon: FileText,
+      className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
+    };
+  }
+
+  if (type === 'sponsor.action.approved') {
+    return {
+      icon: CheckCircle,
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    };
+  }
+
+  if (type === 'sponsor.action.rejected') {
+    return {
+      icon: XCircle,
+      className: 'bg-muted/40 text-muted-foreground',
+    };
+  }
+
+  return {
+    icon: Activity,
+    className: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+  };
+}
 
 function formatDateLabel(value: unknown, pattern = 'MMM d, yyyy') {
   if (!value) {
@@ -55,15 +153,6 @@ function formatRelativeLabel(value: unknown) {
   }
 
   return formatDistanceToNow(date, { addSuffix: true });
-}
-
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) {
-    return 'C';
-  }
-
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
 }
 
 function formatStatusLabel(status: string) {
@@ -244,6 +333,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const profileDepartment = String(contractor?.department ?? 'No department');
   const profileEmail = String(contractor?.email ?? '—');
   const profilePhone = String(contractor?.phone ?? '—');
+  const profileSeed = getAvatarSeed(contractor?._id, contractor?.email, contractor?.name);
   const sponsorEmail = sponsor ? String(sponsor.email ?? '—') : '—';
   const contractWindowCopy = getContractWindowCopy(activeContract?.end_date, contractStatus);
   const contractGuidance = getContractGuidance(contractStatus, isAdmin);
@@ -365,9 +455,12 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       <section className="py-1">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-lg font-semibold text-primary">
-              {getInitials(profileName)}
-            </div>
+            <InitialAvatar
+              seed={profileSeed}
+              label={profileName === 'Contractor' ? profileEmail : profileName}
+              size="lg"
+              shape="rounded"
+            />
             <div className="min-w-0 space-y-3">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
@@ -478,17 +571,20 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 {timelineItems.map((event: Record<string, unknown>) => {
                   const actor = event.actor_id as Record<string, unknown> | undefined;
                   const eventDate = event.created_at || event.createdAt;
+                  const eventType = String(event.event_type ?? '');
+                  const eventMeta = getTimelineEventMeta(eventType);
+                  const EventIcon = eventMeta.icon;
 
                   return (
                     <div
                       key={String(event._id)}
                       className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
                     >
-                      <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Activity size={16} />
+                      <div className={`flex size-8 items-center justify-center rounded-md ${eventMeta.className}`}>
+                        <EventIcon size={16} />
                       </div>
                       <div className="min-w-0 space-y-1.5">
-                        <p className="text-sm font-semibold text-foreground">{getEventLabel(String(event.event_type ?? ''))}</p>
+                        <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
                         <p className="text-sm text-muted-foreground">
                           {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
                         </p>

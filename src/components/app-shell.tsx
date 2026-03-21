@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
+  CheckCircle,
   Group2,
   History,
   HomeCircle,
@@ -21,7 +22,9 @@ import {
   User,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
+import { useGettingStarted } from '@/hooks/use-getting-started';
 import { tenantApi } from '@/lib/api';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { Logo, LogoMark } from '@/components/logo';
 import { TeamSwitcher } from '@/components/team-switcher';
@@ -31,7 +34,67 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 
+function GettingStartedProgressIcon({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
+  const { gettingStartedLoading, completedCount, checklistItems, allChecklistDone } = useGettingStarted();
+  const strokeWidth = 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = checklistItems.length > 0 ? completedCount / checklistItems.length : 0;
+  const dashOffset = circumference * (1 - progress);
+  const stateColorClass = allChecklistDone && !gettingStartedLoading ? 'text-emerald-500' : 'text-blue-500';
+
+  if (allChecklistDone && !gettingStartedLoading) {
+    return <CheckCircle size={size} className={cn(stateColorClass, className)} />;
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn('relative inline-flex items-center justify-center', stateColorClass, className)}
+      style={{ width: size, height: size }}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.2}
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={gettingStartedLoading ? circumference * 0.65 : dashOffset}
+          className="transition-[stroke-dashoffset] duration-300 ease-out"
+        />
+      </svg>
+      <span
+        className="absolute inset-0 flex items-center justify-center rounded-full"
+        style={{
+          boxShadow: 'inset 0 0 0 1px currentColor',
+          opacity: gettingStartedLoading ? 0.12 : progress > 0 ? 0.16 : 0.1,
+        }}
+      />
+    </span>
+  );
+}
+
 const NAV = [
+  { href: '/getting-started', label: 'Getting Started', icon: GettingStartedProgressIcon },
   { href: '/dashboard', label: 'Dashboard', icon: HomeCircle },
   { href: '/contractors', label: 'Contractors', icon: Users },
   { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
@@ -42,7 +105,7 @@ const NAV = [
 ];
 
 const NAV_GROUPS = [
-  { label: 'Overview', items: ['/dashboard', '/contractors', '/sponsor'] },
+  { label: 'Overview', items: ['/getting-started', '/dashboard', '/contractors', '/sponsor'] },
   { label: 'Operations', items: ['/access', '/events'] },
   { label: 'Settings', items: ['/settings/profile', '/settings/team'] },
 ];
@@ -58,6 +121,10 @@ function MenuIcon() {
 }
 
 function routeBreadcrumbs(pathname: string) {
+  if (pathname === '/getting-started') {
+    return [{ label: 'Getting Started' }];
+  }
+
   if (pathname === '/dashboard') {
     return [{ label: 'Dashboard' }];
   }
@@ -154,7 +221,9 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                   )}
                   title={collapsed ? label : undefined}
                 >
-                  <Icon size={18} />
+                  <span className="flex size-[18px] shrink-0 items-center justify-center">
+                    <Icon size={href === '/getting-started' ? 16 : 18} />
+                  </span>
                   {!collapsed ? <span className="flex-1">{label}</span> : null}
                   {!collapsed && href === '/settings/team' && pendingCount > 0 ? (
                     <span
@@ -219,6 +288,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
   };
+  const personalAvatarSeed = getAvatarSeed(user?._id, user?.email);
 
   return (
     <div className="min-h-screen bg-background">
@@ -292,9 +362,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <Image src={user.avatar} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
                     </div>
                   ) : (
-                    <span className="flex size-8 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                      {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
-                    </span>
+                    <InitialAvatar
+                      seed={personalAvatarSeed}
+                      label={user?.name || user?.email || 'User'}
+                      size="sm"
+                    />
                   )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-64">

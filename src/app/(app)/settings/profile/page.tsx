@@ -1,47 +1,40 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import Image from 'next/image';
+import { FormEvent, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { PageHeader, FieldBlock } from '@/components/app-ui';
+import { FieldBlock, PageHeader } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
-import Image from 'next/image';
-import { useRef } from 'react';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { updateUserSession } = useAuth();
-  const [name, setName] = useState('');
-  const [info, setInfo] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [name, setName] = useState<string | undefined>(undefined);
+  const [info, setInfo] = useState<string | undefined>(undefined);
+  const [avatarPreview, setAvatarPreview] = useState<string | null | undefined>(undefined);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => (await tenantApi.getUserProfile()).data,
   });
-
-  useEffect(() => {
-    if (data) {
-      if (data.name) setName(data.name);
-      if (data.info) setInfo(data.info);
-      if (data.avatar) setAvatarPreview(data.avatar);
-    }
-  }, [data]);
+  const resolvedName = name ?? data?.name ?? '';
+  const resolvedInfo = info ?? data?.info ?? '';
+  const resolvedAvatarPreview = avatarPreview === undefined ? data?.avatar ?? null : avatarPreview;
 
   const { mutate: updateProfile, isPending } = useMutation({
-    mutationFn: async () => await tenantApi.updateUserProfile({ 
-      name, 
-      info, 
-      avatar: avatarPreview ?? undefined 
+    mutationFn: async () => await tenantApi.updateUserProfile({
+      name: resolvedName,
+      info: resolvedInfo,
+      avatar: resolvedAvatarPreview ?? undefined,
     }),
     onSuccess: (response) => {
       toast.success('Profile updated successfully.');
@@ -108,18 +101,18 @@ export default function ProfilePage() {
             
             <div className="flex items-center gap-5 pb-2">
               <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xl font-semibold text-primary/80 border">
-                {avatarPreview ? (
-                  <Image src={avatarPreview} alt="Avatar preview" fill unoptimized sizes="64px" className="object-cover" />
+                {resolvedAvatarPreview ? (
+                  <Image src={resolvedAvatarPreview} alt="Avatar preview" fill unoptimized sizes="64px" className="object-cover" />
                 ) : (
-                  (name?.[0] || data?.email?.[0] || 'U').toUpperCase()
+                  (resolvedName?.[0] || data?.email?.[0] || 'U').toUpperCase()
                 )}
               </div>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()}>
-                    {avatarPreview ? 'Replace Image' : 'Upload Image'}
+                    {resolvedAvatarPreview ? 'Replace Image' : 'Upload Image'}
                   </Button>
-                  {avatarPreview && (
+                  {resolvedAvatarPreview && (
                     <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarPreview(null)}>Remove</Button>
                   )}
                 </div>
@@ -139,7 +132,7 @@ export default function ProfilePage() {
             <FieldBlock label="Full Name">
               <Input
                 id="name"
-                value={name}
+                value={resolvedName}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
                 className="w-full sm:w-[300px]"
@@ -149,7 +142,7 @@ export default function ProfilePage() {
             <FieldBlock label="Bio / Info" description="A short description of your role or responsibilities.">
               <Textarea
                 id="info"
-                value={info}
+                value={resolvedInfo}
                 onChange={(e) => setInfo(e.target.value)}
                 placeholder="I am a project manager focused on..."
                 rows={4}
