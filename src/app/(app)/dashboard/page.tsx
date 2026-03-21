@@ -200,7 +200,7 @@ function KpiCard({
   const content = (
     <Card
       className={cn(
-        'h-full transition-colors ring-0 dark:ring-0',
+        'h-full p-px transition-colors ring-0 dark:ring-0',
         KPI_STYLES[tone],
         href ? KPI_WRAPPER_HOVER_STYLES[tone] : '',
         href ? 'cursor-pointer' : 'cursor-default',
