@@ -31,7 +31,7 @@ import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 
-type SignupStep = 'account' | 'verify' | 'workspace' | 'approval';
+type SignupStep = 'account' | 'verify' | 'profile' | 'workspace' | 'tracking' | 'volume' | 'directory' | 'success' | 'approval';
 
 const LOGO_SIZE_LIMIT = 10 * 1024 * 1024;
 const BILLING_COUNTRIES = [
@@ -100,125 +100,105 @@ function PreviewBar({ className }: { className?: string }) {
 }
 
 function WorkspacePreview({ workspaceName }: { workspaceName: string }) {
-  const title = workspaceName.trim() || 'Workspace title';
-  const initials = getInitials(title);
-
-  const navigationItems = [
-    { icon: Activity, width: 'w-[72px]' },
-    { icon: Users, width: 'w-14' },
-    { icon: FileText, width: 'w-16' },
-    { icon: Settings, width: 'w-20' },
-    { icon: Group2, width: 'w-24' },
-  ];
-
   return (
-    <div className="h-full w-full overflow-hidden rounded-l-[20px] rounded-r-none border border-border/70 bg-background shadow-sm">
-      <div className="grid min-h-[560px] grid-cols-[minmax(0,1fr)_190px]">
-        <div className="border-r border-border/60">
-          <div className="flex items-center justify-between gap-4 border-b border-border/60 px-5 py-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-foreground">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">{title}</p>
-                <p className="text-xs text-muted-foreground">Overview</p>
-              </div>
-            </div>
-            <ChevronBottom size={16} className="shrink-0 text-muted-foreground" />
-          </div>
-
-          <div className="border-b border-border/60 px-5 py-4">
-            <div className="flex h-9 items-center gap-3 rounded-lg border border-input bg-background px-3">
-              <Search size={16} className="text-muted-foreground" />
-              <PreviewBar className="w-24" />
-            </div>
-          </div>
-
-          <div className="space-y-5 px-5 py-5">
-            <div className="space-y-4">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div key={item.width} className="grid grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
-                    <Icon size={15} className="text-muted-foreground" />
-                    <PreviewBar className={item.width} />
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-md bg-background text-muted-foreground">
-                    <Plus size={12} />
-                  </div>
-                  <PreviewBar className="w-20" />
-                </div>
-                <ChevronBottom size={14} className="text-muted-foreground" />
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <PreviewBar className="w-28" />
-                <PreviewBar className="w-20" />
-                <PreviewBar className="w-24" />
-              </div>
-            </div>
+    <div className="flex h-full min-h-[400px] w-full flex-col bg-muted/30 lg:rounded-2xl lg:border lg:border-border/60">
+      <div className="px-6 py-6 border-b border-border/60 flex items-center gap-3">
+        <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+          {getInitials(workspaceName || 'Tenurio Workspace')}
+        </div>
+        <p className="text-sm font-semibold truncate capitalize max-w-[200px]">{workspaceName || 'Your Workspace'}</p>
+      </div>
+      <div className="flex flex-1">
+        <div className="w-16 sm:w-56 shrink-0 border-r border-border/60 bg-muted/10 p-3 hidden sm:block">
+          <div className="space-y-1">
+            <div className="h-8 rounded-md bg-muted/60" />
+            <div className="h-8 rounded-md bg-transparent" />
+            <div className="h-8 rounded-md bg-transparent" />
           </div>
         </div>
-
-        <div className="bg-muted/20">
-          <div className="flex items-center gap-3 border-b border-border/60 px-4 py-4">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-background text-muted-foreground">
-              <Group2 size={14} />
-            </div>
-            <PreviewBar className="w-24" />
+        <div className="flex-1 p-6 space-y-6">
+          <div className="h-6 w-32 rounded-md bg-muted/50" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+             <div className="h-24 rounded-xl border border-border/50 bg-background" />
+             <div className="h-24 rounded-xl border border-border/50 bg-background" />
+             <div className="h-24 rounded-xl border border-border/50 bg-background hidden lg:block" />
           </div>
-
-          <div className="divide-y divide-border/60">
-            {Array.from({ length: 9 }).map((_, index) => (
-              <div key={index} className="grid grid-cols-[18px_18px_minmax(0,1fr)] items-center gap-3 px-4 py-3">
-                <div className="size-[18px] rounded-[6px] border border-border/70 bg-background" />
-                <div className="size-[18px] rounded-full bg-muted" />
-                <PreviewBar className={cn(index % 2 === 0 ? 'w-20' : 'w-16')} />
-              </div>
-            ))}
-          </div>
+          <div className="h-48 rounded-xl border border-border/50 bg-background" />
         </div>
       </div>
     </div>
   );
 }
 
+function RadioOption({ 
+  label, 
+  selected, 
+  onClick 
+}: { 
+  label: string; 
+  selected: boolean; 
+  onClick: () => void 
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-muted/50",
+        selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-background"
+      )}
+    >
+      <span className={cn("text-sm font-medium", selected ? "text-primary" : "text-foreground")}>{label}</span>
+      <div className={cn(
+        "flex size-5 items-center justify-center rounded-full border",
+        selected ? "border-primary bg-primary" : "border-muted-foreground/30"
+      )}>
+        {selected && <div className="size-2 rounded-full bg-background" />}
+      </div>
+    </button>
+  );
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<SignupStep>('account');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // 1/5 Profile specific
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 2/5 Workspace specific
   const [tenantName, setTenantName] = useState('');
   const [workspaceName, setWorkspaceName] = useState('');
   const [workspaceHandle, setWorkspaceHandle] = useState('');
   const [workspaceHandleEdited, setWorkspaceHandleEdited] = useState(false);
   const [billingCountry, setBillingCountry] = useState(BILLING_COUNTRIES[0]?.value ?? 'United States of America');
-  const [heardAboutUs, setHeardAboutUs] = useState('');
+  const [companySize, setCompanySize] = useState('11-50');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoFileName, setLogoFileName] = useState('');
-  const [logoError, setLogoError] = useState('');
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Surveys 3/5, 4/5, 5/5
+  const [trackingMethod, setTrackingMethod] = useState('');
+  const [contractorVolume, setContractorVolume] = useState('');
+  const [directoryProvider, setDirectoryProvider] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isWorkspaceStep = step === 'workspace';
+  // The step arrays control mapping to visual layouts (Workspace preview vs Welcome side)
+  const isWorkspaceStep = ['workspace', 'tracking', 'volume', 'directory'].includes(step);
+  const isProfileStep = step === 'profile';
 
   const seedWorkspaceDetails = (seedEmail: string) => {
     const derivedName = deriveWorkspaceName(seedEmail);
-
     setWorkspaceName((current) => current || derivedName);
     setWorkspaceHandle((current) => current || slugify(derivedName));
   };
@@ -229,7 +209,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await authApi.signup(email.trim(), name.trim(), password);
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      await authApi.signup(email.trim(), fullName, password);
       setStep('verify');
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Sign-up failed. Try again.');
@@ -248,16 +229,9 @@ export default function SignupPage() {
     try {
       const response = await authApi.verifyOtp(email.trim(), otp.trim());
 
-      if (response.data.status === 'pending_approval') {
-        setSuccessMessage(response.data.message);
-        setTenantName(response.data.tenant_name);
-        setStep('approval');
-        return;
-      }
-
-      localStorage.setItem('access_token', response.data.access_token);
-      localStorage.setItem('refresh_token', response.data.refresh_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('access_token', response.data.access_token || '');
+      localStorage.setItem('refresh_token', response.data.refresh_token || '');
+      localStorage.setItem('user', JSON.stringify(response.data.user || {}));
 
       let tenantId = response.data.user?.tenant_id;
       if (!tenantId && response.data.access_token) {
@@ -271,8 +245,14 @@ export default function SignupPage() {
         localStorage.setItem('tenant_id', tenantId);
       }
 
-      seedWorkspaceDetails(email);
-      setStep('workspace');
+      if (response.data.status === 'pending_approval') {
+        setSuccessMessage(response.data.message);
+        setTenantName(response.data.tenant_name);
+        setStep('approval');
+      } else {
+        seedWorkspaceDetails(email);
+        setStep('profile');
+      }
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Code did not match. Try again.');
       setError(message);
@@ -282,341 +262,431 @@ export default function SignupPage() {
     }
   };
 
-  const handleWorkspaceNameChange = (value: string) => {
-    setWorkspaceName(value);
-
-    if (!workspaceHandleEdited) {
-      setWorkspaceHandle(slugify(value));
-    }
-  };
-
-  const handleWorkspaceHandleChange = (value: string) => {
-    setWorkspaceHandleEdited(true);
-    setWorkspaceHandle(slugify(value));
-  };
-
-  const clearLogo = () => {
-    setLogoPreview(null);
-    setLogoFileName('');
-    setLogoError('');
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleLogoSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    const validType = file.type === 'image/png' || file.type === 'image/jpeg' || /\.(png|jpe?g)$/i.test(file.name);
-
-    if (!validType) {
-      setLogoError('Upload a PNG or JPG image.');
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > LOGO_SIZE_LIMIT) {
-      setLogoError('Images must be 10MB or smaller.');
-      event.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setLogoPreview(typeof reader.result === 'string' ? reader.result : null);
-      setLogoFileName(file.name);
-      setLogoError('');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleWorkspaceSetup = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!workspaceName.trim()) {
-      setError('Enter your company name to continue.');
-      return;
-    }
-
+  const handleProfileSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      await tenantApi.updateProfile({ tenant_name: workspaceName.trim() });
-      toast.success('Workspace details saved.');
-      router.push('/dashboard');
-    } catch (err: unknown) {
-      const message = getApiErrorMessage(err, 'We couldn’t save your workspace details. Try again.');
-      setError(message);
-      toast.error(message);
+      await tenantApi.updateUserProfile({
+         name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+         marketing_opt_in: marketingOptIn,
+         avatar: avatarPreview ?? undefined, // Only pass if set
+      });
+
+      const userStr = localStorage.getItem('user');
+      const isPending = userStr ? JSON.parse(userStr).status === 'pending_approval' : false;
+
+      if (isPending) {
+        setStep('approval');
+      } else {
+        setStep('workspace');
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to save profile.'));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleWorkspaceSetup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!workspaceName.trim()) {
+      setError('Enter your company name to continue.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+
+    try {
+      await tenantApi.updateProfile({ 
+        name: workspaceName.trim(),
+        slug: slugify(workspaceHandle),
+        billing_country: billingCountry,
+        company_size: companySize,
+        logo: logoPreview ?? undefined,
+      });
+      setStep('tracking');
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'We couldn’t save your workspace details. Try again.');
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSurveyStep = async (nextStep: SignupStep, payload: Record<string, string>) => {
+    setError('');
+    setLoading(true);
+    try {
+      await tenantApi.updateProfile(payload);
+      setStep(nextStep);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to save selection.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileSelection = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setPreview: React.Dispatch<React.SetStateAction<string | null>>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > LOGO_SIZE_LIMIT) {
+      toast.error('Image must be 10MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(typeof reader.result === 'string' ? reader.result : null);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <AuthPageLayout
-      aside={isWorkspaceStep ? <WorkspacePreview workspaceName={workspaceName} /> : <AuthWelcomeAside />}
-      gridClassName={isWorkspaceStep ? 'pr-0 lg:grid-cols-[minmax(0,430px)_minmax(0,1fr)] lg:gap-20 lg:pr-0' : undefined}
-      contentClassName={isWorkspaceStep ? 'max-w-[430px]' : undefined}
-      asideClassName={isWorkspaceStep ? 'w-full max-w-none' : undefined}
+      aside={isWorkspaceStep || isProfileStep ? <WorkspacePreview workspaceName={workspaceName} /> : <AuthWelcomeAside />}
+      gridClassName={(isWorkspaceStep || isProfileStep) ? 'pr-0 lg:grid-cols-[minmax(0,430px)_minmax(0,1fr)] lg:gap-20 lg:pr-0' : undefined}
+      contentClassName={(isWorkspaceStep || isProfileStep) ? 'max-w-[430px] my-auto' : undefined}
+      asideClassName={(isWorkspaceStep || isProfileStep) ? 'w-full max-w-none max-h-screen my-auto py-10 px-8' : undefined}
     >
-      {step === 'account' ? (
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create an account</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Use your work email to create an account and get your workspace set up.
-          </p>
-        </div>
-      ) : null}
-
-      {step === 'verify' ? (
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Check your email</h1>
-          <p className="text-sm leading-6 text-muted-foreground">Enter the 6-digit code we sent to {email}.</p>
-        </div>
-      ) : null}
-
-      {step === 'workspace' ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <button
-              type="button"
-              onClick={() => {
-                setError('');
-                setStep('verify');
-              }}
-              className="flex size-7 items-center justify-center rounded-full transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Back to verification"
-            >
-              <ArrowLeft size={14} />
-            </button>
-            <span>2 / 2</span>
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your workspace</h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Add a few details so your team lands in the right place from day one.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
       {error ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       ) : null}
 
       {step === 'account' ? (
-        <form className="space-y-5" onSubmit={handleSignup}>
-          <FieldBlock label="Name">
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Jane Doe" required />
-          </FieldBlock>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create an account</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Use your work email to create an account and get your workspace set up.
+            </p>
+          </div>
+          <form className="space-y-5" onSubmit={handleSignup}>
+            <div className="grid grid-cols-2 gap-4">
+              <FieldBlock label="First name">
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jane" required />
+              </FieldBlock>
+              <FieldBlock label="Last name">
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" required />
+              </FieldBlock>
+            </div>
 
-          <FieldBlock label="Work email" description="Your email domain decides whether you create or join a workspace.">
-            <Input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="jane@company.com"
-              required
-            />
-          </FieldBlock>
-
-          <FieldBlock label="Password">
-            <div className="relative">
+            <FieldBlock label="Work email" description="Your email domain decides whether you create or join a workspace.">
               <Input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Create a password"
-                className="pr-12"
-                minLength={8}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="jane@company.com"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </FieldBlock>
+            </FieldBlock>
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Sending…' : 'Send code'}
-          </Button>
-        </form>
+            <FieldBlock label="Password">
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Create a password"
+                  className="pr-12"
+                  minLength={8}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </FieldBlock>
+
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Sending…' : 'Send code'}
+            </Button>
+          </form>
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-foreground transition-colors hover:text-primary/70">
+              Sign in
+            </Link>
+          </p>
+        </div>
       ) : null}
 
       {step === 'verify' ? (
-        <form className="space-y-5" onSubmit={handleVerifyOtp}>
-          <FieldBlock label="Code" description="Use the 6-digit code from your inbox.">
-            <InputOTP
-              value={otp}
-              onChange={(value) => setOtp(value)}
-              maxLength={6}
-              pattern={REGEXP_ONLY_DIGITS}
-              required
-            >
-              <InputOTPGroup className="gap-2">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <InputOTPSlot key={index} index={index} />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-          </FieldBlock>
-
-          <div className="space-y-3">
-            <Button type="submit" className="w-full" size="lg" disabled={loading || otp.length !== 6}>
-              {loading ? 'Checking…' : 'Verify code'}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              onClick={() => {
-                setError('');
-                setStep('account');
-              }}
-            >
-              Back
-            </Button>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Check your email</h1>
+            <p className="text-sm leading-6 text-muted-foreground">Enter the 6-digit code we sent to {email}.</p>
           </div>
-        </form>
+          <form className="space-y-5" onSubmit={handleVerifyOtp}>
+            <FieldBlock label="Code">
+              <InputOTP value={otp} onChange={(value) => setOtp(value)} maxLength={6} pattern={REGEXP_ONLY_DIGITS} required>
+                <InputOTPGroup className="gap-2">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <InputOTPSlot key={index} index={index} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </FieldBlock>
+            <div className="space-y-3">
+              <Button type="submit" className="w-full" size="lg" disabled={loading || otp.length !== 6}>
+                {loading ? 'Checking…' : 'Verify code'}
+              </Button>
+              <Button type="button" variant="secondary" className="w-full" onClick={() => { setError(''); setStep('account'); }}>
+                Back
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {step === 'profile' ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">1 / 5</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Let's get to know you</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Add your profile details so your team can recognize you.
+            </p>
+          </div>
+          <form className="space-y-6" onSubmit={handleProfileSetup}>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelection(e, setAvatarPreview)} />
+            
+            <div className="flex items-center gap-5">
+              <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xl font-semibold text-primary/80">
+                {avatarPreview ? (
+                  <Image src={avatarPreview} alt="Avatar preview" fill unoptimized sizes="64px" className="object-cover" />
+                ) : (
+                  getInitials(`${firstName} ${lastName}`)
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()}>
+                    {avatarPreview ? 'Replace' : 'Upload image'}
+                  </Button>
+                  {avatarPreview && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarPreview(null)}>Remove</Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FieldBlock label="First name">
+                <Input value={firstName} onChange={e => setFirstName(e.target.value)} required />
+              </FieldBlock>
+              <FieldBlock label="Last name">
+                <Input value={lastName} onChange={e => setLastName(e.target.value)} required />
+              </FieldBlock>
+            </div>
+
+            <FieldBlock label="Email">
+              <Input value={email} readOnly className="bg-muted text-muted-foreground" />
+            </FieldBlock>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <div className="flex h-5 items-center">
+                <input 
+                  type="checkbox" 
+                  checked={marketingOptIn} 
+                  onChange={(e) => setMarketingOptIn(e.target.checked)} 
+                  className="size-4 rounded-sm border-border accent-primary bg-background text-primary"
+                />
+              </div>
+              <span className="text-sm text-foreground">
+                Subscribe to product update emails and Tenurio newsletters.
+              </span>
+            </label>
+
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Saving…' : 'Continue'}
+            </Button>
+          </form>
+        </div>
       ) : null}
 
       {step === 'workspace' ? (
-        <form className="space-y-5" onSubmit={handleWorkspaceSetup}>
-          <FieldBlock label="Company logo">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
-              className="hidden"
-              onChange={handleLogoSelection}
-            />
-
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">2 / 5</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your workspace</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Add a few details so your team lands in the right place from day one.
+            </p>
+          </div>
+          <form className="space-y-5" onSubmit={handleWorkspaceSetup}>
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelection(e, setLogoPreview)} />
             <div className="flex items-start gap-4 rounded-xl border border-border/70 bg-secondary/20 p-4">
               <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-base font-semibold text-foreground">
                 {logoPreview ? (
-                  <Image
-                    src={logoPreview}
-                    alt="Company logo preview"
-                    fill
-                    unoptimized
-                    sizes="72px"
-                    className="object-cover"
-                  />
+                  <Image src={logoPreview} alt="Logo" fill unoptimized sizes="72px" className="object-cover" />
                 ) : (
-                  getInitials(workspaceName || 'Tenurio')
+                  getInitials(workspaceName || 'T')
                 )}
               </div>
-
               <div className="min-w-0 flex-1 space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                    {logoPreview ? 'Replace image' : 'Upload image'}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={clearLogo} disabled={!logoPreview}>
-                    Remove
-                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>Upload image</Button>
+                  {logoPreview && <Button type="button" variant="secondary" size="sm" onClick={() => setLogoPreview(null)}>Remove</Button>}
                 </div>
-
-                <p className="text-xs leading-5 text-muted-foreground">PNG or JPG up to 10MB. Preview only for now.</p>
-
-                {logoFileName ? <p className="truncate text-xs text-foreground">{logoFileName}</p> : null}
-                {logoError ? <p className="text-xs text-destructive">{logoError}</p> : null}
+                <p className="text-xs text-muted-foreground">PNG or JPG up to 10MB.</p>
               </div>
             </div>
-          </FieldBlock>
 
-          <FieldBlock label="Company name">
-            <Input
-              value={workspaceName}
-              onChange={(event) => handleWorkspaceNameChange(event.target.value)}
-              placeholder="Enter your company name"
-              required
-            />
-          </FieldBlock>
+            <FieldBlock label="Company name">
+              <Input value={workspaceName} onChange={e => { setWorkspaceName(e.target.value); if(!workspaceHandleEdited) setWorkspaceHandle(slugify(e.target.value)); }} placeholder="Enter company name" required />
+            </FieldBlock>
 
-          <FieldBlock label="Workspace handle" description="A friendly internal handle for your workspace.">
-            <Input
-              value={workspaceHandle}
-              onChange={(event) => handleWorkspaceHandleChange(event.target.value)}
-              placeholder="your-workspace"
-            />
-          </FieldBlock>
+            <FieldBlock label="Workspace handle">
+              <div className="flex rounded-md border border-input focus-within:ring-1 focus-within:ring-ring">
+                <span className="flex items-center px-3 text-sm text-muted-foreground bg-muted/40 border-r border-input rounded-l-md font-mono select-none">
+                  tenurio.com/
+                </span>
+                <Input 
+                   value={workspaceHandle} 
+                   onChange={e => { setWorkspaceHandleEdited(true); setWorkspaceHandle(slugify(e.target.value)); }} 
+                   placeholder="your-workspace" 
+                   className="border-0 focus-visible:ring-0 rounded-l-none"
+                   required
+                />
+              </div>
+            </FieldBlock>
 
-          <FieldBlock label="Country">
-            <Select
-              value={billingCountry}
-              onValueChange={(value: string | null) => setBillingCountry(value ?? BILLING_COUNTRIES[0]?.value ?? 'United States of America')}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a country" />
-              </SelectTrigger>
-              <SelectContent>
-                {BILLING_COUNTRIES.map((country) => (
-                  <SelectItem key={country.value} value={country.value}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FieldBlock>
+            <div className="grid grid-cols-2 gap-4">
+              <FieldBlock label="Billing country">
+                <Select value={billingCountry} onValueChange={(val: string | null) => setBillingCountry(val ?? 'United States of America')}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {BILLING_COUNTRIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </FieldBlock>
+              <FieldBlock label="Company size">
+                <Select value={companySize} onValueChange={(val: string | null) => setCompanySize(val ?? '11-50')}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0-10">0 - 10</SelectItem>
+                    <SelectItem value="11-50">11 - 50</SelectItem>
+                    <SelectItem value="51-200">51 - 200</SelectItem>
+                    <SelectItem value="201-1000">201 - 1000</SelectItem>
+                    <SelectItem value="1000+">1000+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldBlock>
+            </div>
 
-          <FieldBlock label="How did you hear about us?">
-            <Textarea
-              value={heardAboutUs}
-              onChange={(event) => setHeardAboutUs(event.target.value)}
-              placeholder="Share how you heard about Tenurio..."
-              className="min-h-20"
-            />
-          </FieldBlock>
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Saving…' : 'Continue'}
+            </Button>
+          </form>
+        </div>
+      ) : null}
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Saving…' : 'Continue'}
+      {step === 'tracking' ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-2 text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">3 / 5</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">How do you currently track contractor access?</h1>
+          </div>
+          <div className="space-y-3 mt-8">
+            {['Spreadsheet (Google Sheets / Excel)', 'HR system', 'Identity provider (Okta, Entra ID, etc)', 'No structured process'].map((opt) => (
+              <RadioOption key={opt} label={opt} selected={trackingMethod === opt} onClick={() => setTrackingMethod(opt)} />
+            ))}
+          </div>
+          <Button 
+            className="w-full mt-8" size="lg" disabled={!trackingMethod || loading} 
+            onClick={() => handleSurveyStep('volume', { tracking_method: trackingMethod })}
+          >
+            {loading ? '...' : 'Continue'}
           </Button>
-        </form>
+        </div>
+      ) : null}
+
+      {step === 'volume' ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-2 text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">4 / 5</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">How many contractors does your team manage?</h1>
+          </div>
+          <div className="space-y-3 mt-8">
+            {['Less than 10', '10 - 50', '50 - 200', '200 - 500', '500+'].map((opt) => (
+              <RadioOption key={opt} label={opt} selected={contractorVolume === opt} onClick={() => setContractorVolume(opt)} />
+            ))}
+          </div>
+          <Button 
+            className="w-full mt-8" size="lg" disabled={!contractorVolume || loading} 
+            onClick={() => handleSurveyStep('directory', { contractor_volume: contractorVolume })}
+          >
+            {loading ? '...' : 'Continue'}
+          </Button>
+        </div>
+      ) : null}
+
+      {step === 'directory' ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-2 text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">5 / 5</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Which directory does your company use?</h1>
+          </div>
+          <div className="space-y-3 mt-8">
+            {['Google Workspace', 'Microsoft Entra (Azure AD)', 'Okta', 'Not sure'].map((opt) => (
+              <RadioOption key={opt} label={opt} selected={directoryProvider === opt} onClick={() => setDirectoryProvider(opt)} />
+            ))}
+          </div>
+          <Button 
+            className="w-full mt-8" size="lg" disabled={!directoryProvider || loading} 
+            onClick={() => handleSurveyStep('success', { directory_provider: directoryProvider })}
+          >
+            {loading ? '...' : 'Go to dashboard'}
+          </Button>
+        </div>
+      ) : null}
+
+      {step === 'success' ? (
+        <div className="space-y-8 animate-in zoom-in-95 duration-700 text-center flex flex-col items-center">
+          <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+            <CheckCircle size={40} />
+          </div>
+          <div className="space-y-3 max-w-sm">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">You're ready to start securing contractor access</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+               Track identities, assign sponsors, prevent orphan accounts, and get clear visibility across your workforce.
+            </p>
+          </div>
+          <div className="pt-4 w-full">
+            <a href="/dashboard" className="block w-full">
+              <Button className="w-full" size="lg">Go to Dashboard</Button>
+            </a>
+          </div>
+        </div>
       ) : null}
 
       {step === 'approval' ? (
-        <div className="space-y-6">
-          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <CheckCircle size={32} />
+        <div className="space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-primary/10 text-primary">
+             <CheckCircle size={32} />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-semibold tracking-tight text-foreground">Approval needed</h3>
             <p className="text-sm leading-6 text-muted-foreground">{successMessage}</p>
           </div>
-          <div className="rounded-xl border border-border/70 bg-secondary/40 px-5 py-4">
+          <div className="rounded-xl border border-border/70 bg-secondary/40 px-5 py-4 mt-6">
             <p className="text-xs font-medium text-muted-foreground">Workspace</p>
             <p className="mt-2 text-base font-semibold text-foreground">{tenantName}</p>
           </div>
-          <Link href="/login" className="block">
-            <Button className="w-full" size="lg">
-              Sign in
-            </Button>
-          </Link>
+          <a href="/login" className="block mt-6">
+            <Button className="w-full" size="lg">Return to Login</Button>
+          </a>
         </div>
-      ) : null}
-
-      {step !== 'workspace' ? (
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-foreground transition-colors hover:text-primary/70">
-            Sign in
-          </Link>
-        </p>
       ) : null}
     </AuthPageLayout>
   );

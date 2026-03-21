@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Fragment, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -17,6 +18,7 @@ import {
   SidebarHiddenLeftWide,
   Sun,
   Users,
+  User,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
@@ -35,7 +37,7 @@ const NAV = [
   { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
   { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
-  { href: '/settings/profile', label: 'Profile', icon: Users },
+  { href: '/settings/profile', label: 'Profile', icon: User },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
@@ -285,9 +287,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                  <span className="flex size-8 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                    {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
-                  </span>
+                  {user?.avatar ? (
+                    <div className="relative flex size-8 items-center justify-center overflow-hidden rounded-full border bg-muted">
+                      <Image src={user.avatar} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
+                    </div>
+                  ) : (
+                    <span className="flex size-8 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                      {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                    </span>
+                  )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-64">
                   <div className="px-2 py-1.5">

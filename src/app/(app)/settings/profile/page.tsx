@@ -13,12 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import Image from 'next/image';
+import { useRef } from 'react';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { updateUserSession } = useAuth();
   const [name, setName] = useState('');
   const [info, setInfo] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['user-profile'],
@@ -29,20 +33,40 @@ export default function ProfilePage() {
     if (data) {
       if (data.name) setName(data.name);
       if (data.info) setInfo(data.info);
+      if (data.avatar) setAvatarPreview(data.avatar);
     }
   }, [data]);
 
   const { mutate: updateProfile, isPending } = useMutation({
-    mutationFn: async () => await tenantApi.updateUserProfile({ name, info }),
+    mutationFn: async () => await tenantApi.updateUserProfile({ 
+      name, 
+      info, 
+      avatar: avatarPreview ?? undefined 
+    }),
     onSuccess: (response) => {
       toast.success('Profile updated successfully.');
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      updateUserSession({ name: response.data.name, info: response.data.info });
+      updateUserSession({ name: response.data.name, info: response.data.info, avatar: response.data.avatar });
     },
     onError: (err) => {
       toast.error(getApiErrorMessage(err, 'Failed to update profile.'));
     },
   });
+
+  const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be 10MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(typeof reader.result === 'string' ? reader.result : null);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -74,6 +98,35 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <input 
+              ref={avatarInputRef} 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleFileSelection} 
+            />
+            
+            <div className="flex items-center gap-5 pb-2">
+              <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xl font-semibold text-primary/80 border">
+                {avatarPreview ? (
+                  <Image src={avatarPreview} alt="Avatar preview" fill unoptimized sizes="64px" className="object-cover" />
+                ) : (
+                  (name?.[0] || data?.email?.[0] || 'U').toUpperCase()
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()}>
+                    {avatarPreview ? 'Replace Image' : 'Upload Image'}
+                  </Button>
+                  {avatarPreview && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarPreview(null)}>Remove</Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG or JPG up to 10MB.</p>
+              </div>
+            </div>
+
             <FieldBlock label="Email Address" description="Your email address is managed exclusively via magic link auth.">
               <Input
                 id="email"

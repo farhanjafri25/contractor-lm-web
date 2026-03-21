@@ -21,6 +21,7 @@ interface User {
     email: string;
     name?: string;
     info?: string;
+    avatar?: string;
     role: 'admin' | 'sponsor';
 }
 
