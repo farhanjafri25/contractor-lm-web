@@ -40,7 +40,7 @@ export function TeamSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-background px-2 text-left text-sidebar-foreground shadow-[0_2px_4px_0_rgba(0,0,0,0.04)] outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 dark:border-sidebar-border dark:shadow-[0_2px_4px_0_rgba(0,0,0,0.04),0_0_1.07px_0_rgba(0,0,0,0.40)]',
+          'card-surface flex h-9 w-full min-w-0 items-center gap-2 rounded-lg bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
           collapsed && 'mx-auto size-9 justify-center px-0',
           className,
         )}
