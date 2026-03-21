@@ -11,6 +11,7 @@ import expiringEmptyLight from '@/assets/expiring-light.svg';
 import expiringEmptyDark from '@/assets/expiring-dark.svg';
 import { AlertTriangle, CalendarClock4, CalendarRemove4, ChevronRight, Clock, ShieldOff, Users } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { getEventLabel } from '@/lib/event-labels';
@@ -559,7 +560,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn('size-2 rounded-full', syncHealth.accentClass)} />
-                <p className="text-sm font-semibold text-foreground">{syncHealth.label}</p>
+                <Badge variant={syncHealth.badgeVariant}>{syncHealth.label}</Badge>
               </div>
             </div>
 
