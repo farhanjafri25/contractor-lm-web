@@ -559,8 +559,10 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Current sync status.</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={cn('size-2 rounded-full', syncHealth.accentClass)} />
-                <Badge variant={syncHealth.badgeVariant}>{syncHealth.label}</Badge>
+                <Badge variant={syncHealth.badgeVariant} className="gap-2">
+                  <span className={cn('size-1.5 rounded-full', syncHealth.accentClass)} />
+                  {syncHealth.label}
+                </Badge>
               </div>
             </div>
 
