@@ -212,7 +212,7 @@ export function CsvImporter() {
                 {REQUIRED_FIELDS.map(field => (
                   <div key={field.key} className="flex items-center justify-between gap-4">
                     <span className="text-sm w-1/3">{field.label} <span className="text-red-500">*</span></span>
-                    <Select value={mapping[field.key] || ''} onValueChange={(val: string) => setMapping(prev => ({ ...prev, [field.key]: val === 'ignore' ? '' : val }))}>
+                    <Select value={mapping[field.key] || ''} onValueChange={(val: string | null) => setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))}>
                       <SelectTrigger className="w-2/3">
                         <SelectValue placeholder="Select CSV Column" />
                       </SelectTrigger>
@@ -232,7 +232,7 @@ export function CsvImporter() {
                 {OPTIONAL_FIELDS.map(field => (
                   <div key={field.key} className="flex items-center justify-between gap-4">
                     <span className="text-sm w-1/3 text-muted-foreground">{field.label}</span>
-                    <Select value={mapping[field.key] || ''} onValueChange={(val: string) => setMapping(prev => ({ ...prev, [field.key]: val === 'ignore' ? '' : val }))}>
+                    <Select value={mapping[field.key] || ''} onValueChange={(val: string | null) => setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))}>
                       <SelectTrigger className="w-2/3">
                         <SelectValue placeholder="Select CSV Column" />
                       </SelectTrigger>
