@@ -135,6 +135,9 @@ export function CsvImporter() {
         toast.error(`Failed to parse CSV: ${err.message}`);
       }
     });
+
+    // Reset input value so the same file can be uploaded again if needed
+    e.target.value = '';
   };
 
   const validateData = (data: Record<string, string>[]) => {
@@ -236,14 +239,26 @@ export function CsvImporter() {
   };
 
   const { mutate: bulkCreate, isPending } = useMutation({
-    mutationFn: async (payload: any) => await contractorsApi.bulkCreate({ contractors: payload }),
-    onSuccess: (res) => {
-      toast.success(`Successfully imported ${res.data.successful} contractors.`);
-      if (res.data.failed > 0) {
-        toast.error(`Failed to import ${res.data.failed} rows. Check formatting.`);
+    mutationFn: async (args: { payload: any[]; indexMap: number[] }) => {
+      const res = await contractorsApi.bulkCreate({ contractors: args.payload });
+      return { ...res.data, indexMap: args.indexMap };
+    },
+    onSuccess: (data) => {
+      if (data.successful > 0) {
+        toast.success(`Successfully imported ${data.successful} contractors.`);
       }
+      
+      if (data.failed > 0) {
+        toast.error(`Failed to import ${data.failed} rows. Check the errors below.`);
+        data.results.failed.forEach((f: any) => {
+          const originalRowNumber = data.indexMap[f.index] + 2; 
+          toast.error(`File Row ${originalRowNumber}: ${f.reason}`, { duration: 10000 });
+        });
+      } else {
+        setOpen(false);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['contractors'] });
-      setOpen(false);
     },
     onError: (err) => {
       toast.error(getApiErrorMessage(err, 'Failed to perform bulk upload.'));
@@ -251,7 +266,19 @@ export function CsvImporter() {
   });
 
   const handleImport = () => {
-    const payload = csvData.map(row => {
+    // Prevent duplicate emails locally before triggering the backend batch
+    const emailSet = new Set<string>();
+    const uniquePayloadWithIndices: { row: any; originalIndex: number }[] = [];
+    
+    csvData.forEach((row, i) => {
+      const email = sanitizeString(row[mapping['email']]).toLowerCase();
+      if (email && !emailSet.has(email)) {
+        emailSet.add(email);
+        uniquePayloadWithIndices.push({ row, originalIndex: i });
+      }
+    });
+
+    const payload = uniquePayloadWithIndices.map(({ row }) => {
       return {
         name: sanitizeString(row[mapping['name']]),
         email: sanitizeString(row[mapping['email']]),
@@ -267,7 +294,8 @@ export function CsvImporter() {
       };
     });
     
-    bulkCreate(payload);
+    const indexMap = uniquePayloadWithIndices.map(u => u.originalIndex);
+    bulkCreate({ payload, indexMap });
   };
 
   return (
@@ -456,8 +484,8 @@ export function CsvImporter() {
           {step === 'REVIEW' && validationErrors.length === 0 && (
             <>
               <Button variant="outline" className="mr-auto" onClick={() => setStep('MAP')}>Back</Button>
-              <Button onClick={handleImport} disabled={isPending || csvData.length === 0}>
-                {isPending ? 'Importing...' : `Import`}
+              <Button onClick={handleImport} disabled={isPending || validRows === 0}>
+                {isPending ? 'Importing...' : `Import ${validRows} Records`}
               </Button>
             </>
           )}
