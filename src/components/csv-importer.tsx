@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus } from '@/components/icons';
+import { FileText, Plus, AlertTriangle, CheckCircle } from '@/components/icons';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 const REQUIRED_FIELDS = [
@@ -31,6 +31,12 @@ const OPTIONAL_FIELDS = [
 const ALL_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
 
 type ImporterStep = 'UPLOAD' | 'MAP' | 'REVIEW';
+
+const sanitizeString = (str: string | undefined | null) => {
+  if (!str) return '';
+  // Strictly strip out all HTML tags, script nodes, and bracket expressions to prevent XSS payloads
+  return str.toString().replace(/<[^>]*>?/gm, '').trim();
+};
 
 const parseDateString = (dateStr: string) => {
   if (!dateStr) return '';
@@ -78,11 +84,19 @@ export function CsvImporter() {
   // Mapping: backendKey -> csvHeader
   const [mapping, setMapping] = React.useState<Record<string, string>>({});
 
+  type ValidationError = { row: number; message: string };
+  const [validationErrors, setValidationErrors] = React.useState<ValidationError[]>([]);
+  const [validRows, setValidRows] = React.useState(0);
+  const [duplicates, setDuplicates] = React.useState(0);
+
   const resetState = () => {
     setStep('UPLOAD');
     setCsvHeaders([]);
     setCsvData([]);
     setMapping({});
+    setValidationErrors([]);
+    setValidRows(0);
+    setDuplicates(0);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -123,13 +137,102 @@ export function CsvImporter() {
     });
   };
 
+  const validateData = (data: Record<string, string>[]) => {
+    const errors: ValidationError[] = [];
+    let duplicatedCount = 0;
+    const emailSet = new Set<string>();
+    let validCount = 0;
+
+    data.forEach((row, i) => {
+      const rowNum = i + 2; // +1 for 0-index, +1 for header
+      const rawName = row[mapping['name']] || '';
+      const rawEmail = row[mapping['email']] || '';
+      const rawStartDate = row[mapping['start_date']] || '';
+      const rawEndDate = row[mapping['end_date']] || '';
+
+      let rowHasError = false;
+
+      // Name validation
+      if (!rawName.trim()) {
+        errors.push({ row: rowNum, message: 'name: Name is required' });
+        rowHasError = true;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!rawEmail.trim()) {
+        errors.push({ row: rowNum, message: 'email: Email is required' });
+        rowHasError = true;
+      } else if (!emailRegex.test(rawEmail.trim())) {
+        errors.push({ row: rowNum, message: 'email: Invalid email format' });
+        rowHasError = true;
+      } else {
+        if (emailSet.has(rawEmail.trim())) {
+          duplicatedCount++;
+        } else {
+          emailSet.add(rawEmail.trim());
+        }
+      }
+
+      // Start Date validation
+      const parsedStart = parseDateString(rawStartDate);
+      let startD: Date | null = null;
+      if (!rawStartDate.trim()) {
+        errors.push({ row: rowNum, message: 'startDate: Start date is required' });
+        rowHasError = true;
+      } else if (!parsedStart || isNaN(new Date(parsedStart).getTime())) {
+        errors.push({ row: rowNum, message: 'startDate: Invalid date format' });
+        rowHasError = true;
+      } else {
+        startD = new Date(parsedStart);
+      }
+
+      // End Date validation (if provided)
+      if (rawEndDate.trim()) {
+        const parsedEnd = parseDateString(rawEndDate);
+        if (!parsedEnd || isNaN(new Date(parsedEnd).getTime())) {
+          errors.push({ row: rowNum, message: 'endDate: Invalid date format' });
+          rowHasError = true;
+        } else if (startD) {
+          const endD = new Date(parsedEnd);
+          if (endD <= startD) {
+            errors.push({ row: rowNum, message: 'endDate: End date must be after start date' });
+            rowHasError = true;
+          }
+        }
+      }
+
+      if (!rowHasError) {
+        validCount++;
+      }
+    });
+
+    return { errors, duplicates: duplicatedCount, validCount };
+  };
+
   const handleMapContinue = () => {
     const missingRequired = REQUIRED_FIELDS.find(f => !mapping[f.key]);
     if (missingRequired) {
       toast.error(`Please map the required field: ${missingRequired.label}`);
       return;
     }
+
+    const { errors, duplicates, validCount } = validateData(csvData);
+    setValidationErrors(errors);
+    setDuplicates(duplicates);
+    setValidRows(validCount);
+    
     setStep('REVIEW');
+  };
+
+  const handleRemoveInvalidRows = () => {
+    const validData = csvData.filter((row, i) => !validationErrors.some(err => err.row === i + 2));
+    setCsvData(validData);
+    
+    const { errors, duplicates, validCount } = validateData(validData);
+    setValidationErrors(errors);
+    setDuplicates(duplicates);
+    setValidRows(validCount);
   };
 
   const { mutate: bulkCreate, isPending } = useMutation({
@@ -150,16 +253,16 @@ export function CsvImporter() {
   const handleImport = () => {
     const payload = csvData.map(row => {
       return {
-        name: row[mapping['name']] || '',
-        email: row[mapping['email']] || '',
-        job_title: mapping['job_title'] ? row[mapping['job_title']] : undefined,
-        department: mapping['department'] ? row[mapping['department']] : undefined,
-        phone: mapping['phone'] ? row[mapping['phone']] : undefined,
-        location: mapping['location'] ? row[mapping['location']] : undefined,
-        notes: mapping['notes'] ? row[mapping['notes']] : undefined,
+        name: sanitizeString(row[mapping['name']]),
+        email: sanitizeString(row[mapping['email']]),
+        job_title: mapping['job_title'] ? sanitizeString(row[mapping['job_title']]) : undefined,
+        department: mapping['department'] ? sanitizeString(row[mapping['department']]) : undefined,
+        phone: mapping['phone'] ? sanitizeString(row[mapping['phone']]) : undefined,
+        location: mapping['location'] ? sanitizeString(row[mapping['location']]) : undefined,
+        notes: mapping['notes'] ? sanitizeString(row[mapping['notes']]) : undefined,
         contract: {
-          start_date: parseDateString(row[mapping['start_date']] || ''),
-          end_date: parseDateString(row[mapping['end_date']] || '')
+          start_date: parseDateString(sanitizeString(row[mapping['start_date']])),
+          end_date: parseDateString(sanitizeString(row[mapping['end_date']]))
         }
       };
     });
@@ -250,30 +353,82 @@ export function CsvImporter() {
           )}
 
           {step === 'REVIEW' && (
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader className="bg-muted">
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Job Title</TableHead>
-                    <TableHead>Start Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {csvData.slice(0, 10).map((row, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium">{row[mapping['name']] || '—'}</TableCell>
-                      <TableCell>{row[mapping['email']] || '—'}</TableCell>
-                      <TableCell>{mapping['job_title'] ? row[mapping['job_title']] : '—'}</TableCell>
-                      <TableCell>{parseDateString(row[mapping['start_date']] || '') || '—'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {csvData.length > 10 && (
-                <div className="p-3 text-center text-xs text-muted-foreground border-t bg-muted/30">
-                  Showing 10 of {csvData.length} total rows.
+            <div className="space-y-6">
+              {validationErrors.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="bg-red-50 text-red-800 rounded-md p-4 text-sm font-medium border border-red-100">
+                    Found {validationErrors.length} error(s) in your data. Please fix these issues before importing.
+                  </div>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {validationErrors.map((err, idx) => (
+                      <div key={idx} className="border border-red-200 rounded-md p-4 bg-white relative">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="text-red-500 w-4 h-4 mt-0.5 shrink-0" />
+                          <div>
+                            <div className="text-sm font-semibold text-foreground">Row {err.row}</div>
+                            <div className="text-sm text-muted-foreground">{err.message}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-blue-50/50 text-blue-800 rounded-md p-4 text-sm border border-blue-100">
+                    Please fix the errors in your CSV file and upload it again, or remove the invalid rows and continue.
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-green-200 rounded-md p-6 bg-green-50/50 mb-6">
+                  <div className="flex items-center gap-2 mb-6">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-800">All data validated successfully!</span>
+                  </div>
+                  <div className="grid grid-cols-3 divide-x text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-green-700">{validRows}</div>
+                      <div className="text-sm font-medium text-green-600 mt-1">Valid Records</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-foreground">{duplicates}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Duplicates</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-foreground">{validationErrors.length}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Errors</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-8 text-left">
+                    Click "Import" to add these contractors to your system. This action cannot be undone.
+                  </p>
+                </div>
+              )}
+
+              {validationErrors.length === 0 && csvData.length > 0 && (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader className="bg-muted bg-muted/50">
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Job Title</TableHead>
+                        <TableHead>Start Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {csvData.slice(0, 10).map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{row[mapping['name']] || '—'}</TableCell>
+                          <TableCell>{row[mapping['email']] || '—'}</TableCell>
+                          <TableCell>{mapping['job_title'] ? row[mapping['job_title']] : '—'}</TableCell>
+                          <TableCell>{parseDateString(row[mapping['start_date']] || '') || '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {csvData.length > 10 && (
+                    <div className="p-3 text-center text-xs text-muted-foreground border-t bg-muted/30">
+                      Showing 10 of {csvData.length} total rows.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -281,12 +436,30 @@ export function CsvImporter() {
         </div>
 
         <DialogFooter className="mt-4 border-t pt-4">
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          {step === 'MAP' && <Button onClick={handleMapContinue}>Review Data</Button>}
-          {step === 'REVIEW' && (
-            <Button onClick={handleImport} disabled={isPending}>
-              {isPending ? 'Importing...' : `Import ${csvData.length} Records`}
-            </Button>
+          {step === 'UPLOAD' && (
+            <Button variant="ghost" className="mr-auto" onClick={() => setOpen(false)}>Cancel</Button>
+          )}
+          {step === 'MAP' && (
+            <>
+              <Button variant="ghost" className="mr-auto" onClick={() => setStep('UPLOAD')}>Back</Button>
+              <Button onClick={handleMapContinue}>Review Data</Button>
+            </>
+          )}
+          {step === 'REVIEW' && validationErrors.length > 0 && (
+            <>
+              <Button variant="ghost" className="mr-auto" onClick={() => setStep('MAP')}>Back</Button>
+              <Button onClick={handleRemoveInvalidRows} variant="secondary">
+                Remove Invalid Rows & Continue
+              </Button>
+            </>
+          )}
+          {step === 'REVIEW' && validationErrors.length === 0 && (
+            <>
+              <Button variant="outline" className="mr-auto" onClick={() => setStep('MAP')}>Back</Button>
+              <Button onClick={handleImport} disabled={isPending || csvData.length === 0}>
+                {isPending ? 'Importing...' : `Import`}
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>
