@@ -18,6 +18,7 @@ export { IconFileText as FileText } from '@central-icons-react/round-outlined-ra
 export { IconGroup2 as Group2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconGroup2';
 export { IconHistory as History } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHistory';
 export { IconHomeCircle as HomeCircle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHomeCircle';
+export { IconHomeCircle as Building } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHomeCircle';
 export { IconLayoutDashboard as LayoutDashboard } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconLayoutDashboard';
 export { IconArrowBoxLeft as LogOut } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowBoxLeft';
 export { IconMoon as Moon } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMoon';

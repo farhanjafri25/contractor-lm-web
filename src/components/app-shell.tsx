@@ -17,9 +17,10 @@ import {
   PeopleAdd,
   ShieldCheck,
   SidebarHiddenLeftWide,
-  Sun,
   Users,
   User,
+  Building,
+  Sun,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -101,13 +102,14 @@ const NAV = [
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
   { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
   { href: '/settings/profile', label: 'Profile', icon: User },
+  { href: '/settings/organization', label: 'Organization', icon: Building, roles: ['admin'] },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
   { label: 'Overview', items: ['/getting-started', '/dashboard', '/contractors', '/sponsor'] },
   { label: 'Operations', items: ['/access', '/events'] },
-  { label: 'Settings', items: ['/settings/profile', '/settings/team'] },
+  { label: 'Settings', items: ['/settings/profile', '/settings/organization', '/settings/team'] },
 ];
 
 function MenuIcon() {
@@ -163,6 +165,13 @@ function routeBreadcrumbs(pathname: string) {
     return [
       { label: 'Settings' },
       { label: 'Team' },
+    ];
+  }
+
+  if (pathname === '/settings/organization') {
+    return [
+      { label: 'Settings' },
+      { label: 'Organization' },
     ];
   }
 
