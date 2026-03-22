@@ -188,7 +188,7 @@ export default function OrganizationSettingsPage() {
         <div className="grid grid-cols-2 gap-4 pt-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium">Company Size</label>
-            <Select value={resolvedCompanySize} onValueChange={(val: string) => setCompanySize(val)}>
+            <Select value={resolvedCompanySize} onValueChange={(val: string | null) => setCompanySize(val || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select size" />
               </SelectTrigger>
@@ -200,7 +200,7 @@ export default function OrganizationSettingsPage() {
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium">Contractor Volume</label>
-            <Select value={resolvedContractorVolume} onValueChange={(val: string) => setContractorVolume(val)}>
+            <Select value={resolvedContractorVolume} onValueChange={(val: string | null) => setContractorVolume(val || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select volume" />
               </SelectTrigger>
@@ -212,7 +212,7 @@ export default function OrganizationSettingsPage() {
 
           <div className="flex flex-col gap-2 pt-2">
             <label className="text-sm font-medium">Current Tracking Method</label>
-            <Select value={resolvedTrackingMethod} onValueChange={(val: string) => setTrackingMethod(val)}>
+            <Select value={resolvedTrackingMethod} onValueChange={(val: string | null) => setTrackingMethod(val || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select platform" />
               </SelectTrigger>
@@ -224,7 +224,7 @@ export default function OrganizationSettingsPage() {
 
           <div className="flex flex-col gap-2 pt-2">
             <label className="text-sm font-medium">Central Directory</label>
-            <Select value={resolvedDirectoryProvider} onValueChange={(val: string) => setDirectoryProvider(val)}>
+            <Select value={resolvedDirectoryProvider} onValueChange={(val: string | null) => setDirectoryProvider(val || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select provider" />
               </SelectTrigger>
