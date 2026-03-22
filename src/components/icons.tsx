@@ -39,6 +39,9 @@ export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-fill
 export { IconCheckmark2 as Checkmark2 } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2';
 export { IconClock as Clock } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClock';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
+export { IconMinusLarge as MinusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMinusLarge';
+export { IconMinimize as Minimize } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMinimize';
+export { IconPaperPlane as PaperPlane } from '@central-icons-react/round-filled-radius-3-stroke-2/IconPaperPlane';
 export { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconPlusLarge';
 export { IconShieldBreak as ShieldAlert } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldBreak';
 export { IconShieldCrossed as ShieldOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconShieldCrossed';
