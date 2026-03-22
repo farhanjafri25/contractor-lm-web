@@ -10,6 +10,7 @@ import { ChevronRight } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { DataTableShell, EmptyState, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { buttonVariants } from '@/components/ui/button';
+import { CsvImporter } from '@/components/csv-importer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 const statusOptions = [
@@ -48,9 +49,12 @@ export default function ContractorsPage() {
         title="Contractors"
         description={`${data?.pagination?.total ?? '…'} contractor records across active, suspended, and ended work.`}
         actions={
-          <Link href="/contractors/new" className={buttonVariants({ variant: 'default' })}>
-            Add contractor
-          </Link>
+          <div className="flex items-center gap-3">
+            <CsvImporter />
+            <Link href="/contractors/new" className={buttonVariants({ variant: 'default' })}>
+              Add contractor
+            </Link>
+          </div>
         }
       />
 

@@ -87,6 +87,7 @@ export const contractorsApi = {
     list: (params?: Record<string, unknown>) => api.get('/contractors', { params }),
     get: (id: string) => api.get(`/contractors/${id}`),
     create: (data: Record<string, unknown>) => api.post('/contractors', data),
+    bulkCreate: (data: { contractors: Record<string, unknown>[] }) => api.post('/contractors/bulk', data),
     update: (id: string, data: Record<string, unknown>) => api.patch(`/contractors/${id}`, data),
 };
 
