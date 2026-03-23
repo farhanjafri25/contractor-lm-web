@@ -39,7 +39,8 @@ const TIMING = {
 };
 
 const SHELL = {
-  collapsedHeight: 62,
+  collapsedHeight: 48,
+  composerHeight: 62,
   collapsedWidth: 384,
   openWidth: 480,
   desktopMaxHeight: 560,
@@ -59,6 +60,9 @@ const BACKDROP = {
   ease: 'easeOut' as const,
 };
 
+const MESSAGE_BUBBLE_SHADOW =
+  '[box-shadow:inset_0_-1px_1px_0_rgba(255,255,255,0.45),0_1px_1.5px_0_rgba(32,32,32,0.16),0_0_1.5px_0_rgba(0,0,0,0.24)] dark:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.05),0_12px_24px_-18px_rgba(0,0,0,0.95)]';
+
 export function TenuBotWidget() {
   const prefersReducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
@@ -74,16 +78,17 @@ export function TenuBotWidget() {
 
   const visibleMessages = messages.filter((message) => message.role !== 'system' && message.role !== 'tool');
   const hasStartedConversation = messages.some((message) => message.role === 'user');
+  const isSendDisabled = !isOpen || !input.trim() || isLoading;
   const isMobile = viewport.width > 0 ? viewport.width < 768 : false;
   const viewportHeight = viewport.height > 0 ? viewport.height : 900;
   const availableHeight = isMobile
-    ? Math.max(viewportHeight - SHELL.mobileViewportOffset, SHELL.collapsedHeight)
-    : Math.max(viewportHeight - SHELL.desktopViewportOffset, SHELL.collapsedHeight);
+    ? Math.max(viewportHeight - SHELL.mobileViewportOffset, SHELL.composerHeight)
+    : Math.max(viewportHeight - SHELL.desktopViewportOffset, SHELL.composerHeight);
   const openHeight = isMobile
     ? Math.min(availableHeight, SHELL.mobileMaxHeight)
     : Math.min(availableHeight, SHELL.desktopMaxHeight);
   const shellHeight = isOpen ? openHeight : SHELL.collapsedHeight;
-  const topRegionHeight = Math.max(openHeight - SHELL.collapsedHeight, 0);
+  const topRegionHeight = Math.max(openHeight - SHELL.composerHeight, 0);
 
   useEffect(() => {
     const updateViewport = () => {
@@ -292,7 +297,7 @@ export function TenuBotWidget() {
                   ...revealTransition,
                   delay: isOpen && !prefersReducedMotion ? TIMING.messagesReveal / 1000 : 0,
                 }}
-                className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(245,245,245,0.55),rgba(255,255,255,0.98)_18%)] px-3 py-3 dark:bg-[linear-gradient(180deg,rgba(38,38,38,0.88),rgba(15,15,16,0.98)_18%)]"
+                className="flex-1 overflow-y-auto px-3 py-3"
               >
                 <div className="space-y-4">
                   {visibleMessages.map((message, index) => (
@@ -301,10 +306,10 @@ export function TenuBotWidget() {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[86%] space-y-2 rounded-[18px] px-3 py-2.5 text-sm [box-shadow:inset_0_-1px_1px_0_rgba(255,255,255,0.45),0_1px_1.5px_0_rgba(32,32,32,0.16),0_0_1.5px_0_rgba(0,0,0,0.24)] [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
+                        className={`max-w-[86%] space-y-2 rounded-[18px] px-3 py-2.5 text-sm ${MESSAGE_BUBBLE_SHADOW} [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
                           message.role === 'user'
                             ? 'rounded-br-md bg-primary text-primary-foreground'
-                            : 'rounded-bl-md border border-border/60 bg-background/92 text-foreground'
+                            : 'rounded-bl-md bg-background/92 text-foreground dark:bg-input/45'
                         }`}
                       >
                         <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -314,7 +319,9 @@ export function TenuBotWidget() {
 
                   {isLoading ? (
                     <div className="flex justify-start">
-                      <div className="flex items-center gap-3 rounded-[18px] rounded-bl-md border border-border/60 bg-background/92 px-3 py-2.5 text-sm [box-shadow:inset_0_-1px_1px_0_rgba(255,255,255,0.45),0_1px_1.5px_0_rgba(32,32,32,0.16),0_0_1.5px_0_rgba(0,0,0,0.24)]">
+                      <div
+                        className={`flex items-center gap-3 rounded-[18px] rounded-bl-md bg-background/92 px-3 py-2.5 text-sm dark:bg-input/45 ${MESSAGE_BUBBLE_SHADOW}`}
+                      >
                         <div className="flex gap-1">
                           <div className="size-2 rounded-full bg-muted-foreground/45 animate-bounce" />
                           <div className="size-2 rounded-full bg-muted-foreground/45 animate-bounce [animation-delay:0.15s]" />
@@ -331,9 +338,9 @@ export function TenuBotWidget() {
             </div>
           </motion.div>
 
-          <div className={`bg-background/95 ${isOpen ? 'p-2' : 'px-1 pt-1 pb-px'}`}>
+          <div className={`bg-background/95 ${isOpen ? 'p-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
             <div
-              className={`flex items-end gap-2 border border-border/70 bg-muted/45 shadow-inner ${isOpen ? 'rounded-[14px] p-1.5' : 'rounded-[12px] p-1'}`}
+              className={`border border-border/70 bg-muted/45 shadow-inner ${isOpen ? 'flex items-end gap-2 rounded-[14px] p-1.5' : 'flex h-full items-center gap-2 rounded-[12px] py-px pr-[3px] pl-px'}`}
               onPointerDownCapture={() => {
                 if (!isOpen) {
                   openPanel();
@@ -367,7 +374,7 @@ export function TenuBotWidget() {
                   void handleSend();
                 }}
                 placeholder="Ask me about contractors..."
-                className="min-h-9 flex-1 bg-transparent px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className={`bg-transparent text-left text-sm text-foreground outline-none placeholder:text-muted-foreground ${isOpen ? 'min-h-9 flex-1 px-3 py-1.5' : 'h-full min-h-0 flex-1 px-3 py-0'}`}
                 aria-label="Ask Tenu-Bot about contractors"
                 disabled={isLoading}
               />
@@ -382,13 +389,16 @@ export function TenuBotWidget() {
 
                   void handleSend();
                 }}
-                disabled={!isOpen || !input.trim() || isLoading}
+                disabled={isSendDisabled}
                 tabIndex={isOpen ? 0 : -1}
                 aria-hidden={!isOpen}
                 size="icon"
-                className={`size-10 ${isOpen ? 'rounded-[10px]' : 'rounded-[10px]'}`}
+                className="size-10 rounded-[10px] disabled:bg-primary/12 disabled:text-primary-foreground/45 disabled:opacity-100 disabled:shadow-none"
               >
-                <PaperPlane size={16} />
+                <PaperPlane
+                  size={16}
+                  className={isSendDisabled ? 'text-primary-foreground/70' : ''}
+                />
               </Button>
             </div>
           </div>
