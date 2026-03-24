@@ -53,10 +53,20 @@ export function useGettingStarted() {
     },
   });
 
-  const googleWorkspace = integrationStatus?.google_workspace as Record<string, unknown> | undefined;
+  const { data: tenantProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['tenant-profile'],
+    queryFn: async () => {
+      try {
+        return (await tenantApi.getProfile()).data as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    },
+  });
+
   const slack = integrationStatus?.slack as Record<string, unknown> | undefined;
-  const isGoogleConnected = googleWorkspace?.connected === true;
-  const googleSyncFailed = googleWorkspace?.sync_failed === true;
+  const isGoogleConnected = Boolean(tenantProfile?.google_workspace_refresh_token);
+  const googleSyncFailed = Boolean(tenantProfile?.google_workspace_sync_failed);
   const isSlackConnected = slack?.connected === true;
 
   const teamMembers = ((teamData?.data as Record<string, unknown>[] | undefined) ?? []);
@@ -94,7 +104,7 @@ export function useGettingStarted() {
   const allChecklistDone = completedCount === checklistItems.length;
   const nextItem = checklistItems.find((item) => !item.done) ?? checklistItems[checklistItems.length - 1];
   const progressValue = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
-  const gettingStartedLoading = summaryLoading || integrationLoading || teamLoading;
+  const gettingStartedLoading = summaryLoading || integrationLoading || teamLoading || profileLoading;
 
   const quickActions: QuickAction[] = [
     !hasAnyContractor ? { label: 'Import CSV', href: '/contractors/import' } : null,
