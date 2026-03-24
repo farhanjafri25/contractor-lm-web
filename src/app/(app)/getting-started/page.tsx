@@ -6,6 +6,7 @@ import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { CheckCircle } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,7 +81,7 @@ function GettingStartedContent() {
         window.location.href = response.data.url;
       }
     } catch (e) {
-      toast.error('Failed to initialize Google OAuth connection');
+      toast.error(getApiErrorMessage(e, 'Failed to initialize Google OAuth connection'));
       console.error(e);
       setConnecting(false);
     }
