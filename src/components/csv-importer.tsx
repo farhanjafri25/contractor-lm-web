@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, AlertTriangle, CheckCircle } from '@/components/icons';
+import { FileText, AlertTriangle, CheckCircle } from '@/components/icons';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 const REQUIRED_FIELDS = [
@@ -31,6 +31,31 @@ const OPTIONAL_FIELDS = [
 const ALL_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
 
 type ImporterStep = 'UPLOAD' | 'MAP' | 'REVIEW';
+type CsvRow = Record<string, string>;
+type BulkCreateContractor = {
+  name: string;
+  email: string;
+  job_title?: string;
+  department?: string;
+  phone?: string;
+  location?: string;
+  notes?: string;
+  contract: {
+    start_date: string;
+    end_date: string;
+  };
+};
+type BulkCreateFailure = {
+  index: number;
+  reason: string;
+};
+type BulkCreateResponse = {
+  successful: number;
+  failed: number;
+  results: {
+    failed: BulkCreateFailure[];
+  };
+};
 
 const sanitizeString = (str: string | undefined | null) => {
   if (!str) return '';
@@ -79,7 +104,7 @@ export function CsvImporter() {
   const [step, setStep] = React.useState<ImporterStep>('UPLOAD');
   
   const [csvHeaders, setCsvHeaders] = React.useState<string[]>([]);
-  const [csvData, setCsvData] = React.useState<Record<string, string>[]>([]);
+  const [csvData, setCsvData] = React.useState<CsvRow[]>([]);
   
   // Mapping: backendKey -> csvHeader
   const [mapping, setMapping] = React.useState<Record<string, string>>({});
@@ -110,7 +135,7 @@ export function CsvImporter() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    Papa.parse<Record<string, string>>(file, {
+    Papa.parse<CsvRow>(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
@@ -140,7 +165,7 @@ export function CsvImporter() {
     e.target.value = '';
   };
 
-  const validateData = (data: Record<string, string>[]) => {
+  const validateData = (data: CsvRow[]) => {
     const errors: ValidationError[] = [];
     let duplicatedCount = 0;
     const emailSet = new Set<string>();
@@ -239,9 +264,9 @@ export function CsvImporter() {
   };
 
   const { mutate: bulkCreate, isPending } = useMutation({
-    mutationFn: async (args: { payload: any[]; indexMap: number[] }) => {
+    mutationFn: async (args: { payload: BulkCreateContractor[]; indexMap: number[] }) => {
       const res = await contractorsApi.bulkCreate({ contractors: args.payload });
-      return { ...res.data, indexMap: args.indexMap };
+      return { ...(res.data as BulkCreateResponse), indexMap: args.indexMap };
     },
     onSuccess: (data) => {
       if (data.successful > 0) {
@@ -250,7 +275,7 @@ export function CsvImporter() {
       
       if (data.failed > 0) {
         toast.error(`Failed to import ${data.failed} rows. Check the errors below.`);
-        data.results.failed.forEach((f: any) => {
+        data.results.failed.forEach((f) => {
           const originalRowNumber = data.indexMap[f.index] + 2; 
           toast.error(`File Row ${originalRowNumber}: ${f.reason}`, { duration: 10000 });
         });
@@ -268,7 +293,7 @@ export function CsvImporter() {
   const handleImport = () => {
     // Prevent duplicate emails locally before triggering the backend batch
     const emailSet = new Set<string>();
-    const uniquePayloadWithIndices: { row: any; originalIndex: number }[] = [];
+    const uniquePayloadWithIndices: { row: CsvRow; originalIndex: number }[] = [];
     
     csvData.forEach((row, i) => {
       const email = sanitizeString(row[mapping['email']]).toLowerCase();
@@ -425,7 +450,7 @@ export function CsvImporter() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-8 text-left">
-                    Click "Import" to add these contractors to your system. This action cannot be undone.
+                    Click &quot;Import&quot; to add these contractors to your system. This action cannot be undone.
                   </p>
                 </div>
               )}

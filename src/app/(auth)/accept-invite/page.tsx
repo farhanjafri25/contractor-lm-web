@@ -7,6 +7,7 @@ import { AuthShell } from '@/components/auth-shell';
 import { FieldBlock } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 
 function AcceptInviteForm() {
@@ -105,7 +106,19 @@ export default function AcceptInvitePage() {
             title="Accept Invitation"
             subtitle="Set up your password to join the workspace."
         >
-            <Suspense fallback={<div className="text-sm text-muted-foreground py-4 text-center">Loading invite details…</div>}>
+            <Suspense fallback={
+                <div className="space-y-5">
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-20 rounded-full" />
+                        <Skeleton className="h-11 w-full rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-28 rounded-full" />
+                        <Skeleton className="h-11 w-full rounded-xl" />
+                    </div>
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                </div>
+            }>
                 <AcceptInviteForm />
             </Suspense>
         </AuthShell>

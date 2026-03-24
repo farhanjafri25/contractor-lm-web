@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Search } from '@/components/icons';
+import { ArrowLeft, ChevronBottom, Search } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { BadgeVariant } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -169,6 +170,75 @@ export function SectionCard({
   );
 }
 
+export function SettingsCard({
+  title,
+  description,
+  actions,
+  footer,
+  children,
+  className,
+}: {
+  title?: string;
+  description?: string;
+  actions?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Card className={cn('rounded-[20px] border-transparent bg-card/95 dark:border-border/70', className)}>
+      {(title || description || actions) ? (
+        <div className="flex flex-col gap-4 border-b border-border/70 px-6 py-6 sm:px-8 sm:py-7 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1.5">
+            {title ? <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2> : null}
+            {description ? <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p> : null}
+          </div>
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        </div>
+      ) : null}
+      <div className="px-6 sm:px-8">{children}</div>
+      {footer ? (
+        <CardFooter className="justify-end border-border/70 bg-transparent px-6 py-5 sm:px-8 sm:py-6">
+          {footer}
+        </CardFooter>
+      ) : null}
+    </Card>
+  );
+}
+
+export function SettingsRow({
+  label,
+  description,
+  children,
+  className,
+  align = 'start',
+  noBorder = false,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+  align?: 'start' | 'center';
+  noBorder?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'grid gap-4 py-6 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] md:gap-8',
+        align === 'center' ? 'md:items-center' : 'md:items-start',
+        !noBorder && 'border-b border-border/70',
+        className,
+      )}
+    >
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground sm:text-[15px]">{label}</p>
+        {description ? <p className="text-sm leading-6 text-muted-foreground">{description}</p> : null}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
 export function DataTableShell({
   title,
   description,
@@ -216,6 +286,40 @@ export function EmptyState({
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
       {action}
     </div>
+  );
+}
+
+export function FiltersPopover({
+  activeCount,
+  onClear,
+  title = 'Filters',
+  children,
+}: {
+  activeCount: number;
+  onClear: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button variant="outline" className="justify-between">
+            <span>{activeCount ? `${title} (${activeCount})` : title}</span>
+            <ChevronBottom data-icon="inline-end" size={16} />
+          </Button>
+        }
+      />
+      <PopoverContent align="end" className="w-80 gap-4 p-4">
+        <PopoverHeader className="flex-row items-center justify-between gap-4">
+          <PopoverTitle>{title}</PopoverTitle>
+          <Button type="button" variant="ghost" size="sm" onClick={onClear} disabled={activeCount === 0}>
+            Clear all
+          </Button>
+        </PopoverHeader>
+        <div className="space-y-4">{children}</div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

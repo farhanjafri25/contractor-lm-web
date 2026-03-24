@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
+import { PageTransition } from '@/components/page-transition';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -28,24 +29,26 @@ export function AuthPageLayout({
         </header>
 
         <main className="flex flex-1 items-center py-8 sm:py-12 lg:py-16">
-          <Card className="mx-auto w-full max-w-[1250px] bg-card">
-            <CardContent className="p-0">
-              <div
-                className={cn(
-                  'grid gap-12 px-12 py-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-36 lg:px-24 lg:py-24',
-                  gridClassName,
-                )}
-              >
-                <section className="flex items-start">
-                  <div className={cn('w-full max-w-md space-y-6', contentClassName)}>{children}</div>
-                </section>
+          <PageTransition className="mx-auto w-full max-w-[1250px]">
+            <Card className="bg-card">
+              <CardContent className="p-0">
+                <div
+                  className={cn(
+                    'grid gap-12 px-12 py-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-36 lg:px-24 lg:py-24',
+                    gridClassName,
+                  )}
+                >
+                  <section className="flex items-start">
+                    <div className={cn('w-full max-w-md space-y-6', contentClassName)}>{children}</div>
+                  </section>
 
-                <section className="flex items-start">
-                  <div className={cn('max-w-xl space-y-6', asideClassName)}>{aside}</div>
-                </section>
-              </div>
-            </CardContent>
-          </Card>
+                  <section className="flex items-start">
+                    <div className={cn('max-w-xl space-y-6', asideClassName)}>{aside}</div>
+                  </section>
+                </div>
+              </CardContent>
+            </Card>
+          </PageTransition>
         </main>
 
         <footer className="flex flex-col items-center justify-center gap-3 pb-4 pt-2 text-sm text-muted-foreground sm:flex-row sm:gap-10">
