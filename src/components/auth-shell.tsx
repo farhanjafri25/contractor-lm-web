@@ -1,4 +1,5 @@
 import { Logo } from '@/components/logo';
+import { PageTransition } from '@/components/page-transition';
 import { Card, CardContent } from '@/components/ui/card';
 
 export function AuthShell({
@@ -14,7 +15,7 @@ export function AuthShell({
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/20 px-3 py-10 sm:px-4">
-      <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+      <PageTransition className="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="hidden rounded-xl border bg-card p-10 lg:flex lg:flex-col lg:justify-between">
           <div className="space-y-8">
             <div className="space-y-4">
@@ -58,7 +59,7 @@ export function AuthShell({
             {footer ? <div className="border-t border-border/60 px-8 py-6 text-sm text-muted-foreground">{footer}</div> : null}
           </CardContent>
         </Card>
-      </div>
+      </PageTransition>
     </div>
   );
 }

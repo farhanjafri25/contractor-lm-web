@@ -24,10 +24,12 @@ import {
 } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
+import { ContractorDetailSkeleton } from '@/components/page-skeletons';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { getEventLabel } from '@/lib/event-labels';
 
@@ -309,7 +311,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     queryFn: async () => (await contractorsApi.get(id)).data,
   });
 
-  const { data: timeline } = useQuery({
+  const { data: timeline, isLoading: timelineLoading } = useQuery({
     queryKey: ['timeline', id],
     queryFn: async () => (await eventsApi.getContractorTimeline(id)).data,
   });
@@ -321,7 +323,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const contractStatus = String(activeContract?.status ?? 'no contract');
   const timelineItems = timeline?.data ?? [];
 
-  const { data: accessData } = useQuery({
+  const { data: accessData, isLoading: accessLoading } = useQuery({
     queryKey: ['access', contractId],
     queryFn: async () => (contractId ? (await accessApi.getByContract(contractId)).data : null),
     enabled: Boolean(contractId),
@@ -438,16 +440,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-12 w-12 rounded-[24px] bg-secondary/40" />
-        <div className="h-72 rounded-[32px] bg-secondary/40" />
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_22rem]">
-          <div className="h-[32rem] rounded-[28px] bg-secondary/40" />
-          <div className="h-[32rem] rounded-[28px] bg-secondary/40" />
-        </div>
-      </div>
-    );
+    return <ContractorDetailSkeleton />;
   }
 
   return (
@@ -524,12 +517,31 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <SectionCard
             title="System access"
             actions={
-              <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
-                {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
-              </div>
+              accessLoading ? (
+                <Skeleton className="h-7 w-16 rounded-full" />
+              ) : (
+                <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
+                </div>
+              )
             }
           >
-            {accessEntries.length ? (
+            {accessLoading ? (
+              <div className="overflow-hidden rounded-[12px] border border-border/60">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                  >
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40 rounded-full" />
+                      <Skeleton className="h-3.5 w-28 rounded-full" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : accessEntries.length ? (
               <div className="overflow-hidden rounded-[12px] border border-border/60">
                 {accessEntries.map((entry: Record<string, unknown>, index: number) => {
                   const app = entry.tenant_application_id as Record<string, unknown> | undefined;
@@ -561,12 +573,32 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <SectionCard
             title="Activity timeline"
             actions={
-              <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
-                {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
-              </div>
+              timelineLoading ? (
+                <Skeleton className="h-7 w-20 rounded-full" />
+              ) : (
+                <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
+                </div>
+              )
             }
           >
-            {timelineItems.length ? (
+            {timelineLoading ? (
+              <div className="space-y-0">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
+                  >
+                    <Skeleton className="size-8 rounded-md" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40 rounded-full" />
+                      <Skeleton className="h-3.5 w-32 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
+                  </div>
+                ))}
+              </div>
+            ) : timelineItems.length ? (
               <div className="space-y-0">
                 {timelineItems.map((event: Record<string, unknown>) => {
                   const actor = event.actor_id as Record<string, unknown> | undefined;

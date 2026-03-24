@@ -4,9 +4,8 @@ import { format, isValid, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { contractorsApi, tenantApi } from '@/lib/api';
+import { contractorsApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ChevronBottom } from '@/components/icons';
 import { FieldBlock, FilterSelect, PageBackLink, PageHeader, SectionCard } from '@/components/app-ui';
@@ -37,11 +36,6 @@ export default function NewContractorPage() {
     start_date: '',
     end_date: '',
     notes: '',
-  });
-
-  const { data: usersData } = useQuery({
-    queryKey: ['team'],
-    queryFn: async () => (await tenantApi.listUsers()).data,
   });
 
   const startDate = contract.start_date ? parseISO(contract.start_date) : undefined;

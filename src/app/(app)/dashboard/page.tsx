@@ -13,6 +13,7 @@ import { AlertTriangle, CalendarClock4, CalendarRemove4, ChevronRight, Clock, Sh
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getEventLabel } from '@/lib/event-labels';
 import { deriveWorkspaceName } from '@/lib/workspace';
@@ -37,8 +38,8 @@ type KpiTone = 'emerald' | 'blue' | 'violet' | 'cyan' | 'danger';
 
 type KpiCardConfig = {
   label: string;
-  value: number | string;
-  description: string;
+  value: React.ReactNode;
+  description: React.ReactNode;
   href?: string;
   icon: React.ElementType;
   tone: KpiTone;
@@ -190,6 +191,39 @@ function DashboardSurface({
   );
 }
 
+function DashboardListSkeleton({
+  rows = 5,
+  showTrailingValue = true,
+  timeline = false,
+}: {
+  rows?: number;
+  showTrailingValue?: boolean;
+  timeline?: boolean;
+}) {
+  return (
+    <div className={cn(timeline ? 'space-y-4' : 'space-y-3')}>
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={index}
+          className={cn(
+            timeline ? 'flex gap-3' : 'flex items-center justify-between py-4',
+            !timeline && index !== rows - 1 && 'border-b border-border/60',
+            !timeline && index === 0 && 'pt-0',
+            !timeline && index === rows - 1 && 'pb-0',
+          )}
+        >
+          {timeline ? <Skeleton className="mt-1 size-2 rounded-full" /> : null}
+          <div className="flex-1 space-y-2">
+            <Skeleton className={cn('h-4 rounded-full', timeline ? 'w-40' : 'w-36')} />
+            <Skeleton className={cn('h-3 rounded-full', timeline ? 'w-24' : 'w-24')} />
+          </div>
+          {showTrailingValue && !timeline ? <Skeleton className="h-8 w-28 rounded-full" /> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function KpiCard({
   label,
   value,
@@ -314,40 +348,40 @@ export default function DashboardPage() {
   const kpiCards: KpiCardConfig[] = [
     {
       label: 'Active Contractors',
-      value: summaryLoading ? '—' : summary?.active_contractors ?? 0,
-      description: 'Currently under active contract.',
+      value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.active_contractors ?? 0,
+      description: summaryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Currently under active contract.',
       href: '/contractors?status=active',
       icon: Users,
       tone: 'emerald',
     },
     {
       label: 'Expiring Soon',
-      value: summaryLoading ? '—' : summary?.expiring_soon ?? 0,
-      description: `Ending in the next ${summary?.expiring_within_days ?? 30} days.`,
+      value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.expiring_soon ?? 0,
+      description: summaryLoading ? <Skeleton className="h-4 w-44 rounded-full" /> : `Ending in the next ${summary?.expiring_within_days ?? 30} days.`,
       href: '/dashboard/expiring',
       icon: CalendarClock4,
       tone: 'cyan',
     },
     {
       label: 'Overdue',
-      value: summaryLoading ? '—' : summary?.overdue_access ?? 0,
-      description: 'Ended contracts with access still open.',
+      value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.overdue_access ?? 0,
+      description: summaryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Ended contracts with access still open.',
       href: '/dashboard/overdue',
       icon: ShieldOff,
       tone: 'danger',
     },
     {
       label: 'Suspended',
-      value: summaryLoading ? '—' : summary?.suspended_contractors ?? 0,
-      description: 'Paused and awaiting next steps.',
+      value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.suspended_contractors ?? 0,
+      description: summaryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Paused and awaiting next steps.',
       href: '/contractors?status=suspended',
       icon: AlertTriangle,
       tone: 'violet',
     },
     {
       label: 'Pending Approval',
-      value: pendingApprovals,
-      description: 'Requests waiting for review.',
+      value: pendingLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : pendingApprovals,
+      description: pendingLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Requests waiting for review.',
       href: '/sponsor?status=pending',
       icon: Clock,
       tone: 'blue',
@@ -390,25 +424,7 @@ export default function DashboardPage() {
           }
         >
           {expiringPanelState === 'loading' ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'flex items-center justify-between py-4',
-                    index !== 4 && 'border-b border-border/60',
-                    index === 0 && 'pt-0',
-                    index === 4 && 'pb-0',
-                  )}
-                >
-                  <div className="space-y-2">
-                    <div className="h-4 w-36 rounded-full bg-muted" />
-                    <div className="h-3 w-24 rounded-full bg-muted/70" />
-                  </div>
-                  <div className="h-8 w-28 rounded-full bg-muted" />
-                </div>
-              ))}
-            </div>
+            <DashboardListSkeleton rows={5} />
           ) : expiringPanelState === 'ready' ? (
             <div className="divide-y divide-border/60">
               {expiringContracts.map((item, index) => {
@@ -484,17 +500,7 @@ export default function DashboardPage() {
           }
         >
           {activityPanelState === 'loading' ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex gap-3">
-                  <div className="mt-1 size-2 rounded-full bg-muted" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-40 rounded-full bg-muted" />
-                    <div className="h-3 w-24 rounded-full bg-muted/70" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DashboardListSkeleton rows={5} showTrailingValue={false} timeline />
           ) : activityPanelState === 'ready' ? (
             <div className="space-y-4">
               {allEvents.slice(0, 5).map((event, index, items) => {

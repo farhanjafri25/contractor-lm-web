@@ -3,30 +3,19 @@
 import Image from 'next/image';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AuthPageLayout, AuthWelcomeAside } from '@/components/auth-page-layout';
 import {
-  Activity,
-  ArrowLeft,
   CheckCircle,
-  ChevronBottom,
   Eye,
   EyeOff,
-  FileText,
-  Group2,
-  Plus,
-  Search,
-  Settings,
-  Users,
 } from '@/components/icons';
 import { FieldBlock } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
@@ -95,10 +84,6 @@ function getInitials(value: string) {
   return parts || 'TW';
 }
 
-function PreviewBar({ className }: { className?: string }) {
-  return <div className={cn('h-2 rounded-full bg-muted', className)} />;
-}
-
 function WorkspacePreview({ workspaceName }: { workspaceName: string }) {
   return (
     <div className="flex h-full min-h-[400px] w-full flex-col bg-muted/30 lg:rounded-2xl lg:border lg:border-border/60">
@@ -160,7 +145,6 @@ function RadioOption({
 }
 
 export default function SignupPage() {
-  const router = useRouter();
   const [step, setStep] = useState<SignupStep>('account');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -291,7 +275,7 @@ export default function SignupPage() {
   const handleWorkspaceSetup = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!workspaceName.trim()) {
-      setError('Enter your company name to continue.');
+      setError('Enter your organization name to continue.');
       return;
     }
     setError('');
@@ -542,8 +526,8 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <FieldBlock label="Company name">
-              <Input value={workspaceName} onChange={e => { setWorkspaceName(e.target.value); if(!workspaceHandleEdited) setWorkspaceHandle(slugify(e.target.value)); }} placeholder="Enter company name" required />
+            <FieldBlock label="Organization name">
+              <Input value={workspaceName} onChange={e => { setWorkspaceName(e.target.value); if(!workspaceHandleEdited) setWorkspaceHandle(slugify(e.target.value)); }} placeholder="Enter organization name" required />
             </FieldBlock>
 
             <FieldBlock label="Workspace handle">
