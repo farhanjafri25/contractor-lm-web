@@ -1,47 +1,169 @@
 'use client';
 
 import Image from 'next/image';
-import { FormEvent, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { FieldBlock, PageHeader } from '@/components/app-ui';
+import { CirclePlus, Pencil, RefreshCw } from '@/components/icons';
+import { SettingsPageSkeleton } from '@/components/page-skeletons';
+import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
+import { cn } from '@/lib/utils';
+
+function parseProfileDetails(info: unknown) {
+  if (typeof info !== 'string' || !info.trim()) {
+    return {
+      jobTitle: '',
+      department: '',
+      phone: '',
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(info) as {
+      job_title?: unknown;
+      department?: unknown;
+      phone?: unknown;
+    };
+
+    return {
+      jobTitle: typeof parsed.job_title === 'string' ? parsed.job_title : '',
+      department: typeof parsed.department === 'string' ? parsed.department : '',
+      phone: typeof parsed.phone === 'string' ? parsed.phone : '',
+    };
+  } catch {
+    return {
+      jobTitle: '',
+      department: '',
+      phone: '',
+    };
+  }
+}
+
+function createProfileStateKey({
+  name,
+  jobTitle,
+  department,
+  phone,
+  avatar,
+}: {
+  name: string;
+  jobTitle: string;
+  department: string;
+  phone: string;
+  avatar: string | null;
+}) {
+  return JSON.stringify({
+    name,
+    job_title: jobTitle,
+    department,
+    phone,
+    avatar,
+  });
+}
+
+function AvatarUploadButton({
+  image,
+  alt,
+  onClick,
+  loading = false,
+}: {
+  image?: string | null;
+  alt: string;
+  onClick: () => void;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={image ? 'Change profile picture' : 'Upload profile picture'}
+      disabled={loading}
+      className="group relative block size-16 overflow-hidden rounded-full border border-border/80 bg-muted transition-colors hover:border-foreground/20"
+    >
+      {loading ? (
+        <div className="flex size-full items-center justify-center bg-background/70 text-foreground">
+          <RefreshCw size={18} className="animate-spin" />
+        </div>
+      ) : image ? (
+        <>
+          <Image src={image} alt={alt} fill unoptimized sizes="64px" className="object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center bg-background/0 text-transparent transition-all duration-150 group-hover:bg-background/70 group-hover:text-foreground">
+            <Pencil size={18} />
+          </div>
+        </>
+      ) : (
+        <div className={cn('flex size-full items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground')}>
+          <CirclePlus size={24} />
+        </div>
+      )}
+    </button>
+  );
+}
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { updateUserSession } = useAuth();
   const [name, setName] = useState<string | undefined>(undefined);
-  const [info, setInfo] = useState<string | undefined>(undefined);
+  const [jobTitle, setJobTitle] = useState<string | undefined>(undefined);
+  const [department, setDepartment] = useState<string | undefined>(undefined);
+  const [phone, setPhone] = useState<string | undefined>(undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null | undefined>(undefined);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
+  const lastAttemptedKeyRef = useRef<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => (await tenantApi.getUserProfile()).data,
   });
+  const persistedDetails = parseProfileDetails(data?.info);
+  const persistedStateKey = createProfileStateKey({
+    name: data?.name ?? '',
+    jobTitle: persistedDetails.jobTitle,
+    department: persistedDetails.department,
+    phone: persistedDetails.phone,
+    avatar: data?.avatar ?? null,
+  });
   const resolvedName = name ?? data?.name ?? '';
-  const resolvedInfo = info ?? data?.info ?? '';
+  const resolvedJobTitle = jobTitle ?? persistedDetails.jobTitle;
+  const resolvedDepartment = department ?? persistedDetails.department;
+  const resolvedPhone = phone ?? persistedDetails.phone;
   const resolvedAvatarPreview = avatarPreview === undefined ? data?.avatar ?? null : avatarPreview;
 
   const { mutate: updateProfile, isPending } = useMutation({
-    mutationFn: async () => await tenantApi.updateUserProfile({
-      name: resolvedName,
-      info: resolvedInfo,
-      avatar: resolvedAvatarPreview ?? undefined,
-    }),
+    mutationFn: async (payload: {
+      name: string;
+      info: string;
+      avatar?: string;
+    }) => await tenantApi.updateUserProfile(payload),
     onSuccess: (response) => {
-      toast.success('Profile updated successfully.');
+      const mergedProfile = {
+        ...data,
+        ...response.data,
+        info: response.data.info ?? data?.info ?? '',
+        avatar: response.data.avatar ?? resolvedAvatarPreview ?? data?.avatar ?? null,
+      };
+      const responseDetails = parseProfileDetails(mergedProfile.info);
+      lastAttemptedKeyRef.current = createProfileStateKey({
+        name: mergedProfile.name ?? '',
+        jobTitle: responseDetails.jobTitle,
+        department: responseDetails.department,
+        phone: responseDetails.phone,
+        avatar: mergedProfile.avatar,
+      });
+      setAvatarUploading(false);
+      queryClient.setQueryData(['user-profile'], mergedProfile);
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      updateUserSession({ name: response.data.name, info: response.data.info, avatar: response.data.avatar });
+      updateUserSession({ name: mergedProfile.name, info: mergedProfile.info, avatar: mergedProfile.avatar ?? undefined });
     },
     onError: (err) => {
+      setAvatarUploading(false);
       toast.error(getApiErrorMessage(err, 'Failed to update profile.'));
     },
   });
@@ -54,109 +176,205 @@ export default function ProfilePage() {
       event.target.value = '';
       return;
     }
+    setAvatarUploading(true);
     const reader = new FileReader();
     reader.onload = () => {
       setAvatarPreview(typeof reader.result === 'string' ? reader.result : null);
     };
+    reader.onerror = () => {
+      setAvatarUploading(false);
+      toast.error('Failed to read image.');
+    };
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    updateProfile();
-  };
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      lastAttemptedKeyRef.current = persistedStateKey;
+    }
+  }, [data, persistedStateKey]);
+
+  useEffect(() => {
+    if (!data || !initializedRef.current || isPending) {
+      return;
+    }
+
+    const nextPayload = {
+      name: resolvedName,
+      info: JSON.stringify({
+        job_title: resolvedJobTitle,
+        department: resolvedDepartment,
+        phone: resolvedPhone,
+      }),
+      avatar: resolvedAvatarPreview ?? undefined,
+    };
+
+    const nextKey = createProfileStateKey({
+      name: resolvedName,
+      jobTitle: resolvedJobTitle,
+      department: resolvedDepartment,
+      phone: resolvedPhone,
+      avatar: resolvedAvatarPreview ?? null,
+    });
+
+    if (nextKey === persistedStateKey || nextKey === lastAttemptedKeyRef.current) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      lastAttemptedKeyRef.current = nextKey;
+      updateProfile(nextPayload);
+    }, 700);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    data,
+    isPending,
+    resolvedName,
+    resolvedJobTitle,
+    resolvedDepartment,
+    resolvedPhone,
+    resolvedAvatarPreview,
+    persistedStateKey,
+    updateProfile,
+  ]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6 max-w-2xl">
-        <PageHeader title="Profile" description="Manage your personal account settings." />
-        <Skeleton className="h-[400px] w-full rounded-xl" />
-      </div>
-    );
+    return <SettingsPageSkeleton topCardRows={5} bottomCardRows={1} />;
   }
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      <PageHeader 
-        title="Profile" 
-        description="Manage your personal account settings." 
+    <div className="mx-auto w-full max-w-4xl space-y-8 pt-6">
+      <PageHeader
+        title="Profile"
+        description="Manage your personal account settings. Changes save automatically."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>
-            This information will be visible to other members of your workspace.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <input 
-              ref={avatarInputRef} 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={handleFileSelection} 
-            />
-            
-            <div className="flex items-center gap-5 pb-2">
-              <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xl font-semibold text-primary/80 border">
-                {resolvedAvatarPreview ? (
-                  <Image src={resolvedAvatarPreview} alt="Avatar preview" fill unoptimized sizes="64px" className="object-cover" />
-                ) : (
-                  (resolvedName?.[0] || data?.email?.[0] || 'U').toUpperCase()
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()}>
-                    {resolvedAvatarPreview ? 'Replace Image' : 'Upload Image'}
-                  </Button>
-                  {resolvedAvatarPreview && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarPreview(null)}>Remove</Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">PNG or JPG up to 10MB.</p>
-              </div>
-            </div>
+      <div className="space-y-12">
+      <div>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelection}
+        />
 
-            <FieldBlock label="Email Address" description="Your email address is managed exclusively via magic link auth.">
+        <SettingsCard>
+          <SettingsRow
+            label="Profile picture"
+            align="center"
+          >
+            <div className="flex justify-start md:justify-end">
+              <AvatarUploadButton
+                image={resolvedAvatarPreview}
+                alt="Profile picture"
+                loading={avatarUploading}
+                onClick={() => avatarInputRef.current?.click()}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Email address"
+            align="center"
+          >
+            <div className="w-full md:ml-auto md:max-w-sm">
               <Input
                 id="email"
                 value={data?.email || ''}
                 readOnly
-                className="bg-muted text-muted-foreground w-full sm:w-[300px]"
+                className="bg-muted/50 text-muted-foreground"
               />
-            </FieldBlock>
+            </div>
+          </SettingsRow>
 
-            <FieldBlock label="Full Name">
+          <SettingsRow
+            label="Full name"
+            align="center"
+          >
+            <div className="w-full md:ml-auto md:max-w-sm">
               <Input
                 id="name"
                 value={resolvedName}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full sm:w-[300px]"
               />
-            </FieldBlock>
+            </div>
+          </SettingsRow>
 
-            <FieldBlock label="Bio / Info" description="A short description of your role or responsibilities.">
-              <Textarea
-                id="info"
-                value={resolvedInfo}
-                onChange={(e) => setInfo(e.target.value)}
-                placeholder="I am a project manager focused on..."
-                rows={4}
+          <SettingsRow
+            label="Job title"
+            align="center"
+          >
+            <div className="w-full md:ml-auto md:max-w-sm">
+              <Input
+                id="job_title"
+                value={resolvedJobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="Operations Manager"
               />
-            </FieldBlock>
+            </div>
+          </SettingsRow>
 
-            <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save changes'}
+          <SettingsRow
+            label="Department"
+            align="center"
+          >
+            <div className="w-full md:ml-auto md:max-w-sm">
+              <Input
+                id="department"
+                value={resolvedDepartment}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="Operations"
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Phone number"
+            noBorder
+            align="center"
+          >
+            <div className="w-full md:ml-auto md:max-w-sm">
+              <Input
+                id="phone"
+                type="tel"
+                value={resolvedPhone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+          </SettingsRow>
+        </SettingsCard>
+      </div>
+
+      <div className="space-y-5">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
+        <SettingsCard>
+          <SettingsRow
+            label="Password"
+            noBorder
+            align="center"
+          >
+            <div className="flex justify-start md:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => toast.info('Password changes are not available in-app yet.')}
+              >
+                Change password
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </SettingsRow>
+        </SettingsCard>
+      </div>
+      </div>
     </div>
   );
 }

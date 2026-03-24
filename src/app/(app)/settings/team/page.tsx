@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { PendingApprovalsSkeleton, SummaryCardsSkeleton, WorkspaceBannerSkeleton } from '@/components/page-skeletons';
 
 
 
@@ -227,6 +228,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 function PendingApprovalsCard({
   members,
   isAdmin,
+  isLoading,
   isBusy,
   activeAction,
   onApprove,
@@ -234,6 +236,7 @@ function PendingApprovalsCard({
 }: {
   members: TeamMember[];
   isAdmin: boolean;
+  isLoading: boolean;
   isBusy: (memberId: string) => boolean;
   activeAction: { type: ActionType; memberId: string } | null;
   onApprove: (id: string) => Promise<void>;
@@ -241,6 +244,10 @@ function PendingApprovalsCard({
 }) {
   if (!isAdmin) {
     return null;
+  }
+
+  if (isLoading) {
+    return <PendingApprovalsSkeleton />;
   }
 
   if (!members.length) {
@@ -523,13 +530,13 @@ export default function TeamPage() {
     queryFn: async () => (await tenantApi.listUsers()).data,
   });
 
-  const { data: pendingData } = useQuery({
+  const { data: pendingData, isLoading: pendingLoading } = useQuery({
     queryKey: ['pending-users'],
     queryFn: async () => (await tenantApi.getPendingUsers()).data,
     enabled: isAdmin,
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['tenant-stats'],
     queryFn: async () => (await tenantApi.getProfile()).data,
   });
@@ -640,21 +647,32 @@ export default function TeamPage() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryStatCard label="Total members" value={totalMembers} />
-        <SummaryStatCard label="Pending approvals" value={pendingMembers.length} />
-        <SummaryStatCard label="Invited" value={invitedMembers} />
-        <SummaryStatCard label="Inactive" value={inactiveMembers} />
+        {isLoading ? (
+          <SummaryCardsSkeleton cards={4} />
+        ) : (
+          <>
+            <SummaryStatCard label="Total members" value={totalMembers} />
+            <SummaryStatCard label="Pending approvals" value={pendingMembers.length} />
+            <SummaryStatCard label="Invited" value={invitedMembers} />
+            <SummaryStatCard label="Inactive" value={inactiveMembers} />
+          </>
+        )}
       </div>
 
-      <WorkspaceContextBanner
-        plan={String(stats?.plan ?? '—')}
-        billing={String(stats?.billing_status ?? '—')}
-        contractorLimit={String(stats?.contractor_seat_limit ?? '∞')}
-      />
+      {statsLoading ? (
+        <WorkspaceBannerSkeleton />
+      ) : (
+        <WorkspaceContextBanner
+          plan={String(stats?.plan ?? '—')}
+          billing={String(stats?.billing_status ?? '—')}
+          contractorLimit={String(stats?.contractor_seat_limit ?? '∞')}
+        />
+      )}
 
       <PendingApprovalsCard
         members={pendingMembers}
         isAdmin={isAdmin}
+        isLoading={Boolean(isAdmin && pendingLoading)}
         isBusy={isBusy}
         activeAction={activeAction}
         onApprove={handleApprove}

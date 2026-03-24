@@ -340,7 +340,7 @@ export function TenuBotWidget() {
 
           <div className={`bg-background/95 ${isOpen ? 'p-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
             <div
-              className={`border border-border/70 bg-muted/45 shadow-inner ${isOpen ? 'flex items-end gap-2 rounded-[14px] p-1.5' : 'flex h-full items-center gap-2 rounded-[12px] py-px pr-[3px] pl-px'}`}
+              className={`border border-border/70 bg-muted/45 ${isOpen ? 'flex items-end gap-2 rounded-[14px] p-1.5' : 'flex h-full items-center gap-2 rounded-[12px] py-px pr-[3px] pl-px'}`}
               onPointerDownCapture={() => {
                 if (!isOpen) {
                   openPanel();

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/auth-context';
@@ -45,13 +46,19 @@ export function TeamSwitcher({
           className,
         )}
       >
-        <InitialAvatar
-          seed={workspaceSeed}
-          label={workspaceName || initials}
-          size="sm"
-          shape="rounded"
-          className="size-5 rounded-sm border-0 text-[8px]"
-        />
+        {data?.logo ? (
+          <div className="relative size-5 shrink-0 overflow-hidden rounded-[4px] border-0">
+            <Image src={data.logo} alt={`${workspaceName} logo`} fill unoptimized sizes="20px" className="object-cover" />
+          </div>
+        ) : (
+          <InitialAvatar
+            seed={workspaceSeed}
+            label={workspaceName || initials}
+            size="sm"
+            shape="rounded"
+            className="size-5 rounded-sm border-0 text-[8px]"
+          />
+        )}
         {!collapsed ? (
           <>
             <span className="min-w-0 flex-1">

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Fragment, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Bell,
   CheckCircle,
@@ -15,11 +16,11 @@ import {
   LogOut,
   Moon,
   PeopleAdd,
+  SettingsGear1,
   ShieldCheck,
   SidebarHiddenLeftWide,
   Users,
   User,
-  Building,
   Sun,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
@@ -31,9 +32,12 @@ import { Logo, LogoMark } from '@/components/logo';
 import { TeamSwitcher } from '@/components/team-switcher';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { PageTransition } from '@/components/page-transition';
 
 function GettingStartedProgressIcon({
   size = 16,
@@ -102,7 +106,7 @@ const NAV = [
   { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
   { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
   { href: '/settings/profile', label: 'Profile', icon: User },
-  { href: '/settings/organization', label: 'Organization', icon: Building, roles: ['admin'] },
+  { href: '/settings/organization', label: 'Organization', icon: SettingsGear1, roles: ['admin'] },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
 ];
 
@@ -168,6 +172,13 @@ function routeBreadcrumbs(pathname: string) {
     ];
   }
 
+  if (pathname === '/settings/profile') {
+    return [
+      { label: 'Settings' },
+      { label: 'Profile' },
+    ];
+  }
+
   if (pathname === '/settings/organization') {
     return [
       { label: 'Settings' },
@@ -178,6 +189,65 @@ function routeBreadcrumbs(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
   const last = segments[segments.length - 1] ?? 'dashboard';
   return [{ label: last.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()) }];
+}
+
+function FeedbackPopover() {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const trimmedMessage = message.trim();
+
+  const handleSubmit = async () => {
+    if (!trimmedMessage) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(trimmedMessage);
+      toast.info("Feedback submission isn't connected yet, so your note was copied to the clipboard.");
+    } catch {
+      toast.info("Feedback submission isn't connected yet in this environment.");
+    }
+    setMessage('');
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
+            Feedback
+          </Button>
+        }
+      />
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-[min(24rem,calc(100vw-1rem))] gap-3 rounded-[0.8rem] border bg-background/98 p-3.5 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)] backdrop-blur-xl"
+      >
+        <Textarea
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="What’s working, what’s confusing, or what should we build next?"
+          aria-label="Feedback"
+          autoFocus
+          rows={5}
+          className="min-h-32 rounded-[0.7rem] border-border/70 bg-muted/20 px-4 py-3 text-sm leading-6 placeholder:text-muted-foreground/90 focus-visible:border-ring/60 focus-visible:ring-ring/25 dark:bg-muted/10"
+        />
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 rounded-xl px-4 text-sm shadow-sm"
+            disabled={!trimmedMessage}
+            onClick={handleSubmit}
+          >
+            Submit
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
@@ -355,9 +425,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
-                Feedback
-              </Button>
+              <FeedbackPopover />
               <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
                 Docs
               </Button>
@@ -398,7 +466,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           <main className="relative flex-1 p-4 md:p-6">
-            <div className="mx-auto w-full max-w-7xl space-y-6">{children}</div>
+            <PageTransition transitionKey={pathname} className="mx-auto w-full max-w-7xl space-y-6">
+              {children}
+            </PageTransition>
           </main>
         </div>
       </div>
