@@ -10,6 +10,7 @@ export function AuthPageLayout({
   gridClassName,
   contentClassName,
   asideClassName,
+  cardClassName,
 }: {
   children: React.ReactNode;
   aside: React.ReactNode;
@@ -17,6 +18,7 @@ export function AuthPageLayout({
   gridClassName?: string;
   contentClassName?: string;
   asideClassName?: string;
+  cardClassName?: string;
 }) {
   return (
     <div className="min-h-screen bg-background px-3 py-6 sm:px-4 sm:py-8">
@@ -28,7 +30,7 @@ export function AuthPageLayout({
         </header>
 
         <main className="flex flex-1 items-center py-8 sm:py-12 lg:py-16">
-          <Card className="mx-auto w-full max-w-[1250px] bg-card">
+          <Card className={cn('mx-auto w-full max-w-[1250px] bg-card', cardClassName)}>
             <CardContent className="p-0">
               <div
                 className={cn(

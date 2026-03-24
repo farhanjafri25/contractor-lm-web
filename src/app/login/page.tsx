@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthPageLayout aside={<AuthWelcomeAside />}>
+    <AuthPageLayout aside={<AuthWelcomeAside />} cardClassName="shadow-none [box-shadow:none]">
       {error ? (
         <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
