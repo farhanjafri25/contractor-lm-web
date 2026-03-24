@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ChevronBottom, Search } from '@/components/icons';
+import { ArrowLeft, ChevronBottom, IconCrossLarge, Search } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { BadgeVariant } from '@/components/ui/badge';
@@ -186,7 +186,7 @@ export function SettingsCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('rounded-[20px] border-transparent bg-card/95 dark:border-border/70', className)}>
+    <Card className={cn('rounded-xl border-transparent bg-card/95 dark:border-border/70', className)}>
       {(title || description || actions) ? (
         <div className="flex flex-col gap-4 border-b border-border/70 px-6 py-6 sm:px-8 sm:py-7 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1.5">
@@ -304,7 +304,7 @@ export function FiltersPopover({
     <Popover>
       <PopoverTrigger
         render={
-          <Button variant="outline" className="justify-between">
+          <Button variant="outline" className="justify-between shadow-xs">
             <span>{activeCount ? `${title} (${activeCount})` : title}</span>
             <ChevronBottom data-icon="inline-end" size={16} />
           </Button>
@@ -335,14 +335,26 @@ export function SearchField({
   className?: string;
 }) {
   return (
-    <div className={cn('relative w-full', className)}>
-      <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+    <div className={cn('group relative w-full', className)}>
+      <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground" />
       <Input
+        type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="pl-11"
+        enterKeyHint="search"
+        className="h-9 rounded-xl bg-background/90 pl-10 pr-10 placeholder:text-muted-foreground/90 dark:bg-input/25"
       />
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="absolute right-2 top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-95"
+          aria-label="Clear search"
+        >
+          <IconCrossLarge size={12} />
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DataTableShell, EmptyState, FieldBlock, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
-import { Checkmark2, IconCrossLarge, ShieldCheck, UserPlus, XCircle } from '@/components/icons';
+import { Checkmark2, IconCrossLarge, PeopleAdd, ShieldCheck, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -144,7 +144,7 @@ function WorkspaceContextBanner({
     contractorLimit === '∞' ? 'Contractors: Unlimited seats' : `Contractors: ${contractorLimit} seat${contractorLimit === '1' ? '' : 's'}`;
 
   return (
-    <Card size="sm" className="border-border/70 bg-muted/20">
+    <Card size="sm" className="border-transparent bg-muted/20 dark:border-border/70">
       <CardContent className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
         <p className="text-sm font-medium text-foreground">Workspace</p>
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -252,7 +252,7 @@ function PendingApprovalsCard({
 
   if (!members.length) {
     return (
-      <Card size="sm" className="border-border/70 bg-muted/15">
+      <Card size="sm" className="border-transparent bg-muted/15 dark:border-border/70">
         <CardContent className="flex flex-col gap-2 pt-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">Pending approvals</p>
@@ -267,7 +267,7 @@ function PendingApprovalsCard({
   return (
     <DataTableShell
       title={`Pending approvals (${members.length})`}
-      className="border-primary/15"
+      className="border-transparent dark:border-primary/15"
     >
       <Table>
         <TableHeader>
@@ -620,7 +620,7 @@ export default function TeamPage() {
         actions={
           isAdmin ? (
             <Button onClick={() => setShowInvite(true)}>
-              <UserPlus size={15} />
+              <PeopleAdd size={15} />
               Invite member
             </Button>
           ) : null
@@ -634,7 +634,7 @@ export default function TeamPage() {
       ) : null}
 
       {!isAdmin ? (
-        <Card size="sm" className="border-border/70 bg-muted/15">
+        <Card size="sm" className="border-transparent bg-muted/15 dark:border-border/70">
           <CardContent className="flex items-start gap-3 pt-4">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <ShieldCheck size={16} />
