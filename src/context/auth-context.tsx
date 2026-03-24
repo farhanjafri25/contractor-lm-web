@@ -22,6 +22,7 @@ interface User {
     name?: string;
     info?: string;
     avatar?: string;
+    avatarVersion?: number;
     role: 'admin' | 'sponsor';
 }
 
@@ -36,6 +37,27 @@ interface AuthState {
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+
+function persistUser(user: User | null) {
+    if (!user) {
+        localStorage.removeItem('user');
+        return;
+    }
+
+    try {
+        localStorage.setItem('user', JSON.stringify(user));
+        return;
+    } catch {
+        const withoutAvatar = { ...user };
+        delete withoutAvatar.avatar;
+
+        try {
+            localStorage.setItem('user', JSON.stringify(withoutAvatar));
+        } catch {
+            // Ignore storage quota failures and keep the in-memory session alive.
+        }
+    }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(() => {
@@ -62,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        persistUser(data.user);
         
         if (tId) {
             localStorage.setItem('tenant_id', tId);
@@ -84,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        persistUser(data.user);
         
         if (tId) {
             localStorage.setItem('tenant_id', tId);
@@ -97,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser((prev) => {
             if (!prev) return prev;
             const next = { ...prev, ...data };
-            localStorage.setItem('user', JSON.stringify(next));
+            persistUser(next);
             return next;
         });
     };

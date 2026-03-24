@@ -116,6 +116,18 @@ const NAV_GROUPS = [
   { label: 'Settings', items: ['/settings/profile', '/settings/organization', '/settings/team'] },
 ];
 
+function getAvatarImageSrc(avatar: string | undefined, version: number | undefined) {
+  if (!avatar) {
+    return null;
+  }
+
+  if (!version || avatar.startsWith('data:')) {
+    return avatar;
+  }
+
+  return `${avatar}${avatar.includes('?') ? '&' : '?'}v=${version}`;
+}
+
 function MenuIcon() {
   return (
     <span className="flex flex-col gap-1" aria-hidden="true">
@@ -368,6 +380,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
   };
   const personalAvatarSeed = getAvatarSeed(user?._id, user?.email);
+  const personalAvatarSrc = getAvatarImageSrc(user?.avatar, user?.avatarVersion);
 
   return (
     <div className="min-h-screen bg-background">
@@ -434,9 +447,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                  {user?.avatar ? (
+                  {personalAvatarSrc ? (
                     <div className="relative flex size-8 items-center justify-center overflow-hidden rounded-full border bg-muted">
-                      <Image src={user.avatar} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
+                      <Image src={personalAvatarSrc} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
                     </div>
                   ) : (
                     <InitialAvatar

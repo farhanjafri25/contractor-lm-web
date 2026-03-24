@@ -6,12 +6,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { CirclePlus, Pencil, RefreshCw } from '@/components/icons';
+import { CirclePlus, IconTrashCanSimple, Pencil, RefreshCw } from '@/components/icons';
 import { SettingsPageSkeleton } from '@/components/page-skeletons';
 import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
+import { prepareImageForUpload } from '@/lib/image-upload';
 import { cn } from '@/lib/utils';
 
 function parseProfileDetails(info: unknown) {
@@ -140,14 +141,25 @@ export default function ProfilePage() {
     mutationFn: async (payload: {
       name: string;
       info: string;
-      avatar?: string;
+      avatar?: string | null;
     }) => await tenantApi.updateUserProfile(payload),
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
+      const previousAvatar = data?.avatar ?? null;
+      const requestedAvatar = Object.prototype.hasOwnProperty.call(variables, 'avatar')
+        ? variables.avatar ?? null
+        : previousAvatar;
+      const returnedAvatar = response.data.avatar;
+      const nextAvatar = returnedAvatar === undefined
+        ? requestedAvatar
+        : returnedAvatar === previousAvatar && requestedAvatar !== previousAvatar
+          ? requestedAvatar
+          : returnedAvatar ?? null;
+
       const mergedProfile = {
         ...data,
         ...response.data,
         info: response.data.info ?? data?.info ?? '',
-        avatar: response.data.avatar ?? resolvedAvatarPreview ?? data?.avatar ?? null,
+        avatar: nextAvatar,
       };
       const responseDetails = parseProfileDetails(mergedProfile.info);
       lastAttemptedKeyRef.current = createProfileStateKey({
@@ -157,10 +169,20 @@ export default function ProfilePage() {
         phone: responseDetails.phone,
         avatar: mergedProfile.avatar,
       });
+      setAvatarPreview(nextAvatar);
       setAvatarUploading(false);
       queryClient.setQueryData(['user-profile'], mergedProfile);
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      updateUserSession({ name: mergedProfile.name, info: mergedProfile.info, avatar: mergedProfile.avatar ?? undefined });
+      updateUserSession({
+        name: mergedProfile.name,
+        info: mergedProfile.info,
+        avatar: mergedProfile.avatar ?? undefined,
+        avatarVersion: Date.now(),
+      });
+
+      if (requestedAvatar !== previousAvatar) {
+        toast.success(requestedAvatar ? 'Profile photo updated.' : 'Profile photo removed.');
+      }
     },
     onError: (err) => {
       setAvatarUploading(false);
@@ -168,24 +190,28 @@ export default function ProfilePage() {
     },
   });
 
-  const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be 10MB or smaller.');
-      event.target.value = '';
-      return;
-    }
+
     setAvatarUploading(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarPreview(typeof reader.result === 'string' ? reader.result : null);
-    };
-    reader.onerror = () => {
+
+    try {
+      const preparedImage = await prepareImageForUpload(file, {
+        label: 'Profile picture',
+      });
+      setAvatarPreview(preparedImage);
+    } catch (error) {
       setAvatarUploading(false);
-      toast.error('Failed to read image.');
-    };
-    reader.readAsDataURL(file);
+      toast.error(error instanceof Error ? error.message : 'Failed to read image.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null);
+    setAvatarUploading(false);
   };
 
   useEffect(() => {
@@ -211,7 +237,7 @@ export default function ProfilePage() {
         department: resolvedDepartment,
         phone: resolvedPhone,
       }),
-      avatar: resolvedAvatarPreview ?? undefined,
+      avatar: resolvedAvatarPreview ?? null,
     };
 
     const nextKey = createProfileStateKey({
@@ -270,7 +296,20 @@ export default function ProfilePage() {
             label="Profile picture"
             align="center"
           >
-            <div className="flex justify-start md:justify-end">
+            <div className="flex items-center justify-start gap-3 md:justify-end">
+              {resolvedAvatarPreview ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={avatarUploading || isPending}
+                  onClick={handleRemoveAvatar}
+                  aria-label="Remove profile picture"
+                  title="Remove profile picture"
+                >
+                  <IconTrashCanSimple />
+                </Button>
+              ) : null}
               <AvatarUploadButton
                 image={resolvedAvatarPreview}
                 alt="Profile picture"

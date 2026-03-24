@@ -32,6 +32,7 @@ export { IconShieldCheck as ShieldCheck } from '@central-icons-react/round-outli
 export { IconSidebarHiddenLeftWide as SidebarHiddenLeftWide } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconSidebarHiddenLeftWide';
 export { IconSun as Sun } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconSun';
 export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTeam';
+export { IconTrashCanSimple as IconTrashCanSimple } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTrashCanSimple';
 export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconX';
 
 export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExclamationTriangle';

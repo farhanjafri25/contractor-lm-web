@@ -265,11 +265,11 @@ function KpiCard({
         </div>
         <div>
           <div className={cn('flex flex-col rounded-lg px-5 py-4', KPI_INNER_STYLES[tone])}>
-            <p className="text-2xl font-semibold tracking-tight text-foreground">
+            <div className="text-2xl font-semibold tracking-tight text-foreground">
               {value}
-            </p>
-            <div className="mt-2">
-              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground">
+              {description}
             </div>
           </div>
         </div>

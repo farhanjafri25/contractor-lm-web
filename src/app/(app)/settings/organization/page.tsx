@@ -14,6 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { prepareImageForUpload } from '@/lib/image-upload';
 import { cn } from '@/lib/utils';
 
 const COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '500+'];
@@ -127,26 +128,23 @@ export default function OrganizationSettingsPage() {
     },
   });
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Logo must be less than 2MB');
-      e.target.value = '';
-      return;
-    }
-
     setLogoUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setLogo(typeof event.target?.result === 'string' ? event.target.result : undefined);
-    };
-    reader.onerror = () => {
+
+    try {
+      const preparedImage = await prepareImageForUpload(file, {
+        label: 'Organization logo',
+      });
+      setLogo(preparedImage);
+    } catch (error) {
       setLogoUploading(false);
-      toast.error('Failed to read image.');
-    };
-    reader.readAsDataURL(file);
+      toast.error(error instanceof Error ? error.message : 'Failed to read image.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   React.useEffect(() => {

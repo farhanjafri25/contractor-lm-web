@@ -18,6 +18,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { prepareImageForUpload } from '@/lib/image-upload';
 import { cn } from '@/lib/utils';
 
 type SignupStep = 'account' | 'verify' | 'profile' | 'workspace' | 'tracking' | 'volume' | 'directory' | 'success' | 'approval';
@@ -311,22 +312,24 @@ export default function SignupPage() {
     }
   };
 
-  const handleFileSelection = (
+  const handleFileSelection = async (
     event: React.ChangeEvent<HTMLInputElement>,
     setPreview: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > LOGO_SIZE_LIMIT) {
-      toast.error('Image must be 10MB or smaller.');
+
+    try {
+      const preparedImage = await prepareImageForUpload(file, {
+        label: 'Image',
+        maxSourceBytes: LOGO_SIZE_LIMIT,
+      });
+      setPreview(preparedImage);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to read image.');
+    } finally {
       event.target.value = '';
-      return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(typeof reader.result === 'string' ? reader.result : null);
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
