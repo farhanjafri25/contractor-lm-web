@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
-import { ChevronGrabberVertical, Users } from '@/components/icons';
+import { ChevronGrabberVertical, Group2, SettingsGear1 } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { deriveWorkspaceName } from '@/lib/workspace';
@@ -69,14 +69,18 @@ export function TeamSwitcher({
         ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
+      <DropdownMenuContent className="w-[var(--anchor-width)] min-w-[var(--anchor-width)] border bg-background/98 p-1.5 backdrop-blur-xl [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium leading-5">{workspaceName}</p>
           <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push('/settings/organization')}>
+          <SettingsGear1 size={14} />
+          Organization settings
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push('/settings/team')}>
-          <Users size={14} />
+          <Group2 size={14} />
           Team
         </DropdownMenuItem>
       </DropdownMenuContent>

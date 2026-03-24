@@ -230,15 +230,20 @@ export function TenuBotWidget() {
             maxWidth: isOpen ? SHELL.openWidth : SHELL.collapsedWidth,
           }}
           transition={shellTransition}
-          className="card-surface pointer-events-auto flex w-full flex-col overflow-hidden rounded-[14px] bg-background/95 backdrop-blur-xl md:rounded-[16px]"
+          className="card-surface relative isolate pointer-events-auto flex w-full flex-col overflow-hidden rounded-[14px] bg-background/95 backdrop-blur-xl md:rounded-[16px]"
         >
+          <div
+            className={`pointer-events-none absolute left-1/2 top-0 z-0 h-48 w-[140%] -translate-x-1/2 -translate-y-[34%] bg-center bg-cover bg-no-repeat transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+            style={{ backgroundImage: "url('/gradient-blur.svg')" }}
+            aria-hidden="true"
+          />
           <motion.div
             initial={false}
             animate={{ height: stage >= 1 ? topRegionHeight : 0 }}
             transition={shellTransition}
-            className="overflow-hidden"
+            className={isOpen ? "overflow-visible" : "overflow-hidden"}
           >
-            <div className="flex h-full min-h-0 flex-col">
+            <div className="relative z-10 flex h-full min-h-0 flex-col">
               <div className="px-[2px] pt-[2px] pb-0">
                 <motion.div
                   initial={false}
@@ -250,13 +255,9 @@ export function TenuBotWidget() {
                     ...revealTransition,
                     delay: isOpen && !prefersReducedMotion ? TIMING.headerReveal / 1000 : 0,
                   }}
-                  className="relative overflow-hidden rounded-[12px] border border-border/35 px-4 py-3 text-foreground"
+                  className="relative rounded-[12px] px-4 py-3 text-foreground"
                 >
-                  <div
-                    className="absolute left-1/2 top-1/2 h-[240%] w-[150%] -translate-x-1/2 -translate-y-1/2 bg-center bg-cover bg-no-repeat opacity-100"
-                    style={{ backgroundImage: "url('/gradient-blur.svg')" }}
-                  />
-                  <div className="relative flex items-center justify-between gap-3">
+                  <div className="relative z-10 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <h3 className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
@@ -280,7 +281,7 @@ export function TenuBotWidget() {
                     </Button>
                   </div>
                   {!hasStartedConversation ? (
-                    <p className="relative mt-0.5 max-w-[24rem] text-xs leading-5 text-foreground/68">
+                    <p className="relative z-10 mt-0.5 max-w-[24rem] text-xs leading-5 text-foreground/68">
                       Ask about active, suspended, and expiring contractors without leaving the page.
                     </p>
                   ) : null}
@@ -338,9 +339,9 @@ export function TenuBotWidget() {
             </div>
           </motion.div>
 
-          <div className={`bg-background/95 ${isOpen ? 'p-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
+          <div className={`relative z-10 bg-background/95 ${isOpen ? 'p-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
             <div
-              className={`border border-border/70 bg-muted/45 ${isOpen ? 'flex items-end gap-2 rounded-[14px] p-1.5' : 'flex h-full items-center gap-2 rounded-[12px] py-px pr-[3px] pl-px'}`}
+              className={`border border-border/70 bg-muted/45 ${isOpen ? 'flex items-end gap-2 rounded-[12px] p-1.5' : 'flex h-full items-center gap-2 rounded-[10px] py-px pr-[3px] pl-px'}`}
               onPointerDownCapture={() => {
                 if (!isOpen) {
                   openPanel();

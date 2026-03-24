@@ -54,7 +54,6 @@ export default function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Enter your email address"
-            className="shadow-sm"
             required
           />
         </div>
@@ -70,7 +69,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
-              className="pr-12 shadow-sm"
+              className="pr-12"
               required
             />
             <button
