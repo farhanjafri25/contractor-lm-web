@@ -27,7 +27,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
 import { tenantApi } from '@/lib/api';
-import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
+import { InitialAvatar, getAvatarSeed, getAvatarTone } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { Logo, LogoMark } from '@/components/logo';
 import { TeamSwitcher } from '@/components/team-switcher';
@@ -116,6 +116,14 @@ const NAV_GROUPS = [
   { label: 'Operations', items: ['/access', '/events'] },
   { label: 'Settings', items: ['/settings/profile', '/settings/organization', '/settings/team'] },
 ];
+
+const AVATAR_MENU_GRADIENTS = {
+  neutral: 'from-neutral-400/18 via-neutral-300/8 dark:from-neutral-500/18 dark:via-neutral-400/10',
+  emerald: 'from-emerald-400/22 via-emerald-300/10 dark:from-emerald-500/20 dark:via-emerald-400/10',
+  blue: 'from-blue-400/22 via-blue-300/10 dark:from-blue-500/20 dark:via-blue-400/10',
+  violet: 'from-violet-400/22 via-violet-300/10 dark:from-violet-500/20 dark:via-violet-400/10',
+  cyan: 'from-cyan-400/22 via-cyan-300/10 dark:from-cyan-500/20 dark:via-cyan-400/10',
+} as const;
 
 function getAvatarImageSrc(avatar: string | undefined, version: number | undefined) {
   if (!avatar) {
@@ -272,7 +280,9 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     staleTime: 60_000,
   });
   const personalAvatarSeed = getAvatarSeed(user?._id, user?.email);
-  const personalAvatarSrc = getAvatarImageSrc(user?.avatar, user?.avatarVersion);
+  const avatarTone = getAvatarTone(personalAvatarSeed);
+  const resolvedAvatar = profileData?.avatar ?? user?.avatar;
+  const personalAvatarSrc = getAvatarImageSrc(resolvedAvatar, user?.avatarVersion);
   const fullName = profileData?.name?.trim() || user?.name?.trim() || '';
   const displayName = fullName || user?.email || 'User';
   const menuName = fullName || 'User';
@@ -286,7 +296,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
         )}
       >
         {personalAvatarSrc ? (
-          <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
+          <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full border-[0.5px] border-black/10 bg-muted dark:border-white/10">
             <Image src={personalAvatarSrc} alt="Avatar" fill unoptimized sizes="20px" className="object-cover" />
           </div>
         ) : (
@@ -307,8 +317,44 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
         ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
-        <div className="px-2 py-1.5">
+      <DropdownMenuContent className="relative w-[var(--anchor-width)] min-w-[var(--anchor-width)] overflow-hidden">
+        {personalAvatarSrc ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,rgba(0,0,0,0.9)_30%,rgba(0,0,0,0.45)_62%,transparent_100%)]"
+          >
+            <Image
+              src={personalAvatarSrc}
+              alt=""
+              fill
+              unoptimized
+              sizes="220px"
+              className="scale-[1.9] object-cover object-top opacity-55 blur-3xl saturate-150"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/35 to-background/85" />
+          </div>
+        ) : (
+          <div
+            aria-hidden="true"
+            className={cn(
+              'pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent [mask-image:linear-gradient(to_bottom,black_0%,rgba(0,0,0,0.9)_30%,rgba(0,0,0,0.45)_62%,transparent_100%)]',
+              AVATAR_MENU_GRADIENTS[avatarTone],
+            )}
+          />
+        )}
+        <div className="relative z-10 px-2 py-2">
+          {personalAvatarSrc ? (
+            <div className="relative mb-2 flex size-11 items-center justify-center overflow-hidden rounded-full border-[0.5px] border-black/10 bg-muted dark:border-white/10">
+              <Image src={personalAvatarSrc} alt="Avatar" fill unoptimized sizes="44px" className="object-cover" />
+            </div>
+          ) : (
+            <InitialAvatar
+              seed={personalAvatarSeed}
+              label={displayName}
+              size="md"
+              className="mb-2 border-0"
+            />
+          )}
           <p className="truncate text-sm font-medium">{menuName}</p>
           {user?.email ? <p className="truncate text-xs text-muted-foreground">{user.email}</p> : null}
           {user?.role ? <p className="mt-1 text-xs capitalize text-muted-foreground">{user.role}</p> : null}
