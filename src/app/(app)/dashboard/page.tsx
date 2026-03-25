@@ -505,7 +505,7 @@ export default function DashboardPage() {
           {activityPanelState === 'loading' ? (
             <DashboardListSkeleton rows={5} showTrailingValue={false} timeline />
           ) : activityPanelState === 'ready' ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {allEvents.slice(0, 5).map((event, index, items) => {
                 const contractor = event.contractor_id as Record<string, unknown> | undefined;
                 const eventType = String(event.event_type ?? '');
@@ -519,7 +519,7 @@ export default function DashboardPage() {
                       <div className={cn('mt-1 size-2 shrink-0 rounded-full', color)} />
                       {!isLast ? <div className="mt-1 w-px flex-1 bg-border/60" /> : null}
                     </div>
-                    <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-4', !isLast && 'pb-4')}>
+                    <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-4', !isLast && 'pb-3')}>
                       <div className="min-w-0">
                         <p className={cn('text-sm font-medium', isHighPriority ? 'text-foreground' : 'text-muted-foreground')}>
                           {getEventLabel(eventType)}
