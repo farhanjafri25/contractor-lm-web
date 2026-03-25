@@ -165,8 +165,8 @@ function GettingStartedContent() {
 
         <div className="rounded-[28px] bg-muted/30 px-8 py-8 lg:min-h-[280px] lg:px-10 lg:py-10">
           <div className="max-w-xl space-y-4">
-            <div className="space-y-2">
-              <p className="text-[28px] font-semibold tracking-tight text-foreground">
+            <div className="space-y-1.5">
+              <p className="text-2xl font-semibold tracking-tight text-foreground">
                 {allChecklistDone ? 'Your workspace is ready' : activeItem?.label}
               </p>
               <p className="text-sm leading-7 text-muted-foreground">
@@ -175,21 +175,36 @@ function GettingStartedContent() {
                   : activeItem?.description}
               </p>
             </div>
-            {activeItem?.label === 'Connect Google Workspace' && !allChecklistDone ? (
+            {allChecklistDone ? (
               <Button
-                onClick={handleConnectGoogle}
-                disabled={connecting || activeItem.done}
-                className="bg-[#4285F4] hover:bg-[#4285F4]/90 text-white"
+                size="sm"
+                render={<Link href="/dashboard" />}
+                nativeButton={false}
               >
-                {activeItem.done ? '✅ Connected' : connecting ? 'Connecting...' : 'Connect Workspace'}
+                Open dashboard
+              </Button>
+            ) : activeItem?.done ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                render={<Link href={activeItem.href} />}
+                nativeButton={false}
+                className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 shadow-none hover:bg-emerald-500/15 dark:text-emerald-400"
+              >
+                <CheckCircle size={14} />
+                {activeItem.label === 'Connect Google Workspace' ? 'Connected' : 'Completed'}
+              </Button>
+            ) : activeItem?.label === 'Connect Google Workspace' ? (
+              <Button size="sm" onClick={handleConnectGoogle} disabled={connecting}>
+                {connecting ? 'Connecting...' : 'Connect Workspace'}
               </Button>
             ) : (
               <Button
                 size="sm"
-                render={<Link href={allChecklistDone ? '/dashboard' : (activeItem?.href ?? '/dashboard')} />}
+                render={<Link href={activeItem?.href ?? '/dashboard'} />}
                 nativeButton={false}
               >
-                {allChecklistDone ? 'Open dashboard' : 'Get Started'}
+                Get Started
               </Button>
             )}
           </div>
