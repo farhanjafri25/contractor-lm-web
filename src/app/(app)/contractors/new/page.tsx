@@ -36,6 +36,7 @@ export default function NewContractorPage() {
     start_date: '',
     end_date: '',
     notes: '',
+    create_google_account: false,
   });
 
   const startDate = contract.start_date ? parseISO(contract.start_date) : undefined;
@@ -47,9 +48,9 @@ export default function NewContractorPage() {
     setError('');
   };
 
-  const updateContractField = (field: keyof typeof contract, value: string) => {
+  const updateContractField = (field: keyof typeof contract, value: string | boolean) => {
     setContract((prev) => ({ ...prev, [field]: value }));
-    if (field !== 'notes') {
+    if (field !== 'notes' && field !== 'create_google_account') {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
     setError('');
@@ -110,7 +111,7 @@ export default function NewContractorPage() {
         contract: {
           start_date: contract.start_date,
           end_date: contract.end_date,
-          create_google_account: false,
+          create_google_account: contract.create_google_account,
           application_access: [],
         },
       });
@@ -254,6 +255,20 @@ export default function NewContractorPage() {
                   placeholder="Add context for the sponsor or IT team"
                 />
               </FieldBlock>
+            </div>
+            <div className="md:col-span-2">
+              <div className="flex flex-row items-center justify-between rounded-lg border p-4 hover:bg-neutral-50/50 transition-colors">
+                <div className="space-y-0.5">
+                  <span className="text-base font-medium">Provision Google Workspace</span>
+                  <p className="text-sm text-muted-foreground">Automatically generate a Google account sequentially parsing their identity name fields.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                  checked={contract.create_google_account}
+                  onChange={(e) => updateContractField('create_google_account', e.target.checked)}
+                />
+              </div>
             </div>
           </div>
         </SectionCard>

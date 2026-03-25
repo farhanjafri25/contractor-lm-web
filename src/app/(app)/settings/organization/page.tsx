@@ -79,7 +79,6 @@ export default function OrganizationSettingsPage() {
 
   const [name, setName] = React.useState<string | undefined>(undefined);
   const [slug, setSlug] = React.useState<string | undefined>(undefined);
-  const [billingCountry, setBillingCountry] = React.useState<string | undefined>(undefined);
   const [companySize, setCompanySize] = React.useState<string | undefined>(undefined);
   const [contractorVolume, setContractorVolume] = React.useState<string | undefined>(undefined);
   const [trackingMethod, setTrackingMethod] = React.useState<string | undefined>(undefined);
@@ -89,7 +88,6 @@ export default function OrganizationSettingsPage() {
 
   const resolvedName = name ?? profile?.name ?? '';
   const resolvedSlug = slug ?? profile?.slug ?? '';
-  const resolvedBillingCountry = billingCountry ?? profile?.billing_country ?? '';
   const resolvedCompanySize = companySize ?? profile?.company_size ?? '';
   const resolvedContractorVolume = contractorVolume ?? profile?.contractor_volume ?? '';
   const resolvedTrackingMethod = trackingMethod ?? profile?.tracking_method ?? '';
@@ -100,7 +98,6 @@ export default function OrganizationSettingsPage() {
     mutationFn: async (payload: {
       name: string;
       slug: string;
-      billing_country: string;
       company_size: string;
       contractor_volume: string;
       tracking_method: string;
@@ -111,7 +108,6 @@ export default function OrganizationSettingsPage() {
       lastAttemptedKeyRef.current = JSON.stringify({
         name: response.data.name ?? '',
         slug: response.data.slug ?? '',
-        billing_country: response.data.billing_country ?? '',
         company_size: response.data.company_size ?? '',
         contractor_volume: response.data.contractor_volume ?? '',
         tracking_method: response.data.tracking_method ?? '',
@@ -155,7 +151,6 @@ export default function OrganizationSettingsPage() {
     const currentKey = JSON.stringify({
       name: profile.name ?? '',
       slug: profile.slug ?? '',
-      billing_country: profile.billing_country ?? '',
       company_size: profile.company_size ?? '',
       contractor_volume: profile.contractor_volume ?? '',
       tracking_method: profile.tracking_method ?? '',
@@ -177,7 +172,6 @@ export default function OrganizationSettingsPage() {
     const nextPayload = {
       name: resolvedName,
       slug: resolvedSlug,
-      billing_country: resolvedBillingCountry,
       company_size: resolvedCompanySize,
       contractor_volume: resolvedContractorVolume,
       tracking_method: resolvedTrackingMethod,
@@ -193,7 +187,6 @@ export default function OrganizationSettingsPage() {
     const currentKey = JSON.stringify({
       name: profile.name ?? '',
       slug: profile.slug ?? '',
-      billing_country: profile.billing_country ?? '',
       company_size: profile.company_size ?? '',
       contractor_volume: profile.contractor_volume ?? '',
       tracking_method: profile.tracking_method ?? '',
@@ -216,7 +209,6 @@ export default function OrganizationSettingsPage() {
     isPending,
     resolvedName,
     resolvedSlug,
-    resolvedBillingCountry,
     resolvedCompanySize,
     resolvedContractorVolume,
     resolvedTrackingMethod,
@@ -359,6 +351,7 @@ export default function OrganizationSettingsPage() {
           <SettingsRow
             label="Central directory"
             description="The identity provider your company uses for workforce access."
+            noBorder
             align="center"
           >
             <div className="w-full md:ml-auto md:max-w-sm">
@@ -370,21 +363,6 @@ export default function OrganizationSettingsPage() {
                   {DIRECTORY_PROVIDERS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Billing country"
-            description="Used for commercial and compliance configuration."
-            noBorder
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                value={resolvedBillingCountry}
-                onChange={(e) => setBillingCountry(e.target.value)}
-                placeholder="e.g. United States"
-              />
             </div>
           </SettingsRow>
         </SettingsCard>

@@ -2,6 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { CheckCircle } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +50,7 @@ function LoadingState() {
   );
 }
 
-export default function GettingStartedPage() {
+function GettingStartedContent() {
   const {
     gettingStartedLoading,
     checklistItems,
@@ -54,6 +59,33 @@ export default function GettingStartedPage() {
     nextItem,
   } = useGettingStarted();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get('success') === 'google_connected') {
+      toast.success('Successfully connected to Google Workspace Admin!');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    if (searchParams?.get('error')) {
+      toast.error('Failed to authorize Google integration. Please try again.');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [searchParams]);
+
+  async function handleConnectGoogle() {
+    setConnecting(true);
+    try {
+      const response = await api.get('/integrations/google/auth');
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Failed to initialize Google OAuth connection'));
+      console.error(e);
+      setConnecting(false);
+    }
+  }
 
   if (gettingStartedLoading) {
     return (
@@ -143,16 +175,34 @@ export default function GettingStartedPage() {
                   : activeItem?.description}
               </p>
             </div>
-            <Button
-              size="sm"
-              render={<Link href={allChecklistDone ? '/dashboard' : (activeItem?.href ?? '/dashboard')} />}
-              nativeButton={false}
-            >
-              {allChecklistDone ? 'Open dashboard' : 'Get Started'}
-            </Button>
+            {activeItem?.label === 'Connect Google Workspace' && !allChecklistDone ? (
+              <Button
+                onClick={handleConnectGoogle}
+                disabled={connecting || activeItem.done}
+                className="bg-[#4285F4] hover:bg-[#4285F4]/90 text-white"
+              >
+                {activeItem.done ? '✅ Connected' : connecting ? 'Connecting...' : 'Connect Workspace'}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                render={<Link href={allChecklistDone ? '/dashboard' : (activeItem?.href ?? '/dashboard')} />}
+                nativeButton={false}
+              >
+                {allChecklistDone ? 'Open dashboard' : 'Get Started'}
+              </Button>
+            )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GettingStartedPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading setup guide...</div>}>
+      <GettingStartedContent />
+    </Suspense>
   );
 }
