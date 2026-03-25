@@ -60,9 +60,6 @@ const BACKDROP = {
   ease: 'easeOut' as const,
 };
 
-const MESSAGE_BUBBLE_SHADOW =
-  '[box-shadow:inset_0_-1px_1px_0_rgba(255,255,255,0.45),0_1px_1.5px_0_rgba(32,32,32,0.16),0_0_1.5px_0_rgba(0,0,0,0.24)] dark:[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.05),0_12px_24px_-18px_rgba(0,0,0,0.95)]';
-
 export function TenuBotWidget() {
   const prefersReducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
@@ -255,7 +252,7 @@ export function TenuBotWidget() {
                     ...revealTransition,
                     delay: isOpen && !prefersReducedMotion ? TIMING.headerReveal / 1000 : 0,
                   }}
-                  className="relative rounded-[12px] px-4 py-3 text-foreground"
+                  className="relative rounded-[12px] px-4 pt-3 pb-2 text-foreground"
                 >
                   <div className="relative z-10 flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -298,7 +295,7 @@ export function TenuBotWidget() {
                   ...revealTransition,
                   delay: isOpen && !prefersReducedMotion ? TIMING.messagesReveal / 1000 : 0,
                 }}
-                className="flex-1 overflow-y-auto px-3 py-3"
+                className="flex-1 overflow-y-auto px-3 py-3 scroll-pb-4 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)]"
               >
                 <div className="space-y-4">
                   {visibleMessages.map((message, index) => (
@@ -307,7 +304,7 @@ export function TenuBotWidget() {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[86%] space-y-2 rounded-[18px] px-3 py-2.5 text-sm ${MESSAGE_BUBBLE_SHADOW} [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
+                        className={`max-w-[86%] space-y-2 rounded-[18px] border-[0.5px] border-black/8 px-3 py-2.5 text-sm shadow-xs dark:border-white/8 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
                           message.role === 'user'
                             ? 'rounded-br-md bg-primary text-primary-foreground'
                             : 'rounded-bl-md bg-background/92 text-foreground dark:bg-input/45'
@@ -321,7 +318,7 @@ export function TenuBotWidget() {
                   {isLoading ? (
                     <div className="flex justify-start">
                       <div
-                        className={`flex items-center gap-3 rounded-[18px] rounded-bl-md bg-background/92 px-3 py-2.5 text-sm dark:bg-input/45 ${MESSAGE_BUBBLE_SHADOW}`}
+                        className="flex items-center gap-3 rounded-[18px] rounded-bl-md border-[0.5px] border-black/8 bg-background/92 px-3 py-2.5 text-sm shadow-xs dark:border-white/8 dark:bg-input/45"
                       >
                         <div className="flex gap-1">
                           <div className="size-2 rounded-full bg-muted-foreground/45 animate-bounce" />
@@ -339,9 +336,9 @@ export function TenuBotWidget() {
             </div>
           </motion.div>
 
-          <div className={`relative z-10 bg-background/95 ${isOpen ? 'p-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
+          <div className={`relative z-10 bg-background ${isOpen ? 'px-2 pt-0.5 pb-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
             <div
-              className={`border border-border/70 bg-muted/45 ${isOpen ? 'flex items-end gap-2 rounded-[12px] p-1.5' : 'flex h-full items-center gap-2 rounded-[10px] py-px pr-[3px] pl-px'}`}
+              className={`border border-border/70 bg-background ${isOpen ? 'flex items-end gap-2 rounded-[12px] p-1.5' : 'flex h-full items-center gap-2 rounded-[10px] py-px pr-[3px] pl-px'}`}
               onPointerDownCapture={() => {
                 if (!isOpen) {
                   openPanel();
