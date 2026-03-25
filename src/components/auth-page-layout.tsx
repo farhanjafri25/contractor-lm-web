@@ -8,6 +8,7 @@ export function AuthPageLayout({
   children,
   aside,
   footer,
+  cardClassName,
   gridClassName,
   contentClassName,
   asideClassName,
@@ -15,6 +16,7 @@ export function AuthPageLayout({
   children: React.ReactNode;
   aside: React.ReactNode;
   footer?: React.ReactNode;
+  cardClassName?: string;
   gridClassName?: string;
   contentClassName?: string;
   asideClassName?: string;
@@ -30,7 +32,7 @@ export function AuthPageLayout({
 
         <main className="flex flex-1 items-center py-8 sm:py-12 lg:py-16">
           <PageTransition className="mx-auto w-full max-w-[1250px]">
-            <Card className="bg-card">
+            <Card className={cn('bg-card shadow-none [box-shadow:none]', cardClassName)}>
               <CardContent className="p-0">
                 <div
                   className={cn(

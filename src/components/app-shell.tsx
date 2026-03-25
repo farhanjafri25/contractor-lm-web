@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import {
   Bell,
   CheckCircle,
+  ChevronGrabberVertical,
   Group2,
   History,
   HomeCircle,
@@ -262,6 +263,66 @@ function FeedbackPopover() {
   );
 }
 
+function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
+  const { user, logout } = useAuth();
+  const { data: profileData } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => (await tenantApi.getUserProfile()).data,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  });
+  const personalAvatarSeed = getAvatarSeed(user?._id, user?.email);
+  const personalAvatarSrc = getAvatarImageSrc(user?.avatar, user?.avatarVersion);
+  const fullName = profileData?.name?.trim() || user?.name?.trim() || '';
+  const displayName = fullName || user?.email || 'User';
+  const menuName = fullName || 'User';
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          'card-surface flex h-9 w-full min-w-0 items-center gap-2 rounded-lg bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
+          collapsed && 'mx-auto size-9 justify-center px-0',
+        )}
+      >
+        {personalAvatarSrc ? (
+          <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
+            <Image src={personalAvatarSrc} alt="Avatar" fill unoptimized sizes="20px" className="object-cover" />
+          </div>
+        ) : (
+          <InitialAvatar
+            seed={personalAvatarSeed}
+            label={displayName}
+            size="sm"
+            className="size-5 border-0 text-[8px]"
+          />
+        )}
+        {!collapsed ? (
+          <>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium leading-5">{displayName}</span>
+            </span>
+            <ChevronGrabberVertical size={16} className="shrink-0 text-muted-foreground" />
+          </>
+        ) : null}
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent className="w-[var(--anchor-width)] min-w-[var(--anchor-width)]">
+        <div className="px-2 py-1.5">
+          <p className="truncate text-sm font-medium">{menuName}</p>
+          {user?.email ? <p className="truncate text-xs text-muted-foreground">{user.email}</p> : null}
+          {user?.role ? <p className="mt-1 text-xs capitalize text-muted-foreground">{user.role}</p> : null}
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout}>
+          <LogOut size={14} />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -354,13 +415,15 @@ function SidebarContent({
       <div className="flex-1 overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
       </div>
+      <div className={cn('px-2 pt-3 pb-4', collapsed && 'pt-2')}>
+        <SidebarProfileMenu collapsed={collapsed} />
+      </div>
     </div>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const breadcrumbs = routeBreadcrumbs(pathname);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -379,8 +442,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
   };
-  const personalAvatarSeed = getAvatarSeed(user?._id, user?.email);
-  const personalAvatarSrc = getAvatarImageSrc(user?.avatar, user?.avatarVersion);
 
   return (
     <div className="min-h-screen bg-background">
@@ -445,36 +506,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button variant="secondary" size="icon-sm" aria-label="Notifications" title="Notifications">
                 <Bell size={16} />
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                  {personalAvatarSrc ? (
-                    <div className="relative flex size-8 items-center justify-center overflow-hidden rounded-full border bg-muted">
-                      <Image src={personalAvatarSrc} alt="Avatar" fill unoptimized sizes="32px" className="object-cover" />
-                    </div>
-                  ) : (
-                    <InitialAvatar
-                      seed={personalAvatarSeed}
-                      label={user?.name || user?.email || 'User'}
-                      size="sm"
-                    />
-                  )}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-64">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium truncate">{user?.name || user?.email}</p>
-                    <p className="text-xs capitalize text-muted-foreground">{user?.role}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
-                    {resolvedTheme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-                    {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>
-                    <LogOut size={14} />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                aria-label={resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+                title={resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              >
+                {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </Button>
             </div>
           </header>
 
