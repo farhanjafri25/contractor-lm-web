@@ -9,9 +9,12 @@ import activityEmptyLight from '@/assets/activity-empty-light.svg';
 import activityEmptyDark from '@/assets/activity-empty-dark.svg';
 import expiringEmptyLight from '@/assets/expiring-light.svg';
 import expiringEmptyDark from '@/assets/expiring-dark.svg';
+import syncEmptyLight from '@/assets/sync-empty-light.svg';
+import syncEmptyDark from '@/assets/sync-empty-dark.svg';
 import { AlertTriangle, CalendarClock4, CalendarRemove4, ChevronRight, Clock, ShieldOff, Users } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -176,7 +179,7 @@ function DashboardSurface({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="card-surface bg-card ring-0">
+    <Card className="card-surface flex h-full flex-col bg-card ring-0">
       <CardHeader className="border-b border-border/60 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -186,7 +189,7 @@ function DashboardSurface({
           {action}
         </div>
       </CardHeader>
-      <CardContent className="pt-5">{children}</CardContent>
+      <CardContent className="flex flex-1 flex-col pt-5">{children}</CardContent>
     </Card>
   );
 }
@@ -475,7 +478,7 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center rounded-[24px] border border-dashed border-border/80 bg-muted/20 px-6 py-10 text-center">
+            <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
               <span className="block dark:hidden">
                 <Image src={expiringEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
               </span>
@@ -536,7 +539,7 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center rounded-[24px] border border-dashed border-border/80 bg-muted/20 px-6 py-10 text-center">
+            <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
               <span className="block dark:hidden">
                 <Image src={activityEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
               </span>
@@ -558,26 +561,51 @@ export default function DashboardPage() {
             title="Sync health"
             description="Directory connection status and sync state."
           >
-          <div className="divide-y divide-border/60">
-            <div className="flex items-center justify-between gap-4 py-4 first:pt-0">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Health</p>
-                <p className="text-sm text-muted-foreground">Current sync status.</p>
+            {syncHealth.label === 'Not connected' ? (
+              <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
+                <span className="block dark:hidden">
+                  <Image src={syncEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
+                </span>
+                <span className="hidden dark:block">
+                  <Image src={syncEmptyDark} alt="" width={266} height={102} className="w-full max-w-60" />
+                </span>
+                <p className="mt-5 text-sm font-semibold text-foreground">Directory not connected</p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  Connect your directory to see sync health here.
+                </p>
+                {user?.role === 'admin' ? (
+                  <Button
+                    size="sm"
+                    className="mt-5"
+                    render={<Link href="/settings/integrations" />}
+                    nativeButton={false}
+                  >
+                    Connect
+                  </Button>
+                ) : null}
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={syncHealth.badgeVariant} className="gap-2">
-                  <span className={cn('size-1.5 rounded-full', syncHealth.accentClass)} />
-                  {syncHealth.label}
-                </Badge>
-              </div>
-            </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                <div className="flex items-center justify-between gap-4 py-4 first:pt-0">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Health</p>
+                    <p className="text-sm text-muted-foreground">Current sync status.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={syncHealth.badgeVariant} className="gap-2">
+                      <span className={cn('size-1.5 rounded-full', syncHealth.accentClass)} />
+                      {syncHealth.label}
+                    </Badge>
+                  </div>
+                </div>
 
-            <div className="py-4 last:pb-0">
-              <p className="text-sm font-medium text-foreground">Last sync</p>
-              <p className="mt-1 text-sm text-muted-foreground">Not available yet. The current API does not expose a sync timestamp.</p>
-            </div>
-          </div>
-        </DashboardSurface>
+                <div className="py-4 last:pb-0">
+                  <p className="text-sm font-medium text-foreground">Last sync</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Not available yet. The current API does not expose a sync timestamp.</p>
+                </div>
+              </div>
+            )}
+          </DashboardSurface>
 
         <DashboardSurface
           title="Missing expiry"
