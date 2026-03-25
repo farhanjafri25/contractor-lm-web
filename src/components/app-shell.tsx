@@ -38,6 +38,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { PageTransition } from '@/components/page-transition';
 
 function GettingStartedProgressIcon({
@@ -453,7 +454,19 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className={cn('flex h-14 items-center', collapsed ? 'justify-center px-2' : 'px-4')}>
-        {collapsed ? <LogoMark priority /> : <Logo priority />}
+        {collapsed ? (
+          <LogoMark priority />
+        ) : (
+          <div className="flex items-center gap-2">
+            <Logo priority />
+            <Badge
+              variant="secondary"
+              className="min-h-0 rounded-md border-sidebar-border bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/75"
+            >
+              Beta
+            </Badge>
+          </div>
+        )}
       </div>
       <div className={cn(collapsed ? 'px-2 pt-2 pb-3' : 'px-2 pt-2 pb-4')}>
         <TeamSwitcher collapsed={collapsed} />
