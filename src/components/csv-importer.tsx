@@ -327,8 +327,7 @@ export function CsvImporter() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger 
         render={
-          <Button variant="outline" className="gap-2 shrink-0">
-            <FileText size={16} />
+          <Button variant="outline" className="shrink-0">
             Import CSV
           </Button>
         } 
