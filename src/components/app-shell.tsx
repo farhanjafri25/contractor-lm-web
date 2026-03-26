@@ -292,7 +292,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'card-surface flex h-9 w-full min-w-0 items-center gap-2 rounded-lg bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
           collapsed && 'mx-auto size-9 justify-center px-0',
         )}
       >
@@ -318,7 +318,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
         ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="relative w-[var(--anchor-width)] min-w-[var(--anchor-width)] overflow-hidden">
+      <DropdownMenuContent className="relative w-[max(var(--anchor-width),13rem)] min-w-[max(var(--anchor-width),13rem)] overflow-hidden">
         {personalAvatarSrc ? (
           <div
             aria-hidden="true"
@@ -474,7 +474,10 @@ function SidebarContent({
       <div className="flex-1 overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
       </div>
-      <div className={cn('px-2 pt-3 pb-4', collapsed && 'pt-2')}>
+      <div className="px-2 pb-4">
+        <div className={cn('py-3', collapsed && 'py-2')}>
+          <Separator className="bg-sidebar-border" />
+        </div>
         <SidebarProfileMenu collapsed={collapsed} />
       </div>
     </div>
