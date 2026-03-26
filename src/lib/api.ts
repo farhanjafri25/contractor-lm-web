@@ -137,6 +137,10 @@ export const integrationApi = {
     getStatus: () => api.get('/integrations/status'),
 };
 
+export const applicationsApi = {
+    list: () => api.get('/applications'),
+};
+
 export interface AiChatMessage {
     role: 'user' | 'assistant' | 'system' | 'tool';
     content: string;

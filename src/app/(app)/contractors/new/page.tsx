@@ -4,8 +4,9 @@ import { format, isValid, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { contractorsApi } from '@/lib/api';
+import { applicationsApi, contractorsApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ChevronBottom } from '@/components/icons';
 import { FieldBlock, FilterSelect, PageBackLink, PageHeader, SectionCard } from '@/components/app-ui';
@@ -14,6 +15,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { useGettingStarted } from '@/hooks/use-getting-started';
 
 const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance', 'Legal', 'Operations', 'Other'];
 
@@ -37,7 +40,21 @@ export default function NewContractorPage() {
     end_date: '',
     notes: '',
     create_google_account: false,
+    create_slack_account: false,
+    application_access: [] as string[],
   });
+
+  const { data: appsData, isLoading: appsLoading } = useQuery({
+    queryKey: ['applications-list'],
+    queryFn: async () => (await applicationsApi.list()).data,
+  });
+
+  const availableApps = (appsData ?? []).filter((app: any) => {
+    const slug = app.application_id?.slug;
+    return slug !== 'google-workspace' && slug !== 'slack';
+  });
+
+  const { isGoogleConnected, isSlackConnected } = useGettingStarted();
 
   const startDate = contract.start_date ? parseISO(contract.start_date) : undefined;
   const endDate = contract.end_date ? parseISO(contract.end_date) : undefined;
@@ -48,12 +65,21 @@ export default function NewContractorPage() {
     setError('');
   };
 
-  const updateContractField = (field: keyof typeof contract, value: string | boolean) => {
+  const updateContractField = (field: keyof typeof contract, value: any) => {
     setContract((prev) => ({ ...prev, [field]: value }));
-    if (field !== 'notes' && field !== 'create_google_account') {
+    if (field !== 'notes' && field !== 'create_google_account' && field !== 'create_slack_account' && field !== 'application_access') {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
     setError('');
+  };
+
+  const toggleAppAccess = (appId: string) => {
+    const current = contract.application_access;
+    if (current.includes(appId)) {
+      updateContractField('application_access', current.filter(id => id !== appId));
+    } else {
+      updateContractField('application_access', [...current, appId]);
+    }
   };
 
   const validateForm = () => {
@@ -105,6 +131,19 @@ export default function NewContractorPage() {
     }
     setLoading(true);
     try {
+      // Find the Google and Slack IDs from the fetched apps data
+      const googleApp = appsData?.find((a: any) => a.application_id?.slug === 'google-workspace');
+      const slackApp = appsData?.find((a: any) => a.application_id?.slug === 'slack');
+
+      const finalAppAccess = contract.application_access.map(id => ({ tenant_application_id: id }));
+
+      if (contract.create_google_account && googleApp) {
+        finalAppAccess.push({ tenant_application_id: googleApp._id });
+      }
+      if (contract.create_slack_account && slackApp) {
+        finalAppAccess.push({ tenant_application_id: slackApp._id });
+      }
+
       await contractorsApi.create({
         ...form,
         notes: contract.notes,
@@ -112,7 +151,8 @@ export default function NewContractorPage() {
           start_date: contract.start_date,
           end_date: contract.end_date,
           create_google_account: contract.create_google_account,
-          application_access: [],
+          create_slack_account: contract.create_slack_account,
+          application_access: finalAppAccess,
         },
       });
       toast.success('Contractor added.');
@@ -257,18 +297,70 @@ export default function NewContractorPage() {
               </FieldBlock>
             </div>
             <div className="md:col-span-2">
-              <div className="flex flex-row items-center justify-between rounded-lg border p-4 hover:bg-neutral-50/50 transition-colors">
+              <div className={cn("flex flex-row items-center justify-between rounded-lg border p-4 transition-colors", !isGoogleConnected && "opacity-60 bg-muted/20")}>
                 <div className="space-y-0.5">
                   <span className="text-base font-medium">Provision Google Workspace</span>
-                  <p className="text-sm text-muted-foreground">Automatically generate a Google account sequentially parsing their identity name fields.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isGoogleConnected 
+                      ? "Automatically generate a Google account for this contractor."
+                      : "Connect Google Workspace in settings to enable this feature."}
+                  </p>
                 </div>
                 <input
                   type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:cursor-not-allowed"
                   checked={contract.create_google_account}
                   onChange={(e) => updateContractField('create_google_account', e.target.checked)}
+                  disabled={!isGoogleConnected}
                 />
               </div>
+
+              <div className={cn("flex flex-row items-center justify-between rounded-lg border p-4 transition-colors", !isSlackConnected && "opacity-60 bg-muted/20")}>
+                <div className="space-y-0.5">
+                  <span className="text-base font-medium">Provision Slack</span>
+                  <p className="text-sm text-muted-foreground">
+                    {isSlackConnected 
+                      ? "Automatically invite to Slack or notify admins to add manually."
+                      : "Connect Slack in settings to enable this feature."}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                  checked={contract.create_slack_account}
+                  onChange={(e) => updateContractField('create_slack_account', e.target.checked)}
+                  disabled={!isSlackConnected}
+                />
+              </div>
+
+              {availableApps.length > 0 && (
+                <div className="mt-8 space-y-4">
+                  <h4 className="text-sm font-semibold text-foreground">Other Applications</h4>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {availableApps.map((app: any) => (
+                      <div 
+                        key={app._id}
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border p-4 cursor-pointer hover:bg-muted/30 transition-colors",
+                          contract.application_access.includes(app._id) && "border-blue-500 bg-blue-50/30 dark:bg-blue-950/20"
+                        )}
+                        onClick={() => toggleAppAccess(app._id)}
+                      >
+                        <div className="min-w-0 pr-2">
+                          <p className="text-sm font-medium truncate">{app.display_name || app.application_id?.name || 'Unnamed App'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{app.application_id?.auth_type || 'Custom'}</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                          checked={contract.application_access.includes(app._id)}
+                          onChange={() => {}} // Controlled by parent div click
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </SectionCard>

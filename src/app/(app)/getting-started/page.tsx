@@ -63,12 +63,19 @@ function GettingStartedContent() {
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    if (searchParams?.get('success') === 'google_connected') {
+    const success = searchParams?.get('success');
+    const error = searchParams?.get('error');
+
+    if (success === 'google_connected') {
       toast.success('Successfully connected to Google Workspace Admin!');
       window.history.replaceState(null, '', window.location.pathname);
+    } else if (success === 'slack_connected') {
+      toast.success('Successfully connected to Slack Workspace!');
+      window.history.replaceState(null, '', window.location.pathname);
     }
-    if (searchParams?.get('error')) {
-      toast.error('Failed to authorize Google integration. Please try again.');
+
+    if (error) {
+      toast.error(error === 'oauth_failed' ? 'Failed to authorize integration. Please try again.' : 'Integration setup interrupted.');
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, [searchParams]);
@@ -82,6 +89,20 @@ function GettingStartedContent() {
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e, 'Failed to initialize Google OAuth connection'));
+      console.error(e);
+      setConnecting(false);
+    }
+  }
+
+  async function handleConnectSlack() {
+    setConnecting(true);
+    try {
+      const response = await api.get('/integrations/slack/auth');
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Failed to initialize Slack OAuth connection'));
       console.error(e);
       setConnecting(false);
     }
@@ -175,28 +196,21 @@ function GettingStartedContent() {
                   : activeItem?.description}
               </p>
             </div>
-            {allChecklistDone ? (
+            {activeItem?.label === 'Connect Google Workspace' ? (
               <Button
-                size="sm"
-                render={<Link href="/dashboard" />}
-                nativeButton={false}
+                onClick={handleConnectGoogle}
+                disabled={connecting}
+                className="bg-[#4285F4] hover:bg-[#4285F4]/90 text-white"
               >
-                Open dashboard
+                {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
               </Button>
-            ) : activeItem?.done ? (
+            ) : activeItem?.label === 'Configure Slack notifications' ? (
               <Button
-                size="sm"
-                variant="secondary"
-                render={<Link href={activeItem.href} />}
-                nativeButton={false}
-                className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 shadow-none hover:bg-emerald-500/15 dark:text-emerald-400"
+                onClick={handleConnectSlack}
+                disabled={connecting}
+                className="bg-[#4A154B] hover:bg-[#4A154B]/90 text-white"
               >
-                <CheckCircle size={14} />
-                {activeItem.label === 'Connect Google Workspace' ? 'Connected' : 'Completed'}
-              </Button>
-            ) : activeItem?.label === 'Connect Google Workspace' ? (
-              <Button size="sm" onClick={handleConnectGoogle} disabled={connecting}>
-                {connecting ? 'Connecting...' : 'Connect Workspace'}
+                {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
               </Button>
             ) : (
               <Button

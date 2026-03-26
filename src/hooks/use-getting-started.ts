@@ -64,10 +64,9 @@ export function useGettingStarted() {
     },
   });
 
-  const slack = integrationStatus?.slack as Record<string, unknown> | undefined;
-  const isGoogleConnected = Boolean(tenantProfile?.google_workspace_refresh_token);
+  const isGoogleConnected = Boolean(tenantProfile?.is_google_connected);
   const googleSyncFailed = Boolean(tenantProfile?.google_workspace_sync_failed);
-  const isSlackConnected = slack?.connected === true;
+  const isSlackConnected = Boolean(tenantProfile?.is_slack_connected);
 
   const teamMembers = ((teamData?.data as Record<string, unknown>[] | undefined) ?? []);
   const sponsorCount = teamMembers.filter((member) => member.role === 'sponsor').length;
