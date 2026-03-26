@@ -8,6 +8,7 @@ import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import { CheckCircle, Clock, Eye, XCircle } from '@/components/icons';
+import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
@@ -280,17 +281,32 @@ export default function SponsorPage() {
                     const submitter = request.sponsor_id as Record<string, unknown> | undefined;
                     const status = String(request.status ?? 'pending');
                     const requestDate = request.createdAt || request.created_at;
+                    const contractorName = contractor ? String(contractor.name ?? '') : '';
+                    const contractorEmail = contractor ? String(contractor.email ?? '') : '';
+                    const contractorSeed = getAvatarSeed(contractor?._id, contractorEmail, contractorName);
+                    const submitterName = submitter ? String(submitter.name ?? submitter.full_name ?? submitter.display_name ?? '') : '';
+                    const submitterEmail = submitter ? String(submitter.email ?? '') : '';
                     return (
                       <TableRow key={String(request._id)}>
                         <TableCell>
-                          <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '') : '—'}</p>
-                          <p className="text-sm text-muted-foreground">{contractor ? String(contractor.department ?? '') : ''}</p>
+                          <div className="flex items-center gap-3">
+                            <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail} />
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-foreground">{contractorName || '—'}</p>
+                              <p className="text-sm text-muted-foreground">{contractor ? String(contractor.department ?? '') : ''}</p>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="capitalize text-muted-foreground">
                           {getActionTypeLabel(String(request.action_type ?? ''))}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {submitter ? String(submitter.email ?? '—') : '—'}
+                        <TableCell>
+                          {submitter ? (
+                            <div className="space-y-0.5">
+                              {submitterName ? <p className="font-medium text-foreground">{submitterName}</p> : null}
+                              <p className="text-sm text-muted-foreground">{submitterEmail || '—'}</p>
+                            </div>
+                          ) : '—'}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {requestDate ? new Date(String(requestDate)).toLocaleString() : '—'}

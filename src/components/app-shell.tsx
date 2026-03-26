@@ -458,7 +458,7 @@ function SidebarContent({
             <Logo priority />
             <Badge
               variant="secondary"
-              className="min-h-0 rounded-sm border-sidebar-border bg-sidebar-accent px-1 py-px text-[9px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/75"
+              className="min-h-0 border-sidebar-border bg-sidebar-accent px-1 py-px text-[9px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/75"
             >
               Beta
             </Badge>

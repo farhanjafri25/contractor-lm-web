@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "group/badge inline-flex min-h-6 w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-2.5 py-1 text-[11px] leading-none font-semibold whitespace-nowrap shadow-2xs transition-[background-color,border-color,color] duration-200 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3.5 [&>svg]:shrink-0",
+  "group/badge inline-flex min-h-6 w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-sm border px-1.5 py-1 text-[11px] leading-none font-semibold whitespace-nowrap transition-[background-color,border-color,color] duration-200 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3.5 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -21,7 +21,7 @@ const badgeVariants = cva(
         ghost:
           "border-transparent bg-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        neutral: "border-border/80 bg-muted/70 text-foreground",
+        neutral: "border-border/80 bg-muted/70 text-foreground/80",
         emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
         blue: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
         violet: "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-400",

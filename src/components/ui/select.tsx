@@ -6,8 +6,8 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckCircle, ChevronBottom } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-function Select({ ...props }: SelectPrimitive.Root.Props<string>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+function Select({ modal = false, ...props }: SelectPrimitive.Root.Props<string>) {
+  return <SelectPrimitive.Root data-slot="select" modal={modal} {...props} />;
 }
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {

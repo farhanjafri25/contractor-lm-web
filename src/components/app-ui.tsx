@@ -343,7 +343,7 @@ export function SearchField({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         enterKeyHint="search"
-        className="h-9 rounded-xl bg-background/90 pl-10 pr-10 placeholder:text-muted-foreground/90 dark:bg-input/25"
+        className="rounded-lg bg-background/90 pl-10 pr-10 placeholder:text-muted-foreground/90 dark:bg-input/25"
       />
       {value ? (
         <button
@@ -395,22 +395,24 @@ export function FilterSelect({
   const selectedOption = options.find((option) => option.value === value);
 
   return (
-    <Select
-      value={value || null}
-      onValueChange={(next: string | null) => onValueChange(next ?? '')}
-      disabled={disabled}
-    >
-      <SelectTrigger className={cn('min-w-[12rem]', className)}>
-        <SelectValue>{selectedOption?.label ?? placeholder}</SelectValue>
-      </SelectTrigger>
-      <SelectContent align="start">
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={cn('min-w-40 shrink-0', className)}>
+      <Select
+        value={value || null}
+        onValueChange={(next: string | null) => onValueChange(next ?? '')}
+        disabled={disabled}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue>{selectedOption?.label ?? placeholder}</SelectValue>
+        </SelectTrigger>
+        <SelectContent align="start" alignItemWithTrigger={false}>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
@@ -453,7 +455,7 @@ export function SummaryPill({
       )}
     >
       <span>{label}</span>
-      <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] tracking-normal">{count}</span>
+      <span className="rounded-sm bg-background/80 px-1.5 py-0.5 text-[10px] tracking-normal">{count}</span>
     </button>
   );
 }

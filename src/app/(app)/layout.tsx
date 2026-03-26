@@ -25,9 +25,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!user) return null;
 
     return (
-        <AppShell>
-            {children}
+        <>
+            <AppShell>
+                {children}
+            </AppShell>
             <TenuBotWidget />
-        </AppShell>
+        </>
     );
 }

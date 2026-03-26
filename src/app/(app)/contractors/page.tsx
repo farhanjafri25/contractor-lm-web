@@ -199,6 +199,8 @@ export default function ContractorsPage() {
                       const contractorHref = `/contractors/${contractorId}`;
                       const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
                       const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
+                      const sponsorName = sponsor ? String(sponsor.name ?? sponsor.full_name ?? sponsor.display_name ?? '') : '';
+                      const sponsorEmail = sponsor ? String(sponsor.email ?? '') : '';
                       const contractorName = String(contractor.name ?? '');
                       const contractorEmail = String(contractor.email ?? '');
                       const contractorSeed = getAvatarSeed(contractor._id, contractorEmail, contractorName);
@@ -225,7 +227,14 @@ export default function ContractorsPage() {
                             </Link>
                           </TableCell>
                           <TableCell className="text-muted-foreground">{String(contractor.department ?? '—')}</TableCell>
-                          <TableCell className="text-muted-foreground">{sponsor ? String(sponsor.email ?? '—') : '—'}</TableCell>
+                          <TableCell>
+                            {sponsor ? (
+                              <div className="space-y-0.5">
+                                {sponsorName ? <p className="font-medium text-foreground">{sponsorName}</p> : null}
+                                <p className="text-sm text-muted-foreground">{sponsorEmail || '—'}</p>
+                              </div>
+                            ) : '—'}
+                          </TableCell>
                           <TableCell className="text-muted-foreground">
                             {activeContract?.end_date ? new Date(String(activeContract.end_date)).toLocaleDateString() : '—'}
                           </TableCell>

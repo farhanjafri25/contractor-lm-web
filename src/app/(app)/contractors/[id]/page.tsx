@@ -24,6 +24,7 @@ import {
 } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
+import { Badge } from '@/components/ui/badge';
 import { ContractorDetailSkeleton } from '@/components/page-skeletons';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -520,9 +521,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               accessLoading ? (
                 <Skeleton className="h-7 w-16 rounded-full" />
               ) : (
-                <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Badge variant="neutral">
                   {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
-                </div>
+                </Badge>
               )
             }
           >
@@ -576,9 +577,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               timelineLoading ? (
                 <Skeleton className="h-7 w-20 rounded-full" />
               ) : (
-                <div className="rounded-full border border-border/70 bg-secondary/30 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Badge variant="neutral">
                   {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
-                </div>
+                </Badge>
               )
             }
           >
