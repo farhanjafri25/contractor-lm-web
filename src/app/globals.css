@@ -190,16 +190,16 @@
   --font-serif: PT Serif, ui-serif, serif;
   --font-mono: JetBrains Mono, ui-monospace, monospace;
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0 0 0 1px rgba(33, 33, 38, 0.05), 0 1px 1px 0 rgba(0, 0, 0, 0.05), 0 4px 6px 0 rgba(34, 42, 53, 0.04), 0 24px 68px 0 rgba(47, 48, 55, 0.05), 0 2px 3px 0 rgba(0, 0, 0, 0.04);
+  --shadow-xs: 0 1px 1px 0 rgba(0, 0, 0, 0.05), 0 4px 6px 0 rgba(34, 42, 53, 0.04), 0 24px 68px 0 rgba(47, 48, 55, 0.05), 0 2px 3px 0 rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
   --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
   --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-  --shadow-card-surface: 0 8px 12px -4px rgba(16, 12, 12, 0.08), 0 0 2px 0 rgba(16, 12, 12, 0.10), 0 1px 2px 0 rgba(16, 12, 12, 0.10);
+  --shadow-card-surface: 0 8px 12px -4px rgba(16, 12, 12, 0.08), 0 1px 2px 0 rgba(16, 12, 12, 0.10);
   --shadow-card-surface-soft: 0 8px 12px -4px rgba(16, 12, 12, 0.08), 0 1px 2px 0 rgba(16, 12, 12, 0.10);
-  --card-surface-stroke: transparent;
+  --card-surface-stroke: var(--border);
 }
 
 .dark {
@@ -242,15 +242,15 @@
   --sidebar-border: #373739;
   --sidebar-ring: #2e2a24;
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 1px 0 rgba(0, 0, 0, 0.32), 0 4px 6px 0 rgba(0, 0, 0, 0.22), 0 24px 68px 0 rgba(0, 0, 0, 0.38), 0 2px 3px 0 rgba(0, 0, 0, 0.24);
+  --shadow-xs: 0 1px 1px 0 rgba(0, 0, 0, 0.32), 0 4px 6px 0 rgba(0, 0, 0, 0.22), 0 24px 68px 0 rgba(0, 0, 0, 0.38), 0 2px 3px 0 rgba(0, 0, 0, 0.24);
   --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
   --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
   --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-  --shadow-card-surface: 0 10px 18px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.45);
-  --shadow-card-surface-soft: 0 10px 18px -10px rgba(0, 0, 0, 0.7), 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --shadow-card-surface: 0 8px 12px -4px rgba(0, 0, 0, 0.28), 0 1px 2px 0 rgba(0, 0, 0, 0.20);
+  --shadow-card-surface-soft: 0 8px 12px -4px rgba(0, 0, 0, 0.28), 0 1px 2px 0 rgba(0, 0, 0, 0.20);
   --card-surface-stroke: rgba(255, 255, 255, 0.10);
 }
 
