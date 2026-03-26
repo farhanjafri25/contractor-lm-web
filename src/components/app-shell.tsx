@@ -254,13 +254,10 @@ function FeedbackPopover() {
           aria-label="Feedback"
           autoFocus
           rows={5}
-          className="min-h-32 rounded-[0.7rem] border-border/70 bg-muted/20 px-4 py-3 text-sm leading-6 placeholder:text-muted-foreground/90 focus-visible:border-ring/60 focus-visible:ring-ring/25 dark:bg-muted/10"
         />
         <div className="flex justify-end">
           <Button
             type="button"
-            size="sm"
-            className="h-9 rounded-xl px-4 text-sm shadow-sm"
             disabled={!trimmedMessage}
             onClick={handleSubmit}
           >
