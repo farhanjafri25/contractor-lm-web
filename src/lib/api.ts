@@ -89,6 +89,7 @@ export const contractorsApi = {
     create: (data: Record<string, unknown>) => api.post('/contractors', data),
     bulkCreate: (data: { contractors: Record<string, unknown>[] }) => api.post('/contractors/bulk', data),
     update: (id: string, data: Record<string, unknown>) => api.patch(`/contractors/${id}`, data),
+    delete: (id: string) => api.delete(`/contractors/${id}`),
 };
 
 export const contractsApi = {
@@ -115,6 +116,7 @@ export const sponsorApi = {
 export const accessApi = {
     list: (params?: Record<string, unknown>) => api.get('/access', { params }),
     getByContract: (contractId: string) => api.get(`/access/contract/${contractId}`),
+    assign: (contractId: string, appIds: string[]) => api.post(`/access/contract/${contractId}/assign`, { app_ids: appIds }),
     retryRevocation: (id: string) => api.post(`/access/${id}/retry-revocation`),
     markResolved: (id: string) => api.post(`/access/${id}/mark-resolved`),
 };

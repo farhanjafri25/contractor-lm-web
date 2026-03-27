@@ -13,6 +13,7 @@ import {
 } from '@/components/icons';
 import { FieldBlock } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -480,15 +481,12 @@ export default function SignupPage() {
               <Input value={email} readOnly className="bg-muted text-muted-foreground" />
             </FieldBlock>
 
-            <label className="flex items-start gap-3 cursor-pointer">
-              <div className="flex h-5 items-center">
-                <input 
-                  type="checkbox" 
-                  checked={marketingOptIn} 
-                  onChange={(e) => setMarketingOptIn(e.target.checked)} 
-                  className="size-4 rounded-sm border-border accent-primary bg-background text-primary"
-                />
-              </div>
+            <label className="flex cursor-pointer items-start gap-3">
+              <Checkbox
+                checked={marketingOptIn}
+                onCheckedChange={(checked) => setMarketingOptIn(Boolean(checked))}
+                className="mt-0.5"
+              />
               <span className="text-sm text-foreground">
                 Subscribe to product update emails and Tenurio newsletters.
               </span>

@@ -9,11 +9,14 @@ import { toast } from 'sonner';
 import { applicationsApi, contractorsApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ChevronBottom } from '@/components/icons';
-import { FieldBlock, FilterSelect, PageBackLink, PageHeader, SectionCard } from '@/components/app-ui';
+import { FieldBlock, PageBackLink, PageHeader, SectionCard, SurfaceAlert } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -176,11 +179,7 @@ export default function NewContractorPage() {
         />
       </div>
 
-      {error ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
+      {error ? <SurfaceAlert tone="danger" title={error} /> : null}
 
       <form className="space-y-6" onSubmit={handleSubmit}>
         <SectionCard title="Details" description="Basic details for this contractor.">
@@ -208,16 +207,25 @@ export default function NewContractorPage() {
               <Input value={form.phone} onChange={(event) => updateFormField('phone', event.target.value)} />
             </FieldBlock>
             <FieldBlock label="Department">
-              <FilterSelect
-                value={form.department}
-                onValueChange={(value) => updateFormField('department', value)}
-                options={[{ label: 'Select department', value: '' }, ...departments.map((value) => ({ label: value, value }))]}
-                placeholder="Select department"
-              />
+              <Select
+                value={form.department || null}
+                onValueChange={(value: string | null) => updateFormField('department', value ?? '')}
+              >
+                <SelectTrigger className="w-full" aria-invalid={Boolean(fieldErrors.department)}>
+                  <SelectValue>
+                    {form.department || <span className="text-muted-foreground">Select department</span>}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {fieldErrors.department ? <p className="text-xs text-destructive">{fieldErrors.department}</p> : null}
             </FieldBlock>
             <div className="md:col-span-2">
-            <FieldBlock label="Title">
+              <FieldBlock label="Title">
                 <Input
                   value={form.job_title}
                   onChange={(event) => updateFormField('job_title', event.target.value)}
@@ -231,7 +239,7 @@ export default function NewContractorPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Contract" description="Set the contract dates for this contractor.">
+        <SectionCard title="Contract" description="Set the contract dates and access for this contractor.">
           <div className="grid gap-5 md:grid-cols-2">
             <FieldBlock label="Start date">
               <Popover>
@@ -240,7 +248,7 @@ export default function NewContractorPage() {
                     <Button
                       variant="outline"
                       data-empty={!startDate}
-                      className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                     >
                       {startDate ? format(startDate, 'PPP') : <span>Choose a start date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
@@ -267,7 +275,7 @@ export default function NewContractorPage() {
                     <Button
                       variant="outline"
                       data-empty={!endDate}
-                      className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                     >
                       {endDate ? format(endDate, 'PPP') : <span>Choose an end date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
@@ -296,67 +304,60 @@ export default function NewContractorPage() {
                 />
               </FieldBlock>
             </div>
-            <div className="md:col-span-2">
-              <div className={cn("flex flex-row items-center justify-between rounded-lg border p-4 transition-colors", !isGoogleConnected && "opacity-60 bg-muted/20")}>
+            <div className="md:col-span-2 space-y-3">
+              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border p-4 shadow-2xs transition-colors', isGoogleConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
                 <div className="space-y-0.5">
-                  <span className="text-base font-medium">Provision Google Workspace</span>
+                  <p className="text-sm font-medium">Provision Google Workspace</p>
                   <p className="text-sm text-muted-foreground">
-                    {isGoogleConnected 
-                      ? "Automatically generate a Google account for this contractor."
-                      : "Connect Google Workspace in settings to enable this feature."}
+                    {isGoogleConnected
+                      ? 'Automatically generate a Google account for this contractor.'
+                      : 'Connect Google Workspace in settings to enable this feature.'}
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                <Switch
                   checked={contract.create_google_account}
-                  onChange={(e) => updateContractField('create_google_account', e.target.checked)}
+                  onCheckedChange={(checked) => updateContractField('create_google_account', checked)}
                   disabled={!isGoogleConnected}
                 />
-              </div>
+              </label>
 
-              <div className={cn("flex flex-row items-center justify-between rounded-lg border p-4 transition-colors", !isSlackConnected && "opacity-60 bg-muted/20")}>
+              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border p-4 shadow-2xs transition-colors', isSlackConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
                 <div className="space-y-0.5">
-                  <span className="text-base font-medium">Provision Slack</span>
+                  <p className="text-sm font-medium">Provision Slack</p>
                   <p className="text-sm text-muted-foreground">
-                    {isSlackConnected 
-                      ? "Automatically invite to Slack or notify admins to add manually."
-                      : "Connect Slack in settings to enable this feature."}
+                    {isSlackConnected
+                      ? 'Automatically invite to Slack or notify admins to add manually.'
+                      : 'Connect Slack in settings to enable this feature.'}
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                <Switch
                   checked={contract.create_slack_account}
-                  onChange={(e) => updateContractField('create_slack_account', e.target.checked)}
+                  onCheckedChange={(checked) => updateContractField('create_slack_account', checked)}
                   disabled={!isSlackConnected}
                 />
-              </div>
+              </label>
 
               {availableApps.length > 0 && (
-                <div className="mt-8 space-y-4">
-                  <h4 className="text-sm font-semibold text-foreground">Other Applications</h4>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                <div className="pt-3 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Other applications</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {availableApps.map((app: any) => (
-                      <div 
+                      <label
                         key={app._id}
                         className={cn(
-                          "flex items-center justify-between rounded-lg border p-4 cursor-pointer hover:bg-muted/30 transition-colors",
-                          contract.application_access.includes(app._id) && "border-blue-500 bg-blue-50/30 dark:bg-blue-950/20"
+                          'flex cursor-pointer items-center justify-between rounded-[10px] border border-border/60 bg-background px-4 py-3 shadow-2xs transition-colors hover:bg-muted/30',
+                          contract.application_access.includes(app._id) && 'border-primary bg-primary/10',
                         )}
-                        onClick={() => toggleAppAccess(app._id)}
                       >
-                        <div className="min-w-0 pr-2">
+                        <div className="min-w-0 pr-3">
                           <p className="text-sm font-medium truncate">{app.display_name || app.application_id?.name || 'Unnamed App'}</p>
                           <p className="text-xs text-muted-foreground truncate">{app.application_id?.auth_type || 'Custom'}</p>
                         </div>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                        <Checkbox
                           checked={contract.application_access.includes(app._id)}
-                          onChange={() => {}} // Controlled by parent div click
+                          onCheckedChange={() => toggleAppAccess(app._id)}
                         />
-                      </div>
+                      </label>
                     ))}
                   </div>
                 </div>

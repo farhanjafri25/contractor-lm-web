@@ -29,8 +29,15 @@ const recencyOptions = [
   { label: 'Last 30 days', value: '30d' },
 ];
 
+const actionTypeLabels: Record<string, string> = {
+  extend: 'Extension',
+  reactivate: 'Reactivation',
+  access_change: 'Access change',
+  deactivate: 'Deactivation',
+};
+
 function getActionTypeLabel(value: string) {
-  return value
+  return actionTypeLabels[value] ?? value
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }

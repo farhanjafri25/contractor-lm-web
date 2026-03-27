@@ -1,10 +1,12 @@
 'use client';
 
 import { use, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { accessApi, contractorsApi, contractsApi, eventsApi, sponsorApi } from '@/lib/api';
+import { accessApi, applicationsApi, contractorsApi, contractsApi, eventsApi, sponsorApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -16,19 +18,26 @@ import {
   ChevronBottom,
   Clock,
   FileText,
+  History,
+  IconTrashCanSimple,
+  Pencil,
   RotateCcw,
+  ShieldAlert,
   ShieldCheck,
   ShieldOff,
   UserPlus,
+  Users,
   XCircle,
 } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ContractorDetailSkeleton } from '@/components/page-skeletons';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,6 +48,10 @@ const suspendReasons = [
   { value: 'performance', label: 'Performance' },
   { value: 'security', label: 'Security concern' },
   { value: 'other', label: 'Other' },
+];
+
+const departments = [
+  'Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance', 'Legal', 'Operations', 'Other',
 ];
 
 function getTimelineEventMeta(type: string) {
@@ -195,12 +208,14 @@ function getContractGuidance(status: string, isAdmin: boolean) {
 
   if (normalized.includes('active')) {
     return isAdmin
-      ? 'This contractor is active. Use suspend to pause work, extend to move the end date, or end contract to begin access removal.'
-      : 'This contractor is active. You can submit an extension request when the contract needs more time.';
+      ? 'This contractor is active. Use suspend to pause work, extend to move the end date, or deactivate to begin access removal.'
+      : 'This contractor is active. You can submit requests for extension, access changes, or deactivation.';
   }
 
   if (normalized.includes('suspend')) {
-    return 'This contractor is suspended. Review recent activity, then reactivate once work is ready to resume.';
+    return isAdmin
+      ? 'This contractor is suspended. Review recent activity, then reactivate once work is ready to resume.'
+      : 'This contractor is suspended. You can request reactivation once the issue is resolved.';
   }
 
   if (normalized.includes('expire')) {
@@ -219,7 +234,6 @@ function ActionDialog({
   onOpenChange,
   title,
   description,
-  error,
   children,
   footer,
 }: {
@@ -227,27 +241,19 @@ function ActionDialog({
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
-  error?: string;
   children: React.ReactNode;
   footer: React.ReactNode;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="flex max-h-[min(640px,85svh)] flex-col overflow-hidden">
         <DialogHeader>
           <div>
             <DialogTitle>{title}</DialogTitle>
             {description ? <DialogDescription>{description}</DialogDescription> : null}
           </div>
         </DialogHeader>
-        <div className="mt-6 space-y-5">
-          {error ? (
-            <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-          {children}
-        </div>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">{children}</div>
         <DialogFooter>{footer}</DialogFooter>
       </DialogContent>
     </Dialog>
@@ -294,17 +300,45 @@ function ActionItem({
 export default function ContractorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const isAdmin = user?.role === 'admin';
 
-  const [modal, setModal] = useState<'suspend' | 'reactivate' | 'extend' | 'terminate' | null>(null);
+  const [modal, setModal] = useState<
+    | 'suspend'
+    | 'reactivate'
+    | 'extend'
+    | 'terminate'
+    | 'edit'
+    | 'delete'
+    | 'change-sponsor'
+    | 'assign-access'
+    | 'request-reactivate'
+    | 'request-access'
+    | 'request-deactivate'
+    | null
+  >(null);
+
+  // Existing action state
   const [suspendReason, setSuspendReason] = useState('security');
   const [suspendNote, setSuspendNote] = useState('');
   const [reactivateNote, setReactivateNote] = useState('');
   const [extendDate, setExtendDate] = useState('');
   const [extendNote, setExtendNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [actionError, setActionError] = useState('');
+
+  // Edit modal state
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', department: '', job_title: '' });
+
+  // Change sponsor state
+  const [newSponsorId, setNewSponsorId] = useState('');
+
+  // Assign access state
+  const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
+
+  // Shared sponsor request note
+  const [requestNote, setRequestNote] = useState('');
+
   const parsedExtendDate = extendDate ? parseISO(extendDate) : undefined;
 
   const { data: contractor, isLoading } = useQuery({
@@ -330,7 +364,28 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     enabled: Boolean(contractId),
   });
 
-  const accessEntries = accessData ?? [];
+  const { data: usersData } = useQuery({
+    queryKey: ['tenant-users'],
+    queryFn: async () => (await tenantApi.listUsers()).data,
+    enabled: modal === 'change-sponsor',
+  });
+
+  const { data: appsData } = useQuery({
+    queryKey: ['applications-list'],
+    queryFn: async () => (await applicationsApi.list()).data,
+    enabled: modal === 'assign-access',
+  });
+
+  const accessEntries = Array.isArray(accessData) ? accessData : [];
+  const tenantUsers = (Array.isArray(usersData?.data) ? usersData.data : []) as Record<string, unknown>[];
+  const availableApps = (Array.isArray(appsData) ? appsData : []) as Record<string, unknown>[];
+  const assignedAppIds = new Set(
+    accessEntries.map((e: Record<string, unknown>) => {
+      const app = e.tenant_application_id as Record<string, unknown> | undefined;
+      return String(app?._id ?? '');
+    }),
+  );
+
   const profileName = String(contractor?.name ?? 'Contractor');
   const profileRole = String(contractor?.job_title ?? 'No title');
   const profileDepartment = String(contractor?.department ?? 'No department');
@@ -349,11 +404,28 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     accessEntries.length === 0
       ? 'No linked applications for this contract.'
       : `${accessEntries.length} connected ${accessEntries.length === 1 ? 'application' : 'applications'}`;
+
+  // Admin action conditions
   const canSuspend = activeContract?.status === 'active' && isAdmin;
   const canExtend = activeContract?.status === 'active';
   const canTerminate = activeContract?.status === 'active' && isAdmin;
   const canReactivate = activeContract?.status === 'suspended' && isAdmin;
-  const hasManageActions = Boolean(canSuspend || canExtend || canTerminate || canReactivate);
+  const canEdit = isAdmin;
+  const canDelete = isAdmin;
+  const canChangeSponsor = isAdmin;
+  const canAssignAccess = activeContract?.status === 'active' && isAdmin;
+
+  // Sponsor action conditions
+  const canRequestReactivate = !isAdmin && activeContract?.status === 'suspended';
+  const canRequestAccess = !isAdmin && activeContract?.status === 'active';
+  const canRequestDeactivate = !isAdmin && activeContract?.status === 'active';
+  const canEditBasic = !isAdmin && Boolean(activeContract);
+
+  const hasManageActions = Boolean(
+    canSuspend || canExtend || canTerminate || canReactivate ||
+    canEdit || canDelete || canChangeSponsor || canAssignAccess ||
+    canRequestReactivate || canRequestAccess || canRequestDeactivate || canEditBasic,
+  );
 
   async function refresh() {
     await Promise.all([
@@ -364,20 +436,35 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   }
 
   function handleError(err: unknown) {
-    const message = getApiErrorMessage(err, 'Action failed. Try again.');
-    setActionError(message);
-    toast.error(message);
+    toast.error(getApiErrorMessage(err, 'Action failed. Try again.'));
   }
 
   function closeDialog() {
     setModal(null);
-    setActionError('');
     setActionLoading(false);
+    setRequestNote('');
+    setNewSponsorId('');
+    setSelectedAppIds([]);
+  }
+
+  function openEditModal() {
+    setEditForm({
+      name: String(contractor?.name ?? ''),
+      email: String(contractor?.email ?? ''),
+      phone: String(contractor?.phone ?? ''),
+      department: String(contractor?.department ?? ''),
+      job_title: String(contractor?.job_title ?? ''),
+    });
+    setModal('edit');
+  }
+
+  function openAssignAccessModal() {
+    setSelectedAppIds(Array.from(assignedAppIds).filter(Boolean));
+    setModal('assign-access');
   }
 
   async function doSuspend() {
     setActionLoading(true);
-    setActionError('');
     try {
       await contractsApi.suspend(contractorId, contractId, suspendReason, suspendNote || undefined);
       await refresh();
@@ -391,7 +478,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
   async function doReactivate() {
     setActionLoading(true);
-    setActionError('');
     try {
       await contractsApi.reactivate(contractorId, contractId, reactivateNote || undefined);
       await refresh();
@@ -405,7 +491,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
   async function doExtend() {
     setActionLoading(true);
-    setActionError('');
     try {
       if (isAdmin) {
         await contractsApi.extend(contractorId, contractId, extendDate, extendNote || undefined);
@@ -428,12 +513,122 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
   async function doTerminate() {
     setActionLoading(true);
-    setActionError('');
     try {
       await contractsApi.terminate(contractorId, contractId);
       await refresh();
       closeDialog();
-      toast.success('Contract ended.');
+      toast.success('Contractor deactivated.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doEdit() {
+    setActionLoading(true);
+    try {
+      const payload: Record<string, string> = isAdmin
+        ? {
+            name: editForm.name,
+            email: editForm.email,
+            phone: editForm.phone,
+            department: editForm.department,
+            job_title: editForm.job_title,
+          }
+        : { name: editForm.name, phone: editForm.phone };
+      await contractorsApi.update(contractorId, payload);
+      await refresh();
+      closeDialog();
+      toast.success('Contractor details updated.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doDelete() {
+    setActionLoading(true);
+    try {
+      await contractorsApi.delete(contractorId);
+      toast.success('Contractor deleted.');
+      router.push('/contractors');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doChangeSponsor() {
+    setActionLoading(true);
+    try {
+      await contractorsApi.update(contractorId, { sponsor_id: newSponsorId });
+      await refresh();
+      closeDialog();
+      toast.success('Sponsor updated.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doAssignAccess() {
+    setActionLoading(true);
+    try {
+      await accessApi.assign(contractId, selectedAppIds);
+      await refresh();
+      closeDialog();
+      toast.success('Access updated.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doRequestReactivate() {
+    setActionLoading(true);
+    try {
+      await sponsorApi.submit({
+        contract_id: contractId,
+        action_type: 'reactivate',
+        justification: requestNote || 'Reactivation requested by sponsor',
+      });
+      await refresh();
+      closeDialog();
+      toast.success('Reactivation request submitted.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doRequestAccess() {
+    setActionLoading(true);
+    try {
+      await sponsorApi.submit({
+        contract_id: contractId,
+        action_type: 'access_change',
+        justification: requestNote || 'Access change requested by sponsor',
+      });
+      await refresh();
+      closeDialog();
+      toast.success('Access change request submitted.');
+    } catch (err) {
+      handleError(err);
+      setActionLoading(false);
+    }
+  }
+
+  async function doRequestDeactivate() {
+    setActionLoading(true);
+    try {
+      await sponsorApi.submit({
+        contract_id: contractId,
+        action_type: 'deactivate',
+        justification: requestNote || 'Deactivation requested by sponsor',
+      });
+      await refresh();
+      closeDialog();
+      toast.success('Deactivation request submitted.');
     } catch (err) {
       handleError(err);
       setActionLoading(false);
@@ -650,8 +845,18 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           {hasManageActions ? (
             <SectionCard title="Manage contract">
               <div className="space-y-3">
+                {/* ── Admin: contract lifecycle ── */}
+                {canReactivate ? (
+                  <ActionItem title="Reactivate contractor" description="Restore active status once the contractor is ready to resume work.">
+                    <Button type="button" variant="outline" onClick={() => setModal('reactivate')}>
+                      <RotateCcw size={14} />
+                      Reactivate
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
                 {canSuspend ? (
-                  <ActionItem title="Suspend contract" description="Pause work and capture the reason so the timeline stays clear.">
+                  <ActionItem title="Suspend contractor" description="Pause work and capture the reason so the timeline stays clear.">
                     <Button type="button" variant="outline" onClick={() => setModal('suspend')}>
                       <CalendarClock4 size={14} />
                       Suspend
@@ -659,10 +864,19 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
+                {canTerminate ? (
+                  <ActionItem title="Deactivate contractor" description="End the engagement and kick off access removal for connected systems.">
+                    <Button type="button" variant="destructive" onClick={() => setModal('terminate')}>
+                      <CalendarRemove4 size={14} />
+                      Deactivate
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
                 {canExtend ? (
                   <ActionItem
-                    title={isAdmin ? 'Extend contract' : 'Request extension'}
-                    description={isAdmin ? 'Move the end date without leaving the detail page.' : 'Send an extension request for sponsor review.'}
+                    title={isAdmin ? 'Extend tenure' : 'Request extension'}
+                    description={isAdmin ? 'Move the end date without leaving the detail page.' : 'Send an extension request for admin review.'}
                   >
                     <Button type="button" variant="outline" onClick={() => setModal('extend')}>
                       <CalendarIcon size={14} />
@@ -671,35 +885,100 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
-                {canTerminate ? (
-                  <ActionItem title="End contract" description="End the engagement and kick off access removal for connected systems.">
-                    <Button type="button" variant="destructive" onClick={() => setModal('terminate')}>
-                      <CalendarRemove4 size={14} />
-                      End contract
+                {/* ── Admin: contractor management ── */}
+                {canEdit ? (
+                  <ActionItem title="Edit contractor details" description="Update the contractor's name, email, contact, department, or title.">
+                    <Button type="button" variant="outline" onClick={openEditModal}>
+                      <Pencil size={14} />
+                      Edit details
                     </Button>
                   </ActionItem>
                 ) : null}
 
-                {canReactivate ? (
-                  <ActionItem title="Reactivate contract" description="Restore active status once the contractor is ready to resume work.">
-                    <Button type="button" variant="outline" onClick={() => setModal('reactivate')}>
-                      <RotateCcw size={14} />
-                      Reactivate
+                {canChangeSponsor ? (
+                  <ActionItem title="Change sponsor" description="Reassign this contractor to a different team member as their sponsor.">
+                    <Button type="button" variant="outline" onClick={() => setModal('change-sponsor')}>
+                      <Users size={14} />
+                      Change sponsor
                     </Button>
                   </ActionItem>
                 ) : null}
+
+                {canAssignAccess ? (
+                  <ActionItem title="Assign / Modify access" description="Add or change which applications this contractor can access.">
+                    <Button type="button" variant="outline" onClick={openAssignAccessModal}>
+                      <ShieldCheck size={14} />
+                      Manage access
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canDelete ? (
+                  <ActionItem title="Delete contractor" description="Permanently remove this contractor record. This cannot be undone.">
+                    <Button type="button" variant="destructive" onClick={() => setModal('delete')}>
+                      <IconTrashCanSimple size={14} />
+                      Delete
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {/* ── Sponsor actions ── */}
+                {canRequestReactivate ? (
+                  <ActionItem title="Request reactivation" description="Submit a reactivation request for admin review.">
+                    <Button type="button" variant="outline" onClick={() => setModal('request-reactivate')}>
+                      <RotateCcw size={14} />
+                      Request reactivation
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canRequestAccess ? (
+                  <ActionItem title="Request access changes" description="Ask the admin to add, change, or remove application access.">
+                    <Button type="button" variant="outline" onClick={() => setModal('request-access')}>
+                      <ShieldAlert size={14} />
+                      Request access changes
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canRequestDeactivate ? (
+                  <ActionItem title="Initiate deactivation" description="Submit a deactivation request to end this contractor's engagement.">
+                    <Button type="button" variant="outline" onClick={() => setModal('request-deactivate')}>
+                      <CalendarRemove4 size={14} />
+                      Initiate deactivation
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canEditBasic ? (
+                  <ActionItem title="Edit basic details" description="Update the contractor's name or phone number.">
+                    <Button type="button" variant="outline" onClick={openEditModal}>
+                      <Pencil size={14} />
+                      Edit details
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {/* ── Audit logs (all roles) ── */}
+                <ActionItem title="View audit logs" description="See the full activity history for this contractor across all events.">
+                  <Link href="/events" className={buttonVariants({ variant: 'outline' })}>
+                    <History size={14} />
+                    View audit logs
+                  </Link>
+                </ActionItem>
               </div>
             </SectionCard>
           ) : null}
         </div>
       </div>
 
+      {/* ── Dialogs ── */}
+
       <ActionDialog
         open={modal === 'suspend'}
         onOpenChange={(open) => !open && closeDialog()}
-        title="Suspend contract"
+        title="Suspend contractor"
         description="This pauses the contract until you reactivate it."
-        error={actionError}
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
@@ -721,9 +1000,8 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       <ActionDialog
         open={modal === 'reactivate'}
         onOpenChange={(open) => !open && closeDialog()}
-        title="Reactivate contract"
+        title="Reactivate contractor"
         description="This returns the contractor to active status."
-        error={actionError}
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
@@ -742,9 +1020,8 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       <ActionDialog
         open={modal === 'extend'}
         onOpenChange={(open) => !open && closeDialog()}
-        title={isAdmin ? 'Extend contract' : 'Request extension'}
+        title={isAdmin ? 'Extend tenure' : 'Request extension'}
         description={isAdmin ? 'This updates the end date for this contract.' : 'This sends an extension request for review.'}
-        error={actionError}
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
@@ -762,7 +1039,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 <Button
                   variant="outline"
                   data-empty={!parsedExtendDate}
-                  className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                  className="w-53 justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
                 >
                   {parsedExtendDate ? format(parsedExtendDate, 'PPP') : <span>Choose a new end date</span>}
                   <ChevronBottom data-icon="inline-end" size={16} />
@@ -787,15 +1064,14 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       <ActionDialog
         open={modal === 'terminate'}
         onOpenChange={(open) => !open && closeDialog()}
-        title="End contract"
+        title="Deactivate contractor"
         description="This ends the contract and starts access removal."
-        error={actionError}
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
             <Button type="button" variant="destructive" onClick={doTerminate} disabled={actionLoading}>
               <CalendarRemove4 size={14} />
-              {actionLoading ? 'Ending…' : 'End contract'}
+              {actionLoading ? 'Deactivating…' : 'Deactivate'}
             </Button>
           </>
         }
@@ -803,6 +1079,213 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         <p className="text-sm leading-6 text-muted-foreground">
           This can&apos;t be undone. Tenurio will start removing their access.
         </p>
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'edit'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title={isAdmin ? 'Edit contractor details' : 'Edit basic details'}
+        description={isAdmin ? 'Update the contractor profile information.' : 'Update the contractor\'s name or phone number.'}
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" onClick={doEdit} disabled={actionLoading}>
+              <Pencil size={14} />
+              {actionLoading ? 'Saving…' : 'Save changes'}
+            </Button>
+          </>
+        }
+      >
+        <FieldBlock label="Name">
+          <Input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} placeholder="Full name" />
+        </FieldBlock>
+        {isAdmin ? (
+          <FieldBlock label="Email">
+            <Input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} placeholder="Email address" />
+          </FieldBlock>
+        ) : null}
+        <FieldBlock label="Phone">
+          <Input value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone number" />
+        </FieldBlock>
+        {isAdmin ? (
+          <>
+            <FieldBlock label="Department">
+              <FilterSelect
+                value={editForm.department}
+                onValueChange={(value) => setEditForm((f) => ({ ...f, department: value }))}
+                options={[{ label: 'Select department', value: '' }, ...departments.map((d) => ({ label: d, value: d }))]}
+                placeholder="Select department"
+              />
+            </FieldBlock>
+            <FieldBlock label="Title">
+              <Input value={editForm.job_title} onChange={(e) => setEditForm((f) => ({ ...f, job_title: e.target.value }))} placeholder="Job title" />
+            </FieldBlock>
+          </>
+        ) : null}
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'delete'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Delete contractor"
+        description="This permanently removes this contractor record."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={doDelete} disabled={actionLoading}>
+              <IconTrashCanSimple size={14} />
+              {actionLoading ? 'Deleting…' : 'Delete contractor'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm leading-6 text-muted-foreground">
+          This can&apos;t be undone. All contract history, access records, and audit logs for <strong>{profileName}</strong> will be permanently deleted.
+        </p>
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'change-sponsor'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Change sponsor"
+        description="Reassign this contractor to a different team member."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" onClick={doChangeSponsor} disabled={actionLoading || !newSponsorId}>
+              <Users size={14} />
+              {actionLoading ? 'Updating…' : 'Update sponsor'}
+            </Button>
+          </>
+        }
+      >
+        {sponsor && (
+          <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+            <p className="text-xs font-medium text-muted-foreground">Current sponsor</p>
+            <p className="text-sm font-medium text-foreground">{String(sponsor.name ?? sponsor.full_name ?? '—')}</p>
+            <p className="text-xs text-muted-foreground">{String(sponsor.email ?? '—')}</p>
+          </div>
+        )}
+        <FieldBlock label="New sponsor">
+          <FilterSelect
+            value={newSponsorId}
+            onValueChange={setNewSponsorId}
+            options={[
+              { label: 'Select a team member', value: '' },
+              ...tenantUsers.map((u) => {
+                const uName = String(u.name ?? u.full_name ?? '');
+                const uEmail = String(u.email ?? '');
+                const label = uName && uEmail ? `${uName} — ${uEmail}` : uName || uEmail || String(u._id);
+                return { label, value: String(u._id) };
+              }),
+            ]}
+            placeholder="Select a team member"
+          />
+        </FieldBlock>
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'assign-access'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Assign / Modify access"
+        description="Select the applications this contractor should have access to."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" onClick={doAssignAccess} disabled={actionLoading}>
+              {actionLoading ? 'Updating…' : 'Update access'}
+            </Button>
+          </>
+        }
+      >
+        {availableApps.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No applications available to assign.</p>
+        ) : (
+          <div className="space-y-2">
+            {availableApps.map((app) => {
+              const appId = String(app._id);
+              const appId2 = app.application_id as Record<string, unknown> | undefined;
+              const appName = String(app.display_name ?? appId2?.name ?? app.app_key ?? 'Unnamed app');
+              const isChecked = selectedAppIds.includes(appId);
+              return (
+                <label
+                  key={appId}
+                  className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-border/60 bg-background px-4 py-3 hover:bg-muted/30"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={() =>
+                      setSelectedAppIds((prev) =>
+                        isChecked ? prev.filter((id) => id !== appId) : [...prev, appId],
+                      )
+                    }
+                  />
+                  <span className="text-sm font-medium text-foreground">{appName}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'request-reactivate'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Request reactivation"
+        description="Explain why this contractor should be reactivated."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" onClick={doRequestReactivate} disabled={actionLoading}>
+              <RotateCcw size={14} />
+              {actionLoading ? 'Submitting…' : 'Submit request'}
+            </Button>
+          </>
+        }
+      >
+        <FieldBlock label="Justification">
+          <Textarea value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder="Reason for reactivation" />
+        </FieldBlock>
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'request-access'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Request access changes"
+        description="Describe the access changes needed for this contractor."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" onClick={doRequestAccess} disabled={actionLoading}>
+              <ShieldAlert size={14} />
+              {actionLoading ? 'Submitting…' : 'Submit request'}
+            </Button>
+          </>
+        }
+      >
+        <FieldBlock label="Details">
+          <Textarea value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder="What access should be added, changed, or removed?" />
+        </FieldBlock>
+      </ActionDialog>
+
+      <ActionDialog
+        open={modal === 'request-deactivate'}
+        onOpenChange={(open) => !open && closeDialog()}
+        title="Initiate deactivation"
+        description="Submit a request to end this contractor's engagement."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={doRequestDeactivate} disabled={actionLoading}>
+              <CalendarRemove4 size={14} />
+              {actionLoading ? 'Submitting…' : 'Submit request'}
+            </Button>
+          </>
+        }
+      >
+        <FieldBlock label="Reason">
+          <Textarea value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder="Why should this contractor be deactivated?" />
+        </FieldBlock>
       </ActionDialog>
     </div>
   );

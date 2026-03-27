@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { useAuth } from '@/context/auth-context';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { PendingApprovalsSkeleton, SummaryCardsSkeleton, WorkspaceBannerSkeleton } from '@/components/page-skeletons';
+import { PendingApprovalsSkeleton, SummaryCardsSkeleton } from '@/components/page-skeletons';
 
 
 
@@ -131,31 +131,7 @@ function SummaryStatCard({
   );
 }
 
-function WorkspaceContextBanner({
-  plan,
-  billing,
-  contractorLimit,
-}: {
-  plan: string;
-  billing: string;
-  contractorLimit: string;
-}) {
-  const contractorLimitLabel =
-    contractorLimit === '∞' ? 'Contractors: Unlimited seats' : `Contractors: ${contractorLimit} seat${contractorLimit === '1' ? '' : 's'}`;
 
-  return (
-    <Card size="sm" className="border-transparent bg-muted/20 dark:border-border/70">
-      <CardContent className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm font-medium text-foreground">Workspace</p>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <StatusBadge status={`Plan: ${plan}`} />
-          <StatusBadge status={`Billing: ${billing}`} />
-          <StatusBadge status={contractorLimitLabel} />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [email, setEmail] = useState('');
@@ -252,7 +228,7 @@ function PendingApprovalsCard({
 
   if (!members.length) {
     return (
-      <Card size="sm" className="border-transparent bg-muted/15 dark:border-border/70">
+      <Card size="sm" className="border-border/70 bg-muted/15 dark:border-border/70">
         <CardContent className="flex flex-col gap-2 pt-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">Pending approvals</p>
@@ -267,7 +243,7 @@ function PendingApprovalsCard({
   return (
     <DataTableShell
       title={`Pending approvals (${members.length})`}
-      className="border-transparent dark:border-primary/15"
+      className="border-border/70 dark:border-primary/15"
     >
       <Table>
         <TableHeader>
@@ -536,10 +512,7 @@ export default function TeamPage() {
     enabled: isAdmin,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['tenant-stats'],
-    queryFn: async () => (await tenantApi.getProfile()).data,
-  });
+
 
   const members = useMemo(() => (Array.isArray(data?.data) ? (data.data as TeamMember[]) : []), [data]);
   const pendingMembers = useMemo(
@@ -634,7 +607,7 @@ export default function TeamPage() {
       ) : null}
 
       {!isAdmin ? (
-        <Card size="sm" className="border-transparent bg-muted/15 dark:border-border/70">
+        <Card size="sm" className="border-border/70 bg-muted/15 dark:border-border/70">
           <CardContent className="flex items-start gap-3 pt-4">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <ShieldCheck size={16} />
@@ -659,15 +632,7 @@ export default function TeamPage() {
         )}
       </div>
 
-      {statsLoading ? (
-        <WorkspaceBannerSkeleton />
-      ) : (
-        <WorkspaceContextBanner
-          plan={String(stats?.plan ?? '—')}
-          billing={String(stats?.billing_status ?? '—')}
-          contractorLimit={String(stats?.contractor_seat_limit ?? '∞')}
-        />
-      )}
+
 
       <PendingApprovalsCard
         members={pendingMembers}

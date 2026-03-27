@@ -189,7 +189,7 @@
   --font-sans: Inter, ui-sans-serif, sans-serif, system-ui;
   --font-serif: PT Serif, ui-serif, serif;
   --font-mono: JetBrains Mono, ui-monospace, monospace;
-  --shadow-2xs: 0 2px 3px -1px #00000014, 0 0 0 0.5px #1313162e;
+  --shadow-2xs: 0 2px 3px -1px #00000014;
   --shadow-xs: 0 1px 1px 0 rgba(0, 0, 0, 0.05), 0 4px 6px 0 rgba(34, 42, 53, 0.04), 0 24px 68px 0 rgba(47, 48, 55, 0.05), 0 2px 3px 0 rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
@@ -241,7 +241,7 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #373739;
   --sidebar-ring: #2e2a24;
-  --shadow-2xs: 0 2px 3px -1px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --shadow-2xs: 0 2px 3px -1px rgba(0, 0, 0, 0.4);
   --shadow-xs: 0 1px 1px 0 rgba(0, 0, 0, 0.32), 0 4px 6px 0 rgba(0, 0, 0, 0.22), 0 24px 68px 0 rgba(0, 0, 0, 0.38), 0 2px 3px 0 rgba(0, 0, 0, 0.24);
   --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);

@@ -198,17 +198,17 @@ function GettingStartedContent() {
             </div>
             {activeItem?.label === 'Connect Google Workspace' ? (
               <Button
+                size="sm"
                 onClick={handleConnectGoogle}
                 disabled={connecting}
-                className="bg-[#4285F4] hover:bg-[#4285F4]/90 text-white"
               >
                 {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
               </Button>
             ) : activeItem?.label === 'Configure Slack notifications' ? (
               <Button
+                size="sm"
                 onClick={handleConnectSlack}
                 disabled={connecting}
-                className="bg-[#4A154B] hover:bg-[#4A154B]/90 text-white"
               >
                 {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
               </Button>

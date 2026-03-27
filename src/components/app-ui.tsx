@@ -186,7 +186,7 @@ export function SettingsCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('rounded-xl border-transparent bg-card/95 dark:border-border/70', className)}>
+    <Card className={cn('rounded-xl border-border/70 bg-card/95', className)}>
       {(title || description || actions) ? (
         <div className="flex flex-col gap-4 border-b border-border/70 px-6 py-6 sm:px-8 sm:py-7 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1.5">

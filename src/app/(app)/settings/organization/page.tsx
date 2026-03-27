@@ -104,7 +104,7 @@ export default function OrganizationSettingsPage() {
       directory_provider: string;
       logo?: string;
     }) => await tenantApi.updateProfile(payload),
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
       lastAttemptedKeyRef.current = JSON.stringify({
         name: response.data.name ?? '',
         slug: response.data.slug ?? '',
@@ -117,10 +117,18 @@ export default function OrganizationSettingsPage() {
       setLogoUploading(false);
       queryClient.setQueryData(['tenant-profile'], response.data);
       queryClient.invalidateQueries({ queryKey: ['tenant-profile'] });
+
+      if (variables.logo && variables.logo !== profile?.logo) {
+        toast.success('Workspace logo updated.', { id: 'org-update' });
+      } else {
+        toast.success('Workspace updated.', { id: 'org-update' });
+      }
     },
     onError: (err) => {
       setLogoUploading(false);
-      toast.error(getApiErrorMessage(err, 'Failed to update organization profile.'));
+      toast.error(getApiErrorMessage(err, 'Failed to update organization profile.'), {
+        id: 'org-update',
+      });
     },
   });
 

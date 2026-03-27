@@ -181,12 +181,20 @@ export default function ProfilePage() {
       });
 
       if (requestedAvatar !== previousAvatar) {
-        toast.success(requestedAvatar ? 'Profile photo updated.' : 'Profile photo removed.');
+        toast.success(requestedAvatar ? 'Profile photo updated.' : 'Profile photo removed.', {
+          id: 'profile-update',
+        });
+      } else {
+        toast.success('Profile updated.', {
+          id: 'profile-update',
+        });
       }
     },
     onError: (err) => {
       setAvatarUploading(false);
-      toast.error(getApiErrorMessage(err, 'Failed to update profile.'));
+      toast.error(getApiErrorMessage(err, 'Failed to update profile.'), {
+        id: 'profile-update',
+      });
     },
   });
 
