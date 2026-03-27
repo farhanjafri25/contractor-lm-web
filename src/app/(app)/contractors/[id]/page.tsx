@@ -285,14 +285,12 @@ function ActionItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[12px] border border-border/60 bg-background p-4">
-      <div className="space-y-3">
-        <div className="space-y-1">
+    <div className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="min-w-0 space-y-1">
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="text-sm leading-6 text-muted-foreground">{description}</p>
-        </div>
-        <div>{children}</div>
       </div>
+      <div className="sm:justify-self-end">{children}</div>
     </div>
   );
 }
@@ -844,7 +842,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
           {hasManageActions ? (
             <SectionCard title="Manage contract">
-              <div className="space-y-3">
+              <div className="space-y-0">
                 {/* ── Admin: contract lifecycle ── */}
                 {canReactivate ? (
                   <ActionItem title="Reactivate contractor" description="Restore active status once the contractor is ready to resume work.">

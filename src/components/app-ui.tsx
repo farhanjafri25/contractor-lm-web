@@ -448,14 +448,14 @@ export function SummaryPill({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
+        'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium transition-colors',
         active
-          ? 'border-primary/25 bg-primary/10 text-primary'
-          : 'border-border/70 bg-secondary/40 text-muted-foreground hover:text-foreground',
+          ? 'border-primary/25 bg-primary/10 text-foreground [box-shadow:var(--shadow-2xs)]'
+          : 'border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground',
       )}
     >
       <span>{label}</span>
-      <span className="rounded-sm bg-background/80 px-1.5 py-0.5 text-[10px] tracking-normal">{count}</span>
+      <span className="rounded-sm bg-background/80 px-1.5 py-0.5 text-xs tracking-normal">{count}</span>
     </button>
   );
 }

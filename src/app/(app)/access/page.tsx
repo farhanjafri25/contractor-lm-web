@@ -47,12 +47,8 @@ export default function AccessPage() {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: ['access-all', statusFilter],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (statusFilter) params.status = statusFilter;
-      return (await accessApi.list(params)).data;
-    },
+    queryKey: ['access-all'],
+    queryFn: async () => (await accessApi.list()).data,
   });
 
   const records: Record<string, unknown>[] = data?.data ?? [];
@@ -82,9 +78,11 @@ export default function AccessPage() {
     const applicationName = String(app?.application_id ?? app?.display_name ?? app?.app_key ?? '').trim();
     const grantedBy = record.granted_by as Record<string, unknown> | undefined;
     const source = grantedBy ? 'member' : 'tenurio';
+    const status = String(record.provisioning_status ?? record.status ?? '');
+    const statusMatches = !statusFilter || status === statusFilter;
     const appMatches = !appFilter || applicationName === appFilter;
     const sourceMatches = !sourceFilter || source === sourceFilter;
-    return appMatches && sourceMatches;
+    return statusMatches && appMatches && sourceMatches;
   });
   const activeFilterCount = [statusFilter, appFilter, sourceFilter].filter(Boolean).length;
   const hasFilters = Boolean(statusFilter || appFilter || sourceFilter);
@@ -137,57 +135,59 @@ export default function AccessPage() {
         </div>
       ) : null}
 
-      {!isLoading && Object.keys(counts).length ? (
-        <div className="flex flex-wrap gap-3">
-          {Object.entries(counts).map(([status, count]) => (
-            <SummaryPill
-              key={status}
-              label={formatStatusLabel(status)}
-              count={count}
-              active={statusFilter === status}
-              onClick={() => updateFilterParams({ status: statusFilter === status ? '' : status })}
-            />
-          ))}
-        </div>
-      ) : null}
-
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <FiltersPopover
-            activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: '', app: '', source: '' })}
-          >
-            <FieldBlock label="Status">
-              <FilterSelect
-                value={statusFilter}
-                onValueChange={(value) => updateFilterParams({ status: value })}
-                options={statuses.map((status) => ({
-                  label: status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'All statuses',
-                  value: status,
-                }))}
-                placeholder="All statuses"
-                className="w-full"
-              />
-            </FieldBlock>
-            <FieldBlock label="Application">
-              <FilterSelect
-                value={appFilter}
-                onValueChange={(value) => updateFilterParams({ app: value })}
-                options={applicationOptions}
-                placeholder="All applications"
-                className="w-full"
-              />
-            </FieldBlock>
-            <FieldBlock label="Assigned by">
-              <FilterSelect
-                value={sourceFilter}
-                onValueChange={(value) => updateFilterParams({ source: value })}
-                options={sourceOptions}
-                placeholder="All sources"
-                className="w-full"
-              />
-            </FieldBlock>
-          </FiltersPopover>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          {!isLoading && Object.keys(counts).length ? (
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(counts).map(([status, count]) => (
+                <SummaryPill
+                  key={status}
+                  label={formatStatusLabel(status)}
+                  count={count}
+                  active={statusFilter === status}
+                  onClick={() => updateFilterParams({ status: statusFilter === status ? '' : status })}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="ml-auto">
+            <FiltersPopover
+              activeCount={activeFilterCount}
+              onClear={() => updateFilterParams({ status: '', app: '', source: '' })}
+            >
+              <FieldBlock label="Status">
+                <FilterSelect
+                  value={statusFilter}
+                  onValueChange={(value) => updateFilterParams({ status: value })}
+                  options={statuses.map((status) => ({
+                    label: status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'All statuses',
+                    value: status,
+                  }))}
+                  placeholder="All statuses"
+                  className="w-full"
+                />
+              </FieldBlock>
+              <FieldBlock label="Application">
+                <FilterSelect
+                  value={appFilter}
+                  onValueChange={(value) => updateFilterParams({ app: value })}
+                  options={applicationOptions}
+                  placeholder="All applications"
+                  className="w-full"
+                />
+              </FieldBlock>
+              <FieldBlock label="Assigned by">
+                <FilterSelect
+                  value={sourceFilter}
+                  onValueChange={(value) => updateFilterParams({ source: value })}
+                  options={sourceOptions}
+                  placeholder="All sources"
+                  className="w-full"
+                />
+              </FieldBlock>
+            </FiltersPopover>
+          </div>
         </div>
 
         <DataTableShell>
