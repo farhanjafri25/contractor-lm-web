@@ -14,7 +14,6 @@ function IntegrationsContent() {
   const searchParams = useSearchParams();
   const [connecting, setConnecting] = useState(false);
 
-  // Fetch tenant profile to see if google_workspace_refresh_token exists
   const { data: profile, isLoading } = useQuery({
     queryKey: ['tenant-profile'],
     queryFn: async () => {
@@ -45,6 +44,7 @@ function IntegrationsContent() {
   }
 
   const isGoogleConnected = Boolean(profile?.google_workspace_refresh_token);
+  const hasGoogleSyncIssue = Boolean(profile?.google_workspace_sync_failed);
 
   async function handleConnectGoogle() {
     setConnecting(true);
@@ -108,9 +108,15 @@ function IntegrationsContent() {
               <Button disabled variant="outline" className="w-full">Loading...</Button>
             ) : isGoogleConnected ? (
               <div className="flex gap-3 items-center">
-                <Button disabled variant="outline" className="w-full border-green-500/20 text-green-600 bg-green-500/10">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
-                  Synced
+                <Button
+                  disabled
+                  variant="outline"
+                  className={hasGoogleSyncIssue
+                    ? 'w-full border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                    : 'w-full border-green-500/20 bg-green-500/10 text-green-600'}
+                >
+                  <div className={`mr-2 h-2 w-2 rounded-full ${hasGoogleSyncIssue ? 'bg-amber-500' : 'bg-green-500'} ${hasGoogleSyncIssue ? '' : 'animate-pulse'}`} />
+                  {hasGoogleSyncIssue ? 'Needs attention' : 'Synced'}
                 </Button>
               </div>
             ) : (

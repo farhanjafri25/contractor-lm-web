@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi, integrationApi, tenantApi } from '@/lib/api';
+import { dashboardApi, tenantApi } from '@/lib/api';
 
 interface DashboardSummary {
   active_contractors: number;
@@ -29,17 +29,6 @@ export function useGettingStarted() {
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async () => (await dashboardApi.getSummary()).data as DashboardSummary,
-  });
-
-  const { data: integrationStatus, isLoading: integrationLoading } = useQuery({
-    queryKey: ['integration-status'],
-    queryFn: async () => {
-      try {
-        return (await integrationApi.getStatus()).data as Record<string, unknown>;
-      } catch {
-        return null;
-      }
-    },
   });
 
   const { data: teamData, isLoading: teamLoading } = useQuery({
@@ -103,7 +92,7 @@ export function useGettingStarted() {
   const allChecklistDone = completedCount === checklistItems.length;
   const nextItem = checklistItems.find((item) => !item.done) ?? checklistItems[checklistItems.length - 1];
   const progressValue = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
-  const gettingStartedLoading = summaryLoading || integrationLoading || teamLoading || profileLoading;
+  const gettingStartedLoading = summaryLoading || teamLoading || profileLoading;
 
   const quickActions: QuickAction[] = [
     !hasAnyContractor ? { label: 'Import CSV', href: '/contractors/import' } : null,

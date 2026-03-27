@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays, format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
-import { dashboardApi, eventsApi, integrationApi, sponsorApi, tenantApi } from '@/lib/api';
+import { contractorsApi, dashboardApi, eventsApi, sponsorApi, tenantApi } from '@/lib/api';
 import activityEmptyLight from '@/assets/activity-empty-light.svg';
 import activityEmptyDark from '@/assets/activity-empty-dark.svg';
 import expiringEmptyLight from '@/assets/expiring-light.svg';
@@ -55,6 +55,14 @@ type SyncHealthState = {
   description: string;
   badgeVariant: 'emerald' | 'danger' | 'neutral';
   accentClass: string;
+};
+
+type ContractorRecord = Record<string, unknown> & {
+  _id?: unknown;
+  name?: unknown;
+  department?: unknown;
+  job_title?: unknown;
+  contracts?: Record<string, unknown>[];
 };
 
 const HIGH_PRIORITY_EVENTS = new Set([
@@ -137,9 +145,13 @@ function getPanelState(isLoading: boolean, count: number): PanelState {
   return count > 0 ? 'ready' : 'empty';
 }
 
-function getSyncHealthState(googleWorkspace: Record<string, unknown> | undefined): SyncHealthState {
-  const isConnected = googleWorkspace?.connected === true;
-  const syncFailed = googleWorkspace?.sync_failed === true;
+function getPrimaryContract(contractor: ContractorRecord) {
+  return (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
+}
+
+function getSyncHealthState(tenantProfile: Record<string, unknown> | undefined): SyncHealthState {
+  const isConnected = tenantProfile?.is_google_connected === true;
+  const syncFailed = tenantProfile?.google_workspace_sync_failed === true;
 
   if (isConnected && syncFailed) {
     return {
@@ -324,29 +336,28 @@ export default function DashboardPage() {
     queryFn: async () => (await sponsorApi.list({ status: 'pending' })).data as DashboardCollectionResponse,
   });
 
-  const { data: integrationStatus } = useQuery({
-    queryKey: ['integration-status'],
-    queryFn: async () => {
-      try {
-        return (await integrationApi.getStatus()).data as Record<string, unknown>;
-      } catch {
-        return null;
-      }
-    },
+  const { data: contractorsData, isLoading: missingExpiryLoading } = useQuery({
+    queryKey: ['dashboard-missing-expiry'],
+    queryFn: async () => (await contractorsApi.list()).data as DashboardCollectionResponse,
   });
 
   const expiringContracts = (expiring?.data ?? []) as Record<string, unknown>[];
   const allEvents = (events?.data ?? []) as Record<string, unknown>[];
+  const contractors = (contractorsData?.data ?? []) as ContractorRecord[];
+  const missingExpiryContractors = contractors.filter((contractor) => {
+    const contract = getPrimaryContract(contractor);
+    return Boolean(contract) && !contract?.end_date;
+  });
   const pendingApprovals = pendingLoading
     ? '—'
     : pendingRequests?.pagination?.total ?? pendingRequests?.data?.length ?? 0;
   const firstName = getUserFirstName(user);
   const greeting = getGreetingForHour(new Date().getHours());
   const workspaceName = deriveWorkspaceName(tenantProfile, user?.email);
-  const googleWorkspace = integrationStatus?.google_workspace as Record<string, unknown> | undefined;
-  const syncHealth = getSyncHealthState(googleWorkspace);
+  const syncHealth = getSyncHealthState(tenantProfile);
   const expiringPanelState = getPanelState(expiringLoading, expiringContracts.length);
   const activityPanelState = getPanelState(eventsLoading, allEvents.length);
+  const missingExpiryPanelState = getPanelState(missingExpiryLoading, missingExpiryContractors.length);
 
   const kpiCards: KpiCardConfig[] = [
     {
@@ -391,8 +402,8 @@ export default function DashboardPage() {
     },
     {
       label: 'Missing Expiry',
-      value: '—',
-      description: 'Contractors missing an end date.',
+      value: missingExpiryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : missingExpiryContractors.length,
+      description: missingExpiryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Contractors missing an end date.',
       icon: CalendarRemove4,
       tone: 'cyan',
     },
@@ -599,38 +610,66 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="py-4 last:pb-0">
-                  <p className="text-sm font-medium text-foreground">Last sync</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Not available yet. The current API does not expose a sync timestamp.</p>
-                </div>
               </div>
             )}
           </DashboardSurface>
 
         <DashboardSurface
           title="Missing expiry"
-          description="Contractors without an end date will appear here once the API supports it."
+          description="Contractors whose current contract is missing an end date."
         >
-          <div className="divide-y divide-border/60">
-            <div className="py-4 first:pt-0">
-              <div className="flex items-center gap-3">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-                  <CalendarRemove4 size={16} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Coverage status</p>
-                  <p className="text-sm text-muted-foreground">Waiting for API support.</p>
-                </div>
-              </div>
-            </div>
+          {missingExpiryPanelState === 'loading' ? (
+            <DashboardListSkeleton rows={4} />
+          ) : missingExpiryPanelState === 'ready' ? (
+            <div className="divide-y divide-border/60">
+              {missingExpiryContractors.slice(0, 5).map((contractor, index) => {
+                const contractorId = String(contractor._id ?? '');
+                const contract = getPrimaryContract(contractor);
+                const status = String(contract?.status ?? 'active');
 
-            <div className="py-4 last:pb-0">
-              <p className="text-sm font-medium text-foreground">What will appear here</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Contractors without an end date, so teams can review and complete expiry coverage in one place.
+                return (
+                  <Link
+                    key={contractorId}
+                    href={contractorId ? `/contractors/${contractorId}` : '/contractors'}
+                    className={cn(
+                      'flex items-center justify-between gap-4 py-4 transition-colors hover:text-foreground',
+                      index === 0 && 'pt-0',
+                      index === Math.min(missingExpiryContractors.length, 5) - 1 && 'pb-0',
+                    )}
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {String(contractor.name ?? 'Unknown contractor')}
+                      </p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {String(contractor.department ?? contractor.job_title ?? 'No department')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">Missing end date</p>
+                        <p className="text-xs text-muted-foreground capitalize">{status}</p>
+                      </div>
+                      <ChevronRight size={14} className="text-muted-foreground" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
+              <span className="block dark:hidden">
+                <Image src={expiringEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
+              </span>
+              <span className="hidden dark:block">
+                <Image src={expiringEmptyDark} alt="" width={266} height={102} className="w-full max-w-60" />
+              </span>
+              <p className="mt-5 text-sm font-semibold text-foreground">No missing expiries</p>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                Contractors whose current contract is missing an end date will show up here for review.
               </p>
             </div>
-          </div>
+          )}
         </DashboardSurface>
         </section>
       </div>
