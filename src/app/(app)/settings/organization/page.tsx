@@ -105,17 +105,25 @@ export default function OrganizationSettingsPage() {
       logo?: string;
     }) => await tenantApi.updateProfile(payload),
     onSuccess: (response, variables) => {
+      const mergedProfile = {
+        ...response.data,
+        ...variables,
+        // Keep the legacy tenant name field in sync so consumers using older keys update immediately.
+        tenant_name: variables.name || response.data.tenant_name,
+        organization_name: variables.name || response.data.organization_name,
+      };
+
       lastAttemptedKeyRef.current = JSON.stringify({
-        name: response.data.name ?? '',
-        slug: response.data.slug ?? '',
-        company_size: response.data.company_size ?? '',
-        contractor_volume: response.data.contractor_volume ?? '',
-        tracking_method: response.data.tracking_method ?? '',
-        directory_provider: response.data.directory_provider ?? '',
-        logo: response.data.logo ?? null,
+        name: mergedProfile.name ?? '',
+        slug: mergedProfile.slug ?? '',
+        company_size: mergedProfile.company_size ?? '',
+        contractor_volume: mergedProfile.contractor_volume ?? '',
+        tracking_method: mergedProfile.tracking_method ?? '',
+        directory_provider: mergedProfile.directory_provider ?? '',
+        logo: mergedProfile.logo ?? null,
       });
       setLogoUploading(false);
-      queryClient.setQueryData(['tenant-profile'], response.data);
+      queryClient.setQueryData(['tenant-profile'], mergedProfile);
       queryClient.invalidateQueries({ queryKey: ['tenant-profile'] });
 
       if (variables.logo && variables.logo !== profile?.logo) {

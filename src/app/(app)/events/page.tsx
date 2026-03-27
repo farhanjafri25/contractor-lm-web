@@ -128,7 +128,7 @@ export default function AuditLogPage() {
                     <Button
                       variant="outline"
                       data-empty={!fromDate}
-                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="w-full justify-between border-transparent bg-card text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-card hover:text-foreground focus-visible:border-foreground/35 data-[empty=true]:text-muted-foreground/75"
                     >
                       {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
@@ -154,7 +154,7 @@ export default function AuditLogPage() {
                     <Button
                       variant="outline"
                       data-empty={!toDate}
-                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="w-full justify-between border-transparent bg-card text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-card hover:text-foreground focus-visible:border-foreground/35 data-[empty=true]:text-muted-foreground/75"
                     >
                       {toDate ? format(toDate, 'PPP') : <span>End date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />

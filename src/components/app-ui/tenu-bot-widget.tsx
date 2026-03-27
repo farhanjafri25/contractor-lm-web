@@ -391,7 +391,7 @@ export function TenuBotWidget() {
                 tabIndex={isOpen ? 0 : -1}
                 aria-hidden={!isOpen}
                 size="icon"
-                className="size-10 rounded-[10px] disabled:bg-primary/12 disabled:text-primary-foreground/45 disabled:opacity-100 disabled:shadow-none"
+                className="size-10 rounded-[10px] disabled:border-transparent disabled:bg-primary/12 disabled:text-primary-foreground/45 disabled:opacity-100 disabled:shadow-none disabled:ring-0"
               >
                 <PaperPlane
                   size={16}

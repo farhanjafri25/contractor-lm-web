@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Agentation } from '@/components/agentation';
-import { InterfaceKit } from "interface-kit/react";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -37,7 +36,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         <Providers>
           {children}
-          {process.env.NODE_ENV === "development" && <InterfaceKit />}
         </Providers>
         {process.env.NODE_ENV === "development" && <Agentation />}
       </body>

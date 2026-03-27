@@ -1037,7 +1037,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 <Button
                   variant="outline"
                   data-empty={!parsedExtendDate}
-                  className="w-53 justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                  className="w-53 justify-between border-transparent bg-card text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-card hover:text-foreground focus-visible:border-foreground/35 data-[empty=true]:text-muted-foreground/75"
                 >
                   {parsedExtendDate ? format(parsedExtendDate, 'PPP') : <span>Choose a new end date</span>}
                   <ChevronBottom data-icon="inline-end" size={16} />

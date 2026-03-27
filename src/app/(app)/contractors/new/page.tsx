@@ -245,14 +245,16 @@ export default function NewContractorPage() {
               <Popover>
                 <PopoverTrigger
                   render={
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
                       data-empty={!startDate}
-                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 md:text-sm"
                     >
-                      {startDate ? format(startDate, 'PPP') : <span>Choose a start date</span>}
-                      <ChevronBottom data-icon="inline-end" size={16} />
-                    </Button>
+                      <span className="flex items-center justify-between gap-1.5">
+                        <span>{startDate ? format(startDate, 'PPP') : 'Choose a start date'}</span>
+                        <ChevronBottom size={16} className="shrink-0 text-muted-foreground" />
+                      </span>
+                    </button>
                   }
                 />
                 <PopoverContent className="w-auto p-0" align="start">
@@ -272,14 +274,16 @@ export default function NewContractorPage() {
               <Popover>
                 <PopoverTrigger
                   render={
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
                       data-empty={!endDate}
-                      className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 md:text-sm"
                     >
-                      {endDate ? format(endDate, 'PPP') : <span>Choose an end date</span>}
-                      <ChevronBottom data-icon="inline-end" size={16} />
-                    </Button>
+                      <span className="flex items-center justify-between gap-1.5">
+                        <span>{endDate ? format(endDate, 'PPP') : 'Choose an end date'}</span>
+                        <ChevronBottom size={16} className="shrink-0 text-muted-foreground" />
+                      </span>
+                    </button>
                   }
                 />
                 <PopoverContent className="w-auto p-0" align="start">
@@ -305,7 +309,7 @@ export default function NewContractorPage() {
               </FieldBlock>
             </div>
             <div className="md:col-span-2 space-y-3">
-              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border p-4 shadow-2xs transition-colors', isGoogleConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
+              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border border-transparent bg-card p-4 shadow-sm ring-1 ring-foreground/10 transition-colors', isGoogleConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">Provision Google Workspace</p>
                   <p className="text-sm text-muted-foreground">
@@ -321,7 +325,7 @@ export default function NewContractorPage() {
                 />
               </label>
 
-              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border p-4 shadow-2xs transition-colors', isSlackConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
+              <label className={cn('flex cursor-pointer flex-row items-center justify-between rounded-lg border border-transparent bg-card p-4 shadow-sm ring-1 ring-foreground/10 transition-colors', isSlackConnected ? 'hover:bg-muted/30' : 'cursor-default opacity-60 bg-muted/20')}>
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">Provision Slack</p>
                   <p className="text-sm text-muted-foreground">
@@ -345,8 +349,8 @@ export default function NewContractorPage() {
                       <label
                         key={app._id}
                         className={cn(
-                          'flex cursor-pointer items-center justify-between rounded-[10px] border border-border/60 bg-background px-4 py-3 shadow-2xs transition-colors hover:bg-muted/30',
-                          contract.application_access.includes(app._id) && 'border-primary bg-primary/10',
+                          'flex cursor-pointer items-center justify-between rounded-[10px] border border-transparent bg-card px-4 py-3 shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/30',
+                          contract.application_access.includes(app._id) && 'border-primary bg-primary/10 ring-primary/20',
                         )}
                       >
                         <div className="min-w-0 pr-3">

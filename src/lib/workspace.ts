@@ -3,11 +3,11 @@ export function deriveWorkspaceName(
   email: string | undefined,
 ) {
   const candidates = [
-    profile?.tenant_name,
     profile?.name,
+    profile?.organization_name,
     profile?.display_name,
     profile?.company_name,
-    profile?.organization_name,
+    profile?.tenant_name,
   ];
 
   const named = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);

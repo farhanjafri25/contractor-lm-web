@@ -11,15 +11,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground [box-shadow:var(--shadow-2xs)] [a]:hover:bg-primary/80",
+          "border-[0.5px] border-white/10 bg-primary text-primary-foreground shadow-md shadow-black/15 ring-1 ring-(--button-ring) [--button-ring:color-mix(in_oklab,black_15%,var(--color-primary))] [&_svg]:drop-shadow-sm text-shadow-sm hover:bg-primary/90 dark:border-transparent dark:[--button-ring:color-mix(in_oklab,white_15%,var(--color-primary))]",
         outline:
-          "border-border bg-background [box-shadow:var(--shadow-2xs)] hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-transparent bg-card shadow-sm shadow-black/15 ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground aria-expanded:bg-muted/50 aria-expanded:text-foreground dark:ring-foreground/15 dark:hover:bg-input/50",
         secondary:
-          "border-border bg-secondary text-secondary-foreground [box-shadow:var(--shadow-2xs)] hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:bg-background dark:hover:bg-muted",
+          "border-border bg-secondary text-secondary-foreground shadow-sm shadow-black/12 hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:bg-background dark:hover:bg-muted",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive/10 text-destructive [box-shadow:var(--shadow-2xs)] hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "border-[0.5px] border-white/10 bg-destructive text-destructive-foreground shadow-md shadow-black/25 ring-1 ring-(--button-ring) [--button-ring:color-mix(in_oklab,black_15%,var(--color-destructive))] [&_svg]:drop-shadow-sm text-shadow-sm hover:bg-destructive/90 dark:border-transparent dark:[--button-ring:color-mix(in_oklab,white_15%,var(--color-destructive))]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

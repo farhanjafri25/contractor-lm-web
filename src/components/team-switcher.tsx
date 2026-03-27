@@ -36,12 +36,18 @@ export function TeamSwitcher({
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('') || 'W';
   const workspaceSeed = getAvatarSeed(tenantId, data?._id, data?.tenant_name, workspaceName);
+  const workspaceSlug =
+    typeof data?.slug === 'string' && data.slug.trim().length > 0
+      ? data.slug.trim()
+      : typeof data?.workspace_slug === 'string' && data.workspace_slug.trim().length > 0
+        ? data.workspace_slug.trim()
+        : null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'card-surface flex h-9 w-full min-w-0 items-center gap-2 rounded-lg bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]',
           collapsed && 'mx-auto size-9 justify-center px-0',
           className,
         )}
@@ -72,7 +78,7 @@ export function TeamSwitcher({
       <DropdownMenuContent className="w-[max(var(--anchor-width),13rem)] min-w-[max(var(--anchor-width),13rem)] border bg-background/98 p-1.5 backdrop-blur-xl [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium leading-5">{workspaceName}</p>
-          <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <p className="text-xs text-muted-foreground">{workspaceSlug ?? user?.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push('/settings/organization')}>
