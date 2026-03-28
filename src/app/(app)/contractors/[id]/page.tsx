@@ -28,6 +28,8 @@ import {
   UserPlus,
   Users,
   XCircle,
+  IconGoogle,
+  IconSlack,
 } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '@/components/app-ui';
@@ -374,13 +376,13 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     enabled: modal === 'assign-access',
   });
 
-  const accessEntries = Array.isArray(accessData) ? accessData : [];
+  const accessEntries = (accessData as any)?.access ?? [];
   const tenantUsers = (Array.isArray(usersData?.data) ? usersData.data : []) as Record<string, unknown>[];
   const availableApps = (Array.isArray(appsData) ? appsData : []) as Record<string, unknown>[];
-  const assignedAppIds = new Set(
+  const assignedAppIds = new Set<string>(
     accessEntries.map((e: Record<string, unknown>) => {
-      const app = e.tenant_application_id as Record<string, unknown> | undefined;
-      return String(app?._id ?? '');
+      const app = e.tenant_application_id as any;
+      return String(app?._id ?? app ?? '');
     }),
   );
 
@@ -390,6 +392,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const profileEmail = String(contractor?.email ?? '—');
   const profilePhone = String(contractor?.phone ?? '—');
   const profileSeed = getAvatarSeed(contractor?._id, contractor?.email, contractor?.name);
+  const sponsorName = sponsor ? String(sponsor.name ?? sponsor.full_name ?? '—') : '—';
   const sponsorEmail = sponsor ? String(sponsor.email ?? '—') : '—';
   const contractWindowCopy = getContractWindowCopy(activeContract?.end_date, contractStatus);
   const contractGuidance = getContractGuidance(contractStatus, isAdmin);
@@ -402,6 +405,13 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     accessEntries.length === 0
       ? 'No linked applications for this contract.'
       : `${accessEntries.length} connected ${accessEntries.length === 1 ? 'application' : 'applications'}`;
+
+  const renderAppIcon = (slug: string) => {
+    const baseClass = "h-5 w-5 shrink-0";
+    if (slug === 'google-workspace') return <IconGoogle className={baseClass} />;
+    if (slug === 'slack') return <IconSlack className={baseClass} />;
+    return null;
+  };
 
   // Admin action conditions
   const canSuspend = activeContract?.status === 'active' && isAdmin;
@@ -724,7 +734,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
             <DetailRow label="Phone" value={profilePhone} />
             <DetailRow label="Department" value={profileDepartment} />
             <DetailRow label="Title" value={profileRole} />
-            <DetailRow label="Sponsor" value={sponsorEmail} />
+            <DetailRow label="Sponsor" value={sponsorName !== '—' ? `${sponsorName} (${sponsorEmail})` : sponsorEmail} />
           </div>
         </SectionCard>
 
@@ -876,20 +886,24 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           ) : accessEntries.length ? (
             <div className="overflow-hidden rounded-[12px] border border-border/60">
               {accessEntries.map((entry: Record<string, unknown>, index: number) => {
-                const app = entry.tenant_application_id as Record<string, unknown> | undefined;
+                const app = entry.tenant_application_id as any;
+                const application = app?.application_id as any;
+                const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
 
                 return (
                   <div
                     key={String(entry._id)}
                     className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {app ? String(app.display_name ?? app.app_key ?? '') : 'Unknown application'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{index === 0 ? accessSummary : 'Provisioning record'}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                       {renderAppIcon(appSlug)}
+                       <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                            {app ? String(app.display_name ?? application?.name ?? app.app_key ?? '') : 'Unknown application'}
+                        </p>
+                       </div>
                     </div>
-                    <StatusBadge status={String(entry.status ?? 'unknown')} />
+                    <StatusBadge status={String(entry.provisioning_status ?? entry.status ?? 'unknown')} />
                   </div>
                 );
               })}
@@ -1200,8 +1214,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <div className="space-y-2">
             {availableApps.map((app) => {
               const appId = String(app._id);
-              const appId2 = app.application_id as Record<string, unknown> | undefined;
-              const appName = String(app.display_name ?? appId2?.name ?? app.app_key ?? 'Unnamed app');
+              const appIdRef = app.application_id as any;
+              const appSlug = appIdRef?.slug || String(app.app_key ?? '').trim();
+              const appName = String(app.display_name ?? appIdRef?.name ?? app.app_key ?? 'Unnamed app');
               const isChecked = selectedAppIds.includes(appId);
               return (
                 <label
@@ -1216,7 +1231,10 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                       )
                     }
                   />
-                  <span className="text-sm font-medium text-foreground">{appName}</span>
+                  <div className="flex flex-1 items-center gap-3">
+                    {renderAppIcon(appSlug)}
+                    <span className="text-sm font-medium text-foreground">{appName}</span>
+                  </div>
                 </label>
               );
             })}
