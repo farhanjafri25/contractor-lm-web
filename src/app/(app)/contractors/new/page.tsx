@@ -56,7 +56,6 @@ export default function NewContractorPage() {
     notes: '',
     create_google_account: false,
     create_slack_account: false,
-    application_access: [] as string[],
   });
 
   const { data: appsData } = useQuery({
@@ -82,20 +81,12 @@ export default function NewContractorPage() {
 
   const updateContractField = (field: keyof typeof contract, value: string | boolean | string[]) => {
     setContract((prev) => ({ ...prev, [field]: value }));
-    if (field !== 'notes' && field !== 'create_google_account' && field !== 'create_slack_account' && field !== 'application_access') {
+    if (field !== 'notes' && field !== 'create_google_account' && field !== 'create_slack_account') {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
     setError('');
   };
 
-  const toggleAppAccess = (appId: string) => {
-    const current = contract.application_access;
-    if (current.includes(appId)) {
-      updateContractField('application_access', current.filter(id => id !== appId));
-    } else {
-      updateContractField('application_access', [...current, appId]);
-    }
-  };
 
   const validateForm = () => {
     const nextErrors: ValidationErrors = {};
@@ -150,7 +141,7 @@ export default function NewContractorPage() {
       const googleApp = appsData?.find((a: TenantApplication) => a.application_id?.slug === 'google-workspace');
       const slackApp = appsData?.find((a: TenantApplication) => a.application_id?.slug === 'slack');
 
-      const finalAppAccess = contract.application_access.map(id => ({ tenant_application_id: id }));
+      const finalAppAccess = [];
 
       if (contract.create_google_account && googleApp) {
         finalAppAccess.push({ tenant_application_id: googleApp._id });
@@ -353,31 +344,6 @@ export default function NewContractorPage() {
                 />
               </label>
 
-              {availableApps.length > 0 && (
-                <div className="pt-3 space-y-3">
-                  <p className="text-sm font-medium text-foreground">Other applications</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {availableApps.map((app: TenantApplication) => (
-                      <label
-                        key={app._id}
-                        className={cn(
-                          'flex cursor-pointer items-center justify-between rounded-[10px] border border-transparent bg-card px-4 py-3 shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/30',
-                          contract.application_access.includes(app._id) && 'border-primary bg-primary/10 ring-primary/20',
-                        )}
-                      >
-                        <div className="min-w-0 pr-3">
-                          <p className="text-sm font-medium truncate">{app.display_name || app.application_id?.name || 'Unnamed App'}</p>
-                          <p className="text-xs text-muted-foreground truncate">{app.application_id?.auth_type || 'Custom'}</p>
-                        </div>
-                        <Checkbox
-                          checked={contract.application_access.includes(app._id)}
-                          onCheckedChange={() => toggleAppAccess(app._id)}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </SectionCard>
