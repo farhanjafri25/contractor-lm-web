@@ -26,6 +26,18 @@ const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finan
 type FormField = 'name' | 'email' | 'phone' | 'job_title' | 'department' | 'start_date' | 'end_date';
 type ValidationErrors = Partial<Record<FormField, string>>;
 
+interface TenantApplication {
+  _id: string;
+  display_name?: string;
+  app_key?: string;
+  application_id?: {
+    _id: string;
+    name: string;
+    slug: string;
+    auth_type: string;
+  };
+}
+
 export default function NewContractorPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -47,12 +59,12 @@ export default function NewContractorPage() {
     application_access: [] as string[],
   });
 
-  const { data: appsData, isLoading: appsLoading } = useQuery({
+  const { data: appsData } = useQuery({
     queryKey: ['applications-list'],
-    queryFn: async () => (await applicationsApi.list()).data,
+    queryFn: async () => (await applicationsApi.list()).data as TenantApplication[],
   });
 
-  const availableApps = (appsData ?? []).filter((app: any) => {
+  const availableApps = (appsData ?? []).filter((app: TenantApplication) => {
     const slug = app.application_id?.slug;
     return slug !== 'google-workspace' && slug !== 'slack';
   });
@@ -68,7 +80,7 @@ export default function NewContractorPage() {
     setError('');
   };
 
-  const updateContractField = (field: keyof typeof contract, value: any) => {
+  const updateContractField = (field: keyof typeof contract, value: string | boolean | string[]) => {
     setContract((prev) => ({ ...prev, [field]: value }));
     if (field !== 'notes' && field !== 'create_google_account' && field !== 'create_slack_account' && field !== 'application_access') {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -135,8 +147,8 @@ export default function NewContractorPage() {
     setLoading(true);
     try {
       // Find the Google and Slack IDs from the fetched apps data
-      const googleApp = appsData?.find((a: any) => a.application_id?.slug === 'google-workspace');
-      const slackApp = appsData?.find((a: any) => a.application_id?.slug === 'slack');
+      const googleApp = appsData?.find((a: TenantApplication) => a.application_id?.slug === 'google-workspace');
+      const slackApp = appsData?.find((a: TenantApplication) => a.application_id?.slug === 'slack');
 
       const finalAppAccess = contract.application_access.map(id => ({ tenant_application_id: id }));
 
@@ -345,7 +357,7 @@ export default function NewContractorPage() {
                 <div className="pt-3 space-y-3">
                   <p className="text-sm font-medium text-foreground">Other applications</p>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {availableApps.map((app: any) => (
+                    {availableApps.map((app: TenantApplication) => (
                       <label
                         key={app._id}
                         className={cn(

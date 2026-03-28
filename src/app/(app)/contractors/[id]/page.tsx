@@ -671,11 +671,11 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="space-y-6">
-          <SectionCard
-            title="Contract summary"
-          >
+      <div className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <SectionCard
+          title="Contract summary"
+          className="xl:self-start"
+        >
             {activeContract ? (
               <div className="space-y-6">
                 <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
@@ -707,138 +707,17 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               />
             )}
           </SectionCard>
+        <SectionCard title="Profile details" className="xl:self-start">
+          <div>
+            <DetailRow label="Email" value={profileEmail} />
+            <DetailRow label="Phone" value={profilePhone} />
+            <DetailRow label="Department" value={profileDepartment} />
+            <DetailRow label="Title" value={profileRole} />
+            <DetailRow label="Sponsor" value={sponsorEmail} />
+          </div>
+        </SectionCard>
 
-          <SectionCard
-            title="System access"
-            actions={
-              accessLoading ? (
-                <Skeleton className="h-7 w-16 rounded-full" />
-              ) : (
-                <Badge variant="neutral">
-                  {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
-                </Badge>
-              )
-            }
-          >
-            {accessLoading ? (
-              <div className="overflow-hidden rounded-[12px] border border-border/60">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
-                  >
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-40 rounded-full" />
-                      <Skeleton className="h-3.5 w-28 rounded-full" />
-                    </div>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                ))}
-              </div>
-            ) : accessEntries.length ? (
-              <div className="overflow-hidden rounded-[12px] border border-border/60">
-                {accessEntries.map((entry: Record<string, unknown>, index: number) => {
-                  const app = entry.tenant_application_id as Record<string, unknown> | undefined;
-
-                  return (
-                    <div
-                      key={String(entry._id)}
-                      className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-foreground">
-                          {app ? String(app.display_name ?? app.app_key ?? '') : 'Unknown application'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{index === 0 ? accessSummary : 'Provisioning record'}</p>
-                      </div>
-                      <StatusBadge status={String(entry.status ?? 'unknown')} />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState
-                title="No linked applications"
-                description="Provisioned apps will show here once this contract has system access attached."
-              />
-            )}
-          </SectionCard>
-
-          <SectionCard
-            title="Activity timeline"
-            actions={
-              timelineLoading ? (
-                <Skeleton className="h-7 w-20 rounded-full" />
-              ) : (
-                <Badge variant="neutral">
-                  {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
-                </Badge>
-              )
-            }
-          >
-            {timelineLoading ? (
-              <div className="space-y-0">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
-                  >
-                    <Skeleton className="size-8 rounded-md" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-40 rounded-full" />
-                      <Skeleton className="h-3.5 w-32 rounded-full" />
-                    </div>
-                    <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
-                  </div>
-                ))}
-              </div>
-            ) : timelineItems.length ? (
-              <div className="space-y-0">
-                {timelineItems.map((event: Record<string, unknown>) => {
-                  const actor = event.actor_id as Record<string, unknown> | undefined;
-                  const eventDate = event.created_at || event.createdAt;
-                  const eventType = String(event.event_type ?? '');
-                  const eventMeta = getTimelineEventMeta(eventType);
-                  const EventIcon = eventMeta.icon;
-
-                  return (
-                    <div
-                      key={String(event._id)}
-                      className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
-                    >
-                      <div className={`flex size-8 items-center justify-center rounded-md ${eventMeta.className}`}>
-                        <EventIcon size={16} />
-                      </div>
-                      <div className="min-w-0 space-y-1.5">
-                        <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground sm:pt-1 sm:text-right">{formatRelativeLabel(eventDate)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState
-                title="No activity yet"
-                description="Lifecycle changes, access updates, and sponsor requests will appear here once work starts moving."
-              />
-            )}
-          </SectionCard>
-        </div>
-
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <SectionCard title="Profile details">
-            <div>
-              <DetailRow label="Email" value={profileEmail} />
-              <DetailRow label="Phone" value={profilePhone} />
-              <DetailRow label="Department" value={profileDepartment} />
-              <DetailRow label="Title" value={profileRole} />
-              <DetailRow label="Sponsor" value={sponsorEmail} />
-            </div>
-          </SectionCard>
+        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start xl:col-start-2 xl:row-span-12 xl:row-start-1">
 
           {hasManageActions ? (
             <SectionCard title="Manage contract">
@@ -862,14 +741,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
-                {canTerminate ? (
-                  <ActionItem title="Deactivate contractor" description="End the engagement and kick off access removal for connected systems.">
-                    <Button type="button" variant="destructive" onClick={() => setModal('terminate')}>
-                      <CalendarRemove4 size={14} />
-                      Deactivate
-                    </Button>
-                  </ActionItem>
-                ) : null}
 
                 {canExtend ? (
                   <ActionItem
@@ -911,14 +782,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
-                {canDelete ? (
-                  <ActionItem title="Delete contractor" description="Permanently remove this contractor record. This cannot be undone.">
-                    <Button type="button" variant="destructive" onClick={() => setModal('delete')}>
-                      <IconTrashCanSimple size={14} />
-                      Delete
-                    </Button>
-                  </ActionItem>
-                ) : null}
 
                 {/* ── Sponsor actions ── */}
                 {canRequestReactivate ? (
@@ -939,14 +802,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
-                {canRequestDeactivate ? (
-                  <ActionItem title="Initiate deactivation" description="Submit a deactivation request to end this contractor's engagement.">
-                    <Button type="button" variant="outline" onClick={() => setModal('request-deactivate')}>
-                      <CalendarRemove4 size={14} />
-                      Initiate deactivation
-                    </Button>
-                  </ActionItem>
-                ) : null}
 
                 {canEditBasic ? (
                   <ActionItem title="Edit basic details" description="Update the contractor's name or phone number.">
@@ -964,10 +819,160 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                     View audit logs
                   </Link>
                 </ActionItem>
+
+                {/* ── Destructive actions ── */}
+                {canRequestDeactivate ? (
+                  <ActionItem title="Initiate deactivation" description="Submit a deactivation request to end this contractor's engagement.">
+                    <Button type="button" variant="outline" onClick={() => setModal('request-deactivate')}>
+                      <CalendarRemove4 size={14} />
+                      Initiate deactivation
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canTerminate ? (
+                  <ActionItem title="Deactivate contractor" description="End the engagement and kick off access removal for connected systems.">
+                    <Button type="button" variant="destructive" onClick={() => setModal('terminate')}>
+                      <CalendarRemove4 size={14} />
+                      Deactivate
+                    </Button>
+                  </ActionItem>
+                ) : null}
+
+                {canDelete ? (
+                  <ActionItem title="Delete contractor" description="Permanently remove this contractor record. This cannot be undone.">
+                    <Button type="button" variant="destructive" onClick={() => setModal('delete')}>
+                      <IconTrashCanSimple size={14} />
+                      Delete
+                    </Button>
+                  </ActionItem>
+                ) : null}
               </div>
             </SectionCard>
           ) : null}
         </div>
+
+        <SectionCard
+          title="System access"
+          className="xl:self-start"
+          actions={
+            accessLoading ? (
+              <Skeleton className="h-7 w-16 rounded-full" />
+            ) : (
+              <Badge variant="neutral">
+                {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
+              </Badge>
+            )
+          }
+        >
+          {accessLoading ? (
+            <div className="overflow-hidden rounded-[12px] border border-border/60">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                >
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40 rounded-full" />
+                    <Skeleton className="h-3.5 w-28 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : accessEntries.length ? (
+            <div className="overflow-hidden rounded-[12px] border border-border/60">
+              {accessEntries.map((entry: Record<string, unknown>, index: number) => {
+                const app = entry.tenant_application_id as Record<string, unknown> | undefined;
+
+                return (
+                  <div
+                    key={String(entry._id)}
+                    className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {app ? String(app.display_name ?? app.app_key ?? '') : 'Unknown application'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{index === 0 ? accessSummary : 'Provisioning record'}</p>
+                    </div>
+                    <StatusBadge status={String(entry.status ?? 'unknown')} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              title="No linked applications"
+              description="Provisioned apps will show here once this contract has system access attached."
+            />
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Activity timeline"
+          className="xl:self-start"
+          actions={
+            timelineLoading ? (
+              <Skeleton className="h-7 w-20 rounded-full" />
+            ) : (
+              <Badge variant="neutral">
+                {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
+              </Badge>
+            )
+          }
+        >
+          {timelineLoading ? (
+            <div className="space-y-0">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
+                >
+                  <Skeleton className="size-8 rounded-md" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40 rounded-full" />
+                    <Skeleton className="h-3.5 w-32 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
+                </div>
+              ))}
+            </div>
+          ) : timelineItems.length ? (
+            <div className="space-y-0">
+              {timelineItems.map((event: Record<string, unknown>) => {
+                const actor = event.actor_id as Record<string, unknown> | undefined;
+                const eventDate = event.created_at || event.createdAt;
+                const eventType = String(event.event_type ?? '');
+                const eventMeta = getTimelineEventMeta(eventType);
+                const EventIcon = eventMeta.icon;
+
+                return (
+                  <div
+                    key={String(event._id)}
+                    className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
+                  >
+                    <div className={`flex size-8 items-center justify-center rounded-md ${eventMeta.className}`}>
+                      <EventIcon size={16} />
+                    </div>
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground sm:pt-1 sm:text-right">{formatRelativeLabel(eventDate)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              title="No activity yet"
+              description="Lifecycle changes, access updates, and sponsor requests will appear here once work starts moving."
+            />
+          )}
+        </SectionCard>
       </div>
 
       {/* ── Dialogs ── */}
