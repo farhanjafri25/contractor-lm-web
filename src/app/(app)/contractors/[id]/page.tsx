@@ -707,7 +707,18 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               />
             )}
           </SectionCard>
-        <SectionCard title="Profile details" className="xl:self-start">
+        <SectionCard
+          title="Profile details"
+          className="xl:self-start"
+          actions={
+            canEdit || canEditBasic ? (
+              <Button type="button" variant="outline" onClick={openEditModal}>
+                <Pencil size={14} />
+                Edit details
+              </Button>
+            ) : null
+          }
+        >
           <div>
             <DetailRow label="Email" value={profileEmail} />
             <DetailRow label="Phone" value={profilePhone} />
@@ -755,15 +766,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 ) : null}
 
                 {/* ── Admin: contractor management ── */}
-                {canEdit ? (
-                  <ActionItem title="Edit contractor details" description="Update the contractor's name, email, contact, department, or title.">
-                    <Button type="button" variant="outline" onClick={openEditModal}>
-                      <Pencil size={14} />
-                      Edit details
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
                 {canChangeSponsor ? (
                   <ActionItem title="Change sponsor" description="Reassign this contractor to a different team member as their sponsor.">
                     <Button type="button" variant="outline" onClick={() => setModal('change-sponsor')}>
@@ -802,15 +804,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   </ActionItem>
                 ) : null}
 
-
-                {canEditBasic ? (
-                  <ActionItem title="Edit basic details" description="Update the contractor's name or phone number.">
-                    <Button type="button" variant="outline" onClick={openEditModal}>
-                      <Pencil size={14} />
-                      Edit details
-                    </Button>
-                  </ActionItem>
-                ) : null}
 
                 {/* ── Audit logs (all roles) ── */}
                 <ActionItem title="View audit logs" description="See the full activity history for this contractor across all events.">
