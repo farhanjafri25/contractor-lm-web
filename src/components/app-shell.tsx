@@ -23,6 +23,7 @@ import {
   Users,
   User,
   Sun,
+  CirclePlus,
 } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -110,11 +111,12 @@ const NAV = [
   { href: '/settings/profile', label: 'Profile', icon: User },
   { href: '/settings/organization', label: 'Organization', icon: SettingsGear1, roles: ['admin'] },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
+  { href: '/integrations', label: 'Integrations', icon: CirclePlus, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
   { label: 'Overview', items: ['/getting-started', '/dashboard', '/contractors', '/sponsor'] },
-  { label: 'Operations', items: ['/access', '/events'] },
+  { label: 'Operations', items: ['/access', '/events', '/integrations'] },
   { label: 'Settings', items: ['/settings/profile', '/settings/organization', '/settings/team'] },
 ];
 
@@ -185,6 +187,10 @@ function routeBreadcrumbs(pathname: string) {
 
   if (pathname === '/events') {
     return [{ label: 'Activity' }];
+  }
+  
+  if (pathname === '/integrations') {
+    return [{ label: 'Integrations' }];
   }
 
   if (pathname === '/settings/team') {
