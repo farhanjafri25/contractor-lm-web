@@ -156,13 +156,13 @@ export default function AccessPage() {
         ...app,
         application_slug: appSlug,
         access_id: record._id,
-        status: record.provisioning_status ?? record.status,
+        status: String(record.provisioning_status ?? record.status ?? ''),
         failure_reason: record.failure_reason,
         access_role: record.access_role,
       });
     } else {
       // If we encounter a 'failed' record for the same app, prioritize it for the aggregate view
-      const currentStatus = record.provisioning_status ?? record.status;
+      const currentStatus = String(record.provisioning_status ?? record.status ?? '');
       if (currentStatus === 'failed') {
         existingApp.status = 'failed';
         existingApp.failure_reason = record.failure_reason;
@@ -171,14 +171,14 @@ export default function AccessPage() {
     }
 
     // Aggregate Status Priority: failed > pending > active > revoked
-    const currentStatus = record.provisioning_status ?? record.status;
+    const currentStatus = String(record.provisioning_status ?? record.status ?? '');
     const priority: Record<string, number> = { failed: 4, pending: 3, active: 2, revoked: 1, '': 0 };
     if (priority[currentStatus] > priority[acc[contractorId].status]) {
       acc[contractorId].status = currentStatus;
     }
 
     if (record.failure_reason) {
-      acc[contractorId].failureReasons.push(record.failure_reason);
+      acc[contractorId].failureReasons.push(String(record.failure_reason));
     }
 
     return acc;
