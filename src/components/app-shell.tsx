@@ -23,8 +23,9 @@ import {
   Users,
   User,
   Sun,
-  CirclePlus,
+  Connectors,
 } from '@/components/icons';
+
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
 import { tenantApi } from '@/lib/api';
@@ -111,7 +112,7 @@ const NAV = [
   { href: '/settings/profile', label: 'Profile', icon: User },
   { href: '/settings/organization', label: 'Organization', icon: SettingsGear1, roles: ['admin'] },
   { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
-  { href: '/integrations', label: 'Integrations', icon: CirclePlus, roles: ['admin'] },
+  { href: '/integrations', label: 'Integrations', icon: Connectors, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [

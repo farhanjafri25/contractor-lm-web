@@ -34,6 +34,8 @@ export { IconSun as Sun } from '@central-icons-react/round-outlined-radius-3-str
 export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTeam';
 export { IconTrashCanSimple as IconTrashCanSimple } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTrashCanSimple';
 export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconX';
+export { IconConnectors1 as Connectors } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconConnectors1';
+
 
 export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExclamationTriangle';
 export { IconCheckCircle2 as CheckCheck } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckCircle2';
