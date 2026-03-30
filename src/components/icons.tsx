@@ -6,15 +6,19 @@ export { IconBell as Bell } from '@central-icons-react/round-outlined-radius-3-s
 export { IconCalendar1 as Calendar } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendar1';
 export { IconCalendarClock4 as CalendarClock4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarClock4';
 export { IconCalendarRemove4 as CalendarRemove4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarRemove4';
+export { IconCheckCircleDashed as CheckCircleDashed } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckCircleDashed';
 export { IconChevronBottom as ChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronBottom';
 export { IconChevronGrabberVertical as ChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronGrabberVertical';
 export { IconChevronLeft as ChevronLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeft';
 export { IconChevronRight as ChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRight';
 export { IconCrossLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossLarge';
 export { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
+export { IconDotGrid1x3HorizontalTight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconDotGrid1x3HorizontalTight';
+export { IconDotGrid1x3VerticalTight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconDotGrid1x3VerticalTight';
 export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeOpen';
 export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeSlash';
 export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFileText';
+export { IconFilter2 as IconFilter2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFilter2';
 export { IconGroup2 as Group2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconGroup2';
 export { IconHistory as History } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHistory';
 export { IconHomeCircle as HomeCircle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHomeCircle';
@@ -43,6 +47,7 @@ export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-fill
 export { IconCheckmark2 as Checkmark2 } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2';
 export { IconCheckmark2Small as Checkmark2Small } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2Small';
 export { IconClock as Clock } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClock';
+export { IconClockAlert as ClockAlert } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClockAlert';
 export { IconCirclePlus as CirclePlus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconMinusLarge as MinusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMinusLarge';
@@ -57,3 +62,6 @@ export { IconUserAdd as UserPlus } from '@central-icons-react/round-filled-radiu
 export { IconCircleX as XCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCircleX';
 export { IconGoogle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGoogle';
 export { IconSlack } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSlack';
+export { IconCheckmark1 as Checkmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckmark1';
+export { IconCloudSimpleUpload as CloudUpload } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCloudSimpleUpload';
+export { IconArrowRight as ArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRight';

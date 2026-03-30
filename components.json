@@ -10,11 +10,14 @@
     "cssVariables": true,
     "prefix": ""
   },
+  "iconLibrary": "none",
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
     "ui": "@/components/ui",
     "lib": "@/lib"
   },
-  "iconLibrary": "none"
+  "registries": {
+    "@svgl": "https://svgl.app/r/{name}.json"
+  }
 }

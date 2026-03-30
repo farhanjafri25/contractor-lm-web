@@ -93,29 +93,24 @@ export function ContractorDetailSkeleton() {
               <div className="space-y-4 px-6 py-5">
                 {cardIndex === 0 ? (
                   <>
-                    <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
+                    <div>
                       {Array.from({ length: 4 }).map((__, index) => (
-                        <div key={index} className="space-y-3 bg-background p-5">
+                        <div key={index} className="flex items-start justify-between gap-4 border-b border-border/60 py-3 last:border-b-0 last:pb-0 first:pt-0">
                           <Skeleton className="h-3.5 w-20 rounded-full" />
-                          <Skeleton className="h-6 w-28 rounded-md" />
+                          <Skeleton className="h-4 w-28 rounded-full" />
                         </div>
                       ))}
-                    </div>
-                    <div className="space-y-3 rounded-[12px] border border-border/60 bg-background p-5">
-                      <Skeleton className="h-3.5 w-24 rounded-full" />
-                      <Skeleton className="h-7 w-40 rounded-md" />
-                      <Skeleton className="h-4 w-full rounded-full" />
-                      <Skeleton className="h-4 w-[88%] rounded-full" />
                     </div>
                   </>
                 ) : (
                   Array.from({ length: 4 }).map((__, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 rounded-[12px] border border-border/60 bg-background px-4 py-4">
+                    <div key={index} className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start">
+                      <Skeleton className="size-8 rounded-md" />
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-40 rounded-full" />
-                        <Skeleton className="h-3.5 w-24 rounded-full" />
+                        <Skeleton className="h-3.5 w-32 rounded-full" />
                       </div>
-                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
                     </div>
                   ))
                 )}
@@ -138,19 +133,15 @@ export function ContractorDetailSkeleton() {
                   </div>
                 ))}
                 {cardIndex === 1 ? (
-                  <div className="space-y-3 pt-2">
-                    {Array.from({ length: 2 }).map((__, index) => (
-                      <div key={index} className="rounded-[12px] border border-border/60 bg-background p-4">
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-28 rounded-full" />
-                            <Skeleton className="h-4 w-full rounded-full" />
-                          </div>
-                          <Skeleton className="h-10 w-28 rounded-xl" />
-                        </div>
+                  Array.from({ length: 3 }).map((__, index) => (
+                    <div key={index} className="flex items-center justify-between gap-3 border-b border-border/60 py-3 last:border-b-0 last:pb-0 first:pt-0">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="size-5 rounded" />
+                        <Skeleton className="h-4 w-36 rounded-full" />
                       </div>
-                    ))}
-                  </div>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                  ))
                 ) : null}
               </div>
             </div>

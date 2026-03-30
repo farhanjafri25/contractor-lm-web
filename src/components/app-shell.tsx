@@ -8,7 +8,6 @@ import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  Bell,
   CheckCircle,
   ChevronGrabberVertical,
   Group2,
@@ -265,7 +264,7 @@ function FeedbackPopover() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex" type="button">
             Feedback
           </Button>
         }
@@ -425,6 +424,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { showGettingStarted } = useGettingStarted();
   const isAdmin = user?.role === 'admin';
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
@@ -434,8 +434,15 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
   const pendingCount = pendingData?.data?.length || 0;
 
   const visible = useMemo(
-    () => NAV.filter((item) => !item.roles || item.roles.includes(user?.role ?? '')),
-    [user?.role],
+    () =>
+      NAV.filter((item) => {
+        if (item.href === '/getting-started' && !showGettingStarted) {
+          return false;
+        }
+
+        return !item.roles || item.roles.includes(user?.role ?? '');
+      }),
+    [showGettingStarted, user?.role],
   );
 
   return (
@@ -614,14 +621,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="flex items-center gap-2">
               <FeedbackPopover />
-              <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
-                Docs
-              </Button>
-              <Button variant="secondary" size="icon-sm" aria-label="Notifications" title="Notifications">
-                <Bell size={16} />
-              </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="icon-sm"
                 aria-label={resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
                 title={resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}

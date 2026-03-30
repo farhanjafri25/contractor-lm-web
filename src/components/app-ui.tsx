@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ChevronBottom, IconCrossLarge, Search } from '@/components/icons';
+import { ArrowLeft, ChevronBottom, IconCrossLarge, IconFilter2, Search } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { BadgeVariant } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +18,17 @@ export interface SelectOption {
   label: string;
   value: string;
 }
+
+function toggleMultiValue(values: string[], nextValue: string) {
+  if (values.includes(nextValue)) {
+    return values.filter((value) => value !== nextValue);
+  }
+
+  return [...values, nextValue];
+}
+
+const filterControlClassName =
+  'border border-transparent bg-background/90 shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 dark:bg-input/25 dark:hover:bg-input/50';
 
 export function PageHeader({
   title,
@@ -96,16 +108,21 @@ export function StatusBadge({
   className?: string;
 }) {
   const normalized = status.toLowerCase();
+  const isDisconnectedState = normalized.includes('not connected') || normalized.includes('disconnected');
   const variant: BadgeVariant =
-    normalized.includes('active') ||
-    normalized.includes('approved') ||
-    normalized.includes('provisioned') ||
-    normalized.includes('complete') ||
-    normalized.includes('completed') ||
-    normalized.includes('resolved') ||
-    normalized.includes('done')
-      ? 'emerald'
-      : normalized.includes('pending') ||
+    isDisconnectedState
+      ? 'danger'
+      : normalized.includes('connected') ||
+          normalized.includes('active') ||
+          normalized.includes('approved') ||
+          normalized.includes('provisioned') ||
+          normalized.includes('complete') ||
+          normalized.includes('completed') ||
+          normalized.includes('resolved') ||
+          normalized.includes('done')
+        ? 'emerald'
+        : normalized.includes('pending') ||
+          normalized.includes('coming soon') ||
           normalized.includes('review') ||
           normalized.includes('invited')
         ? 'blue'
@@ -119,12 +136,12 @@ export function StatusBadge({
             normalized.includes('hold') ||
             normalized.includes('warning')
           ? 'violet'
-          : normalized.includes('reject') ||
-              normalized.includes('expire') ||
-              normalized.includes('terminate') ||
-              normalized.includes('revoked') ||
-              normalized.includes('deactivate') ||
-              normalized.includes('failed') ||
+        : normalized.includes('reject') ||
+            normalized.includes('expire') ||
+            normalized.includes('terminate') ||
+            normalized.includes('revoked') ||
+            normalized.includes('deactivate') ||
+            normalized.includes('failed') ||
               normalized.includes('error') ||
               normalized.includes('danger')
             ? 'danger'
@@ -148,7 +165,7 @@ export function SectionCard({
   children,
   className,
 }: {
-  title?: string;
+  title?: React.ReactNode;
   description?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
@@ -157,12 +174,12 @@ export function SectionCard({
   return (
     <Card className={className}>
       {(title || description || actions) ? (
-        <div className="flex flex-col gap-4 border-b px-6 py-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-4 border-b px-6 py-4 md:min-h-16 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-h-8 flex-col justify-center space-y-1">
             {title ? <h2 className="text-base font-semibold text-foreground">{title}</h2> : null}
             {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
           </div>
-          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex min-h-8 flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
       <div className="px-6 py-5">{children}</div>
@@ -304,9 +321,23 @@ export function FiltersPopover({
     <Popover>
       <PopoverTrigger
         render={
-          <Button variant="outline" className="justify-between shadow-xs">
-            <span>{activeCount ? `${title} (${activeCount})` : title}</span>
-            <ChevronBottom data-icon="inline-end" size={16} />
+          <Button
+            variant="ghost"
+            className={cn(
+              'justify-center px-0 size-8 shrink-0 md:size-auto md:justify-between md:px-2.5',
+              filterControlClassName,
+            )}
+          >
+            <span className="relative flex size-4 items-center justify-center md:hidden">
+              <IconFilter2 size={16} />
+              {activeCount ? (
+                <span className="absolute -right-1.5 -top-1.5 flex min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium leading-4 text-background">
+                  {activeCount}
+                </span>
+              ) : null}
+            </span>
+            <span className="hidden md:inline">{activeCount ? `${title} (${activeCount})` : title}</span>
+            <ChevronBottom data-icon="inline-end" size={16} className="hidden md:block" />
           </Button>
         }
       />
@@ -364,7 +395,7 @@ export function FieldBlock({
   description,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   description?: string;
   children: React.ReactNode;
 }) {
@@ -383,6 +414,7 @@ export function FilterSelect({
   options,
   placeholder,
   className,
+  triggerClassName,
   disabled,
 }: {
   value: string;
@@ -390,6 +422,7 @@ export function FilterSelect({
   options: SelectOption[];
   placeholder: string;
   className?: string;
+  triggerClassName?: string;
   disabled?: boolean;
 }) {
   const selectedOption = options.find((option) => option.value === value);
@@ -401,7 +434,7 @@ export function FilterSelect({
         onValueChange={(next: string | null) => onValueChange(next ?? '')}
         disabled={disabled}
       >
-        <SelectTrigger className="w-full">
+        <SelectTrigger className={cn('w-full justify-between', filterControlClassName, triggerClassName)}>
           <SelectValue>{selectedOption?.label ?? placeholder}</SelectValue>
         </SelectTrigger>
         <SelectContent align="start" alignItemWithTrigger={false}>
@@ -413,6 +446,98 @@ export function FilterSelect({
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+export function MultiFilterChecklist({
+  options,
+  values,
+  onValuesChange,
+  className,
+}: {
+  options: SelectOption[];
+  values: string[];
+  onValuesChange: (values: string[]) => void;
+  className?: string;
+}) {
+  const availableOptions = options.filter((option) => option.value);
+
+  if (!availableOptions.length) {
+    return (
+      <div className={cn('rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground', className)}>
+        No options available.
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn('space-y-1', className)}>
+      {availableOptions.map((option) => {
+        const checked = values.includes(option.value);
+
+        return (
+          <label
+            key={option.value}
+            className="flex w-full cursor-pointer items-center gap-3 rounded-md px-1 py-1 text-sm transition-colors hover:bg-muted/50"
+          >
+            <Checkbox
+              checked={checked}
+              onCheckedChange={() => onValuesChange(toggleMultiValue(values, option.value))}
+            />
+            <span className="min-w-0 flex-1 text-foreground">{option.label}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MultiFilterDropdown({
+  title,
+  values,
+  onValuesChange,
+  options,
+  placeholder,
+  className,
+}: {
+  title: string;
+  values: string[];
+  onValuesChange: (values: string[]) => void;
+  options: SelectOption[];
+  placeholder: string;
+  className?: string;
+}) {
+  const selectedOptions = options.filter((option) => values.includes(option.value));
+  const triggerLabel =
+    selectedOptions.length === 0
+      ? placeholder
+      : selectedOptions.length === 1
+        ? selectedOptions[0].label
+        : `${title} (${selectedOptions.length})`;
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            className={cn('justify-between', filterControlClassName, className)}
+          >
+            <span className={cn(selectedOptions.length === 0 && 'text-muted-foreground/75')}>{triggerLabel}</span>
+            <ChevronBottom data-icon="inline-end" size={16} />
+          </Button>
+        }
+      />
+      <PopoverContent align="start" className="w-60 gap-1 p-2.5">
+        <PopoverHeader className="flex-row items-center justify-between gap-3 pl-1 pr-0">
+          <PopoverTitle>{title}</PopoverTitle>
+          <Button type="button" variant="ghost" size="sm" className="px-1.5" onClick={() => onValuesChange([])} disabled={values.length === 0}>
+            Clear
+          </Button>
+        </PopoverHeader>
+        <MultiFilterChecklist options={options} values={values} onValuesChange={onValuesChange} />
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -6,11 +6,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { contractorsApi } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, AlertTriangle, CheckCircle } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CloudUpload, FileText, AlertTriangle, CheckCircle, Checkmark1, ArrowRight } from '@/components/icons';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 const REQUIRED_FIELDS = [
@@ -29,6 +33,12 @@ const OPTIONAL_FIELDS = [
 ];
 
 const ALL_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
+
+const STEPS = [
+  { key: 'UPLOAD', label: 'Upload' },
+  { key: 'MAP', label: 'Map fields' },
+  { key: 'REVIEW', label: 'Review' },
+] as const;
 
 type ImporterStep = 'UPLOAD' | 'MAP' | 'REVIEW';
 type CsvRow = Record<string, string>;
@@ -59,38 +69,33 @@ type BulkCreateResponse = {
 
 const sanitizeString = (str: string | undefined | null) => {
   if (!str) return '';
-  // Strictly strip out all HTML tags, script nodes, and bracket expressions to prevent XSS payloads
   return str.toString().replace(/<[^>]*>?/gm, '').trim();
 };
 
 const parseDateString = (dateStr: string) => {
   if (!dateStr) return '';
-  
-  // Extract patterns like DD-MM-YYYY or MM/DD/YYYY
+
   const parts = dateStr.split(/[-/]/);
   if (parts.length === 3) {
-    if (parts[2].length === 4) { // Year is explicitly at the end
+    if (parts[2].length === 4) {
       const p0 = parseInt(parts[0], 10);
       const p1 = parseInt(parts[1], 10);
       const year = parts[2];
-      
+
       let month = p1;
       let day = p0;
-      
-      // Heuristic: If p0 > 12, it must be the day (DD-MM-YYYY).
-      // If p1 > 12, it must be the day (MM-DD-YYYY).
+
       if (p0 <= 12 && p1 > 12) {
         month = p0;
         day = p1;
       }
       return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     }
-    if (parts[0].length === 4) { // Year is at the start (YYYY-MM-DD or YYYY/MM/DD)
+    if (parts[0].length === 4) {
       return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
   }
 
-  // Fallback to JS standard instantiation
   const parsed = new Date(dateStr);
   if (!isNaN(parsed.getTime())) {
     return parsed.toISOString().split('T')[0];
@@ -98,21 +103,66 @@ const parseDateString = (dateStr: string) => {
   return dateStr;
 };
 
+function StepIndicator({ currentStep }: { currentStep: ImporterStep }) {
+  const currentIndex = STEPS.findIndex(s => s.key === currentStep);
+
+  return (
+    <div className="flex items-center gap-2">
+      {STEPS.map((step, i) => {
+        const isComplete = i < currentIndex;
+        const isCurrent = i === currentIndex;
+
+        return (
+          <React.Fragment key={step.key}>
+            {i > 0 && (
+              <div className={cn('h-px flex-1', isComplete ? 'bg-foreground/30' : 'bg-border')} />
+            )}
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-full text-xs font-medium transition-colors',
+                  isComplete
+                    ? 'bg-muted text-muted-foreground'
+                    : isCurrent
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-muted-foreground',
+                )}
+              >
+                {isComplete ? <Checkmark1 size={14} /> : i + 1}
+              </div>
+              <span
+                className={cn(
+                  'hidden text-xs font-medium sm:inline',
+                  isCurrent ? 'text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CsvImporter() {
   const queryClient = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const [step, setStep] = React.useState<ImporterStep>('UPLOAD');
-  
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
   const [csvHeaders, setCsvHeaders] = React.useState<string[]>([]);
   const [csvData, setCsvData] = React.useState<CsvRow[]>([]);
-  
-  // Mapping: backendKey -> csvHeader
+
   const [mapping, setMapping] = React.useState<Record<string, string>>({});
 
   type ValidationError = { row: number; message: string };
   const [validationErrors, setValidationErrors] = React.useState<ValidationError[]>([]);
-  const [validRows, setValidRows] = React.useState(0);
   const [duplicates, setDuplicates] = React.useState(0);
+  const [excludedRows, setExcludedRows] = React.useState<Set<number>>(new Set());
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const resetState = () => {
     setStep('UPLOAD');
@@ -120,8 +170,9 @@ export function CsvImporter() {
     setCsvData([]);
     setMapping({});
     setValidationErrors([]);
-    setValidRows(0);
     setDuplicates(0);
+    setExcludedRows(new Set());
+    setIsDragOver(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -131,10 +182,7 @@ export function CsvImporter() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     Papa.parse<CsvRow>(file, {
       header: true,
       skipEmptyLines: true,
@@ -145,24 +193,38 @@ export function CsvImporter() {
         }
         setCsvHeaders(results.meta.fields);
         setCsvData(results.data);
-        
-        // Auto-map where possible (simple lowercase match)
+
         const autoMap: Record<string, string> = {};
         ALL_FIELDS.forEach(f => {
           const match = results.meta.fields?.find(header => header.toLowerCase().includes(f.key.replace('_', ' ')));
           if (match) autoMap[f.key] = match;
         });
         setMapping(autoMap);
-        
+
         setStep('MAP');
       },
       error: (err) => {
         toast.error(`Failed to parse CSV: ${err.message}`);
       }
     });
+  };
 
-    // Reset input value so the same file can be uploaded again if needed
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
     e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.name.endsWith('.csv')) {
+      processFile(file);
+    } else {
+      toast.error('Please upload a .csv file.');
+    }
   };
 
   const validateData = (data: CsvRow[]) => {
@@ -172,7 +234,7 @@ export function CsvImporter() {
     let validCount = 0;
 
     data.forEach((row, i) => {
-      const rowNum = i + 2; // +1 for 0-index, +1 for header
+      const rowNum = i + 2;
       const rawName = row[mapping['name']] || '';
       const rawEmail = row[mapping['email']] || '';
       const rawStartDate = row[mapping['start_date']] || '';
@@ -180,19 +242,17 @@ export function CsvImporter() {
 
       let rowHasError = false;
 
-      // Name validation
       if (!rawName.trim()) {
-        errors.push({ row: rowNum, message: 'name: Name is required' });
+        errors.push({ row: rowNum, message: 'Name is required' });
         rowHasError = true;
       }
 
-      // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!rawEmail.trim()) {
-        errors.push({ row: rowNum, message: 'email: Email is required' });
+        errors.push({ row: rowNum, message: 'Email is required' });
         rowHasError = true;
       } else if (!emailRegex.test(rawEmail.trim())) {
-        errors.push({ row: rowNum, message: 'email: Invalid email format' });
+        errors.push({ row: rowNum, message: 'Invalid email format' });
         rowHasError = true;
       } else {
         if (emailSet.has(rawEmail.trim())) {
@@ -202,29 +262,27 @@ export function CsvImporter() {
         }
       }
 
-      // Start Date validation
       const parsedStart = parseDateString(rawStartDate);
       let startD: Date | null = null;
       if (!rawStartDate.trim()) {
-        errors.push({ row: rowNum, message: 'startDate: Start date is required' });
+        errors.push({ row: rowNum, message: 'Start date is required' });
         rowHasError = true;
       } else if (!parsedStart || isNaN(new Date(parsedStart).getTime())) {
-        errors.push({ row: rowNum, message: 'startDate: Invalid date format' });
+        errors.push({ row: rowNum, message: 'Invalid start date format' });
         rowHasError = true;
       } else {
         startD = new Date(parsedStart);
       }
 
-      // End Date validation (if provided)
       if (rawEndDate.trim()) {
         const parsedEnd = parseDateString(rawEndDate);
         if (!parsedEnd || isNaN(new Date(parsedEnd).getTime())) {
-          errors.push({ row: rowNum, message: 'endDate: Invalid date format' });
+          errors.push({ row: rowNum, message: 'Invalid end date format' });
           rowHasError = true;
         } else if (startD) {
           const endD = new Date(parsedEnd);
           if (endD <= startD) {
-            errors.push({ row: rowNum, message: 'endDate: End date must be after start date' });
+            errors.push({ row: rowNum, message: 'End date must be after start date' });
             rowHasError = true;
           }
         }
@@ -245,22 +303,20 @@ export function CsvImporter() {
       return;
     }
 
-    const { errors, duplicates, validCount } = validateData(csvData);
+    const { errors, duplicates } = validateData(csvData);
     setValidationErrors(errors);
     setDuplicates(duplicates);
-    setValidRows(validCount);
-    
+
     setStep('REVIEW');
   };
 
   const handleRemoveInvalidRows = () => {
     const validData = csvData.filter((row, i) => !validationErrors.some(err => err.row === i + 2));
     setCsvData(validData);
-    
-    const { errors, duplicates, validCount } = validateData(validData);
+
+    const { errors, duplicates } = validateData(validData);
     setValidationErrors(errors);
     setDuplicates(duplicates);
-    setValidRows(validCount);
   };
 
   const { mutate: bulkCreate, isPending } = useMutation({
@@ -272,17 +328,17 @@ export function CsvImporter() {
       if (data.successful > 0) {
         toast.success(`Successfully imported ${data.successful} contractors.`);
       }
-      
+
       if (data.failed > 0) {
         toast.error(`Failed to import ${data.failed} rows. Check the errors below.`);
         data.results.failed.forEach((f) => {
-          const originalRowNumber = data.indexMap[f.index] + 2; 
+          const originalRowNumber = data.indexMap[f.index] + 2;
           toast.error(`File Row ${originalRowNumber}: ${f.reason}`, { duration: 10000 });
         });
       } else {
         setOpen(false);
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ['contractors'] });
     },
     onError: (err) => {
@@ -290,12 +346,36 @@ export function CsvImporter() {
     }
   });
 
+  const toggleRow = (index: number) => {
+    setExcludedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllRows = (checked: boolean) => {
+    if (checked) {
+      setExcludedRows(new Set());
+    } else {
+      setExcludedRows(new Set(csvData.map((_, i) => i)));
+    }
+  };
+
+  const selectedCount = csvData.length - excludedRows.size;
+  const allSelected = excludedRows.size === 0 && csvData.length > 0;
+  const someSelected = selectedCount > 0 && selectedCount < csvData.length;
+
   const handleImport = () => {
-    // Prevent duplicate emails locally before triggering the backend batch
     const emailSet = new Set<string>();
     const uniquePayloadWithIndices: { row: CsvRow; originalIndex: number }[] = [];
-    
+
     csvData.forEach((row, i) => {
+      if (excludedRows.has(i)) return;
       const email = sanitizeString(row[mapping['email']]).toLowerCase();
       if (email && !emailSet.has(email)) {
         emailSet.add(email);
@@ -318,198 +398,297 @@ export function CsvImporter() {
         }
       };
     });
-    
+
     const indexMap = uniquePayloadWithIndices.map(u => u.originalIndex);
     bulkCreate({ payload, indexMap });
   };
 
+  const mappedRequiredCount = REQUIRED_FIELDS.filter(f => mapping[f.key]).length;
+  const mappedOptionalCount = OPTIONAL_FIELDS.filter(f => mapping[f.key]).length;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger 
+      <DialogTrigger
         render={
-          <Button variant="outline" className="shrink-0">
+          <Button variant="secondary" className="shrink-0">
             Import CSV
           </Button>
-        } 
+        }
       />
-      <DialogContent className="sm:max-w-[700px] overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="flex w-auto flex-col resize overflow-auto sm:min-w-200" style={{ maxHeight: 'min(640px, 85svh)', maxWidth: 'calc(100% - 2rem)', minWidth: 480, minHeight: 280 }}>
         <DialogHeader>
-          <DialogTitle>Bulk Import Contractors</DialogTitle>
-          <DialogDescription>
-            {step === 'UPLOAD' && 'Upload a CSV file containing contractor records.'}
-            {step === 'MAP' && 'Map your CSV columns to the required system fields.'}
-            {step === 'REVIEW' && `Review ${csvData.length} records before finalizing the import.`}
-          </DialogDescription>
+          <DialogTitle>Import contractors</DialogTitle>
+          <div className="pt-2">
+            <StepIndicator currentStep={step} />
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-1">
+          {/* UPLOAD STEP */}
           {step === 'UPLOAD' && (
-            <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted/30">
-              <FileText size={48} className="text-muted-foreground mb-4" />
-              <p className="text-sm font-medium mb-1">Click to select a CSV file</p>
-              <p className="text-xs text-muted-foreground mb-6">Headers must be present in the first row.</p>
-              <div className="relative">
-                <Button type="button">Browse Files</Button>
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                  onChange={handleFileUpload} 
-                />
+            <div
+              className={cn(
+                'group relative flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-14 text-center transition-colors',
+                isDragOver
+                  ? 'border-foreground/30 bg-muted/60'
+                  : 'border-border bg-muted/30 hover:border-foreground/20 hover:bg-muted/40',
+              )}
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+            >
+              <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <CloudUpload size={20} />
               </div>
+              <p className="mt-4 text-sm font-medium text-foreground">
+                Drag and drop your CSV file here
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                or click below to browse. Headers must be in the first row.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-5"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileText size={14} />
+                Choose file
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
             </div>
           )}
 
+          {/* MAP STEP */}
           {step === 'MAP' && (
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium border-b pb-2">Required Fields</h4>
-                {REQUIRED_FIELDS.map(field => (
-                  <div key={field.key} className="flex items-center justify-between gap-4">
-                    <span className="text-sm w-1/3">{field.label} <span className="text-red-500">*</span></span>
-                    <Select value={mapping[field.key] || ''} onValueChange={(val: string | null) => setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))}>
-                      <SelectTrigger className="w-2/3">
-                        <SelectValue placeholder="Select CSV Column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ignore" className="text-muted-foreground italic">-- Do Not Map --</SelectItem>
-                        {csvHeaders.map(h => (
-                          <SelectItem key={h} value={h}>{h}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <FileText size={14} />
+                <span>{csvData.length} rows detected with {csvHeaders.length} columns</span>
               </div>
-              
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium border-b pb-2">Optional Fields</h4>
-                {OPTIONAL_FIELDS.map(field => (
-                  <div key={field.key} className="flex items-center justify-between gap-4">
-                    <span className="text-sm w-1/3 text-muted-foreground">{field.label}</span>
-                    <Select value={mapping[field.key] || ''} onValueChange={(val: string | null) => setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))}>
-                      <SelectTrigger className="w-2/3">
-                        <SelectValue placeholder="Select CSV Column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ignore" className="text-muted-foreground italic">-- Do Not Map --</SelectItem>
-                        {csvHeaders.map(h => (
-                          <SelectItem key={h} value={h}>{h}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Required fields</Label>
+                  <Badge variant={mappedRequiredCount === REQUIRED_FIELDS.length ? 'emerald' : 'neutral'}>
+                    {mappedRequiredCount}/{REQUIRED_FIELDS.length} mapped
+                  </Badge>
+                </div>
+                <div className="rounded-lg border bg-card">
+                  {REQUIRED_FIELDS.map((field, i) => (
+                    <div
+                      key={field.key}
+                      className={cn(
+                        'flex items-center gap-4 px-4 py-2.5',
+                        i < REQUIRED_FIELDS.length - 1 && 'border-b border-border/60',
+                      )}
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">{field.label}</span>
+                        <span className="text-xs text-destructive">*</span>
+                      </div>
+                      <div className="w-[55%] shrink-0">
+                        <Select
+                          value={mapping[field.key] || ''}
+                          onValueChange={(val: string | null) =>
+                            setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore" className="text-muted-foreground">
+                              — None —
+                            </SelectItem>
+                            {csvHeaders.map(h => (
+                              <SelectItem key={h} value={h}>{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Optional fields</Label>
+                  {mappedOptionalCount > 0 && (
+                    <Badge variant="neutral">{mappedOptionalCount} mapped</Badge>
+                  )}
+                </div>
+                <div className="rounded-lg border bg-card">
+                  {OPTIONAL_FIELDS.map((field, i) => (
+                    <div
+                      key={field.key}
+                      className={cn(
+                        'flex items-center gap-4 px-4 py-2.5',
+                        i < OPTIONAL_FIELDS.length - 1 && 'border-b border-border/60',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{field.label}</span>
+                      <div className="w-[55%] shrink-0">
+                        <Select
+                          value={mapping[field.key] || ''}
+                          onValueChange={(val: string | null) =>
+                            setMapping(prev => ({ ...prev, [field.key]: !val || val === 'ignore' ? '' : val }))
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore" className="text-muted-foreground">
+                              — None —
+                            </SelectItem>
+                            {csvHeaders.map(h => (
+                              <SelectItem key={h} value={h}>{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
+          {/* REVIEW STEP */}
           {step === 'REVIEW' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {validationErrors.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="bg-red-50 text-red-800 rounded-md p-4 text-sm font-medium border border-red-100">
-                    Found {validationErrors.length} error(s) in your data. Please fix these issues before importing.
+                <>
+                  <div className="rounded-lg border border-destructive/15 bg-destructive/10 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle size={14} className="shrink-0 text-destructive" />
+                      <p className="text-sm font-medium text-destructive">
+                        {validationErrors.length} {validationErrors.length === 1 ? 'error' : 'errors'} found
+                      </p>
+                    </div>
+                    <p className="mt-1 pl-5.5 text-xs text-destructive/80">
+                      Fix these in your CSV and re-upload, or remove invalid rows to continue.
+                    </p>
                   </div>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+
+                  <div className="max-h-60 space-y-1.5 overflow-y-auto">
                     {validationErrors.map((err, idx) => (
-                      <div key={idx} className="border border-red-200 rounded-md p-4 bg-white relative">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="text-red-500 w-4 h-4 mt-0.5 shrink-0" />
-                          <div>
-                            <div className="text-sm font-semibold text-foreground">Row {err.row}</div>
-                            <div className="text-sm text-muted-foreground">{err.message}</div>
-                          </div>
-                        </div>
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 rounded-lg border border-border/60 bg-card px-3.5 py-2.5"
+                      >
+                        <Badge variant="neutral" className="mt-px shrink-0 tabular-nums">
+                          Row {err.row}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">{err.message}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-blue-50/50 text-blue-800 rounded-md p-4 text-sm border border-blue-100">
-                    Please fix the errors in your CSV file and upload it again, or remove the invalid rows and continue.
-                  </div>
-                </div>
+                </>
               ) : (
-                <div className="border border-green-200 rounded-md p-6 bg-green-50/50 mb-6">
-                  <div className="flex items-center gap-2 mb-6">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-semibold text-green-800">All data validated successfully!</span>
-                  </div>
-                  <div className="grid grid-cols-3 divide-x text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-green-700">{validRows}</div>
-                      <div className="text-sm font-medium text-green-600 mt-1">Valid Records</div>
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
+                        <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">All records validated</span>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">{duplicates}</div>
-                      <div className="text-sm text-muted-foreground mt-1">Duplicates</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">{validationErrors.length}</div>
-                      <div className="text-sm text-muted-foreground mt-1">Errors</div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="emerald">{selectedCount} selected</Badge>
+                      {duplicates > 0 && <Badge variant="warning">{duplicates} duplicates</Badge>}
+                      <Badge variant="neutral">{csvData.length} total</Badge>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-8 text-left">
-                    Click &quot;Import&quot; to add these contractors to your system. This action cannot be undone.
-                  </p>
-                </div>
-              )}
 
-              {validationErrors.length === 0 && csvData.length > 0 && (
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader className="bg-muted bg-muted/50">
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Job Title</TableHead>
-                        <TableHead>Start Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {csvData.slice(0, 10).map((row, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium">{row[mapping['name']] || '—'}</TableCell>
-                          <TableCell>{row[mapping['email']] || '—'}</TableCell>
-                          <TableCell>{mapping['job_title'] ? row[mapping['job_title']] : '—'}</TableCell>
-                          <TableCell>{parseDateString(row[mapping['start_date']] || '') || '—'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {csvData.length > 10 && (
-                    <div className="p-3 text-center text-xs text-muted-foreground border-t bg-muted/30">
-                      Showing 10 of {csvData.length} total rows.
+                  {csvData.length > 0 && (
+                    <div className="overflow-hidden rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-10 pr-0">
+                              <Checkbox
+                                checked={allSelected}
+                                indeterminate={someSelected}
+                                onCheckedChange={toggleAllRows}
+                              />
+                            </TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Job Title</TableHead>
+                            <TableHead>Start Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {csvData.map((row, i) => (
+                            <TableRow key={i} className={cn(excludedRows.has(i) && 'opacity-40')}>
+                              <TableCell className="pr-0">
+                                <Checkbox
+                                  checked={!excludedRows.has(i)}
+                                  onCheckedChange={() => toggleRow(i)}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">{row[mapping['name']] || '—'}</TableCell>
+                              <TableCell>{row[mapping['email']] || '—'}</TableCell>
+                              <TableCell>{mapping['job_title'] ? row[mapping['job_title']] : '—'}</TableCell>
+                              <TableCell className="tabular-nums">{parseDateString(row[mapping['start_date']] || '') || '—'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
-                </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Importing cannot be undone. Duplicate emails will be skipped.
+                  </p>
+                </>
               )}
             </div>
           )}
         </div>
 
-        <DialogFooter className="mt-4 border-t pt-4">
+        <DialogFooter>
           {step === 'UPLOAD' && (
-            <Button variant="ghost" className="mr-auto" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           )}
           {step === 'MAP' && (
             <>
-              <Button variant="ghost" className="mr-auto" onClick={() => setStep('UPLOAD')}>Back</Button>
-              <Button onClick={handleMapContinue}>Review Data</Button>
+              <Button variant="outline" className="sm:mr-auto" onClick={() => { resetState(); }}>
+                Back
+              </Button>
+              <Button onClick={handleMapContinue}>
+                Review data
+                <ArrowRight size={14} />
+              </Button>
             </>
           )}
           {step === 'REVIEW' && validationErrors.length > 0 && (
             <>
-              <Button variant="ghost" className="mr-auto" onClick={() => setStep('MAP')}>Back</Button>
+              <Button variant="outline" className="sm:mr-auto" onClick={() => setStep('MAP')}>
+                Back
+              </Button>
               <Button onClick={handleRemoveInvalidRows} variant="secondary">
-                Remove Invalid Rows & Continue
+                Remove invalid rows
               </Button>
             </>
           )}
           {step === 'REVIEW' && validationErrors.length === 0 && (
             <>
-              <Button variant="outline" className="mr-auto" onClick={() => setStep('MAP')}>Back</Button>
-              <Button onClick={handleImport} disabled={isPending || validRows === 0}>
-                {isPending ? 'Importing...' : `Import ${validRows} Records`}
+              <Button variant="outline" className="sm:mr-auto" onClick={() => setStep('MAP')}>
+                Back
+              </Button>
+              <Button onClick={handleImport} disabled={isPending || selectedCount === 0}>
+                {isPending ? 'Importing…' : `Import ${selectedCount} records`}
               </Button>
             </>
           )}
