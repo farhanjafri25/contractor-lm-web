@@ -27,6 +27,20 @@ function Okta(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+type IntegrationCard = {
+  name: string;
+  description: string;
+  status?: string;
+  icon: (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
+  iconContainerClassName: string;
+  buttonLabel: string;
+  buttonVariant: 'secondary';
+  onClick?: () => void | Promise<void>;
+  disabled: boolean;
+  buttonClassName?: string;
+  hideDetails?: boolean;
+};
+
 function IntegrationsContent() {
   const { isGoogleConnected, isSlackConnected, gettingStartedLoading } = useGettingStarted();
   const searchParams = useSearchParams();
@@ -78,7 +92,7 @@ function IntegrationsContent() {
     }
   }
 
-  const integrations = [
+  const integrations: IntegrationCard[] = [
     {
       name: 'Google Workspace',
       description: 'Provision Google accounts for contractors.',
