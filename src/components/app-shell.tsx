@@ -574,9 +574,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="flex items-center gap-2">
               <FeedbackPopover />
-              <Button variant="secondary" size="sm" className="hidden border-transparent sm:inline-flex" type="button">
-                Docs
-              </Button>
               <Button variant="secondary" size="icon-sm" className="border-transparent" aria-label="Notifications" title="Notifications">
                 <Bell size={16} />
               </Button>

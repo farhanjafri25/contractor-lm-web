@@ -386,6 +386,11 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const accessEntries = (accessData as unknown as AccessData)?.access ?? [];
   const tenantUsers = (Array.isArray(usersData?.data) ? usersData.data : []) as Record<string, unknown>[];
   const availableApps = (Array.isArray(appsData) ? appsData : []) as Record<string, unknown>[];
+  const modifiableApps = availableApps.filter((app) => {
+    const appRef = app.application_id as Application | undefined;
+    const slug = String(appRef?.slug ?? app.app_key ?? '').trim().toLowerCase();
+    return slug === 'google-workspace' || slug === 'slack';
+  });
   const assignedAppIds = new Set<string>(
     accessEntries.map((e) => {
       const app = e.tenant_application_id;
@@ -1226,11 +1231,11 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </>
         }
       >
-        {availableApps.length === 0 ? (
+        {modifiableApps.length === 0 ? (
           <p className="text-sm text-muted-foreground">No applications available to assign.</p>
         ) : (
           <div className="space-y-2">
-            {availableApps.map((app: Record<string, unknown>) => {
+            {modifiableApps.map((app: Record<string, unknown>) => {
               const appId = String(app._id);
               const appIdRef = app.application_id as Application | undefined;
               const appSlug = appIdRef?.slug || String(app.app_key ?? '').trim();
