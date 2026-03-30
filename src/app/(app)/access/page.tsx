@@ -46,7 +46,12 @@ interface GroupedByContractor {
   contractorKey: string;
   contractor: Contractor;
   apps: GroupedApp[];
-  grantedBy: { email?: string } | null;
+  grantedBy: {
+    email?: string;
+    name?: string;
+    full_name?: string;
+    display_name?: string;
+  } | null;
   status: string;
 }
 
@@ -250,6 +255,7 @@ export default function AccessPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const statusFilters = searchParams.getAll('status').filter(Boolean);
   const appFilters = searchParams.getAll('app').filter(Boolean);
   const sourceFilters = searchParams.getAll('source').filter(Boolean);
@@ -355,7 +361,7 @@ export default function AccessPage() {
         contractorKey: contractorId,
         contractor,
         apps: [],
-        grantedBy: record.granted_by as { email?: string } | null,
+        grantedBy: record.granted_by as GroupedByContractor['grantedBy'],
         status: 'active',
       };
     }
