@@ -9,7 +9,7 @@ import { contractorsApi } from '@/lib/api';
 import { ChevronRight, IconDotGrid1x3VerticalTight } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
-import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CsvImporter } from '@/components/csv-importer';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -72,14 +72,14 @@ export default function ContractorsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const status = searchParams.get('status') ?? '';
-  const department = searchParams.get('department') ?? '';
-  const timing = searchParams.get('timing') ?? '';
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
+  const departmentFilters = searchParams.getAll('department').filter(Boolean);
+  const timingFilters = searchParams.getAll('timing').filter(Boolean);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['contractors', search, status],
+    queryKey: ['contractors', search],
     queryFn: async () =>
-      (await contractorsApi.list({ search: search || undefined, status: status || undefined })).data,
+      (await contractorsApi.list({ search: search || undefined })).data,
   });
 
   const contractors = Array.isArray(data?.data) ? data.data : [];
@@ -96,23 +96,26 @@ export default function ContractorsPage() {
       .map((value) => ({ label: value, value })),
   ];
   const filteredContractors = contractors.filter((contractor: Record<string, unknown>) => {
-    const departmentMatches = !department || String(contractor.department ?? '') === department;
     const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
-    const timingMatches = getContractTimingMatch(activeContract?.end_date, timing);
-    return departmentMatches && timingMatches;
+    const contractStatus = String(activeContract?.status ?? '');
+    const departmentMatches = departmentFilters.length === 0 || departmentFilters.includes(String(contractor.department ?? ''));
+    const statusMatches = statusFilters.length === 0 || statusFilters.includes(contractStatus);
+    const timingMatches =
+      timingFilters.length === 0 ||
+      timingFilters.some((timing) => getContractTimingMatch(activeContract?.end_date, timing));
+    return departmentMatches && statusMatches && timingMatches;
   });
-  const activeFilterCount = [status, department, timing].filter(Boolean).length;
-  const hasSearchOrFilters = Boolean(search || status || department || timing);
+  const activeFilterCount = statusFilters.length + departmentFilters.length + timingFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const query = params.toString();
@@ -145,40 +148,69 @@ export default function ContractorsPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="md:w-80" />
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: '', department: '', timing: '' })}
+            onClear={() => updateFilterParams({ status: [], department: [], timing: [] })}
           >
             <FieldBlock label="Status">
-              <FilterSelect
-                value={status}
-                onValueChange={(value) => updateFilterParams({ status: value })}
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
                 options={statusOptions}
-                placeholder="All statuses"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Department">
-              <FilterSelect
-                value={department}
-                onValueChange={(value) => updateFilterParams({ department: value })}
+              <MultiFilterChecklist
+                values={departmentFilters}
+                onValuesChange={(values) => updateFilterParams({ department: values })}
                 options={departmentOptions}
-                placeholder="All departments"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Contract timing">
-              <FilterSelect
-                value={timing}
-                onValueChange={(value) => updateFilterParams({ timing: value })}
+              <MultiFilterChecklist
+                values={timingFilters}
+                onValuesChange={(values) => updateFilterParams({ timing: values })}
                 options={timingOptions}
-                placeholder="Any contract date"
-                className="w-full"
               />
             </FieldBlock>
           </FiltersPopover>
+        </div>
+
+        <div className="hidden md:flex md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Status"
+              values={statusFilters}
+              onValuesChange={(values) => updateFilterParams({ status: values })}
+              options={statusOptions}
+              placeholder="All statuses"
+              className="min-w-40"
+            />
+            <MultiFilterDropdown
+              title="Department"
+              values={departmentFilters}
+              onValuesChange={(values) => updateFilterParams({ department: values })}
+              options={departmentOptions}
+              placeholder="All departments"
+              className="min-w-44"
+            />
+            <MultiFilterDropdown
+              title="Contract timing"
+              values={timingFilters}
+              onValuesChange={(values) => updateFilterParams({ timing: values })}
+              options={timingOptions}
+              placeholder="Any contract date"
+              className="min-w-48"
+            />
+          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name or email"
+            className="ml-auto w-80"
+          />
         </div>
 
         <DataTableShell>

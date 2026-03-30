@@ -18,6 +18,7 @@ export { IconDotGrid1x3VerticalTight } from '@central-icons-react/round-outlined
 export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeOpen';
 export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeSlash';
 export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFileText';
+export { IconFilter2 as IconFilter2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFilter2';
 export { IconGroup2 as Group2 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconGroup2';
 export { IconHistory as History } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHistory';
 export { IconHomeCircle as HomeCircle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconHomeCircle';

@@ -12,7 +12,7 @@ import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
@@ -251,13 +251,13 @@ export default function SponsorPage() {
   const searchParams = useSearchParams();
   const [reviewingRequest, setReviewingRequest] = useState<SponsorRequest | null>(null);
   const [search, setSearch] = useState('');
-  const statusFilter = searchParams.get('status') ?? '';
-  const typeFilter = searchParams.get('type') ?? '';
-  const rangeFilter = searchParams.get('range') ?? '';
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
+  const typeFilters = searchParams.getAll('type').filter(Boolean);
+  const rangeFilters = searchParams.getAll('range').filter(Boolean);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sponsor-actions', statusFilter],
-    queryFn: async () => (await sponsorApi.list({ status: statusFilter || undefined })).data,
+    queryKey: ['sponsor-actions'],
+    queryFn: async () => (await sponsorApi.list()).data,
   });
 
   const requests = Array.isArray(data?.data) ? data.data : [];
@@ -277,10 +277,12 @@ export default function SponsorPage() {
   const filteredRequests = requests.filter((request: Record<string, unknown>) => {
       const requestType = String(request.action_type ?? '');
       const requestDate = request.createdAt || request.created_at;
-      const typeMatches = !typeFilter || requestType === typeFilter;
-      const rangeMatches = getRecencyMatch(requestDate, rangeFilter);
+      const status = String(request.status ?? '');
+      const typeMatches = typeFilters.length === 0 || typeFilters.includes(requestType);
+      const statusMatches = statusFilters.length === 0 || statusFilters.includes(status);
+      const rangeMatches = rangeFilters.length === 0 || rangeFilters.some((range) => getRecencyMatch(requestDate, range));
 
-      if (!typeMatches || !rangeMatches) {
+      if (!statusMatches || !typeMatches || !rangeMatches) {
         return false;
       }
 
@@ -296,23 +298,22 @@ export default function SponsorPage() {
           contractor ? String(contractor.department ?? '') : '',
           submitter ? String(submitter.email ?? '') : '',
           getActionTypeLabel(requestType),
-          String(request.status ?? ''),
+          status,
         ];
 
         return values.some((value) => value.toLowerCase().includes(query));
       });
-  const activeFilterCount = [statusFilter, typeFilter, rangeFilter].filter(Boolean).length;
-  const hasSearchOrFilters = Boolean(search || statusFilter || typeFilter || rangeFilter);
+  const activeFilterCount = statusFilters.length + typeFilters.length + rangeFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const queryString = params.toString();
@@ -333,40 +334,69 @@ export default function SponsorPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="md:w-80" />
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: '', type: '', range: '' })}
+            onClear={() => updateFilterParams({ status: [], type: [], range: [] })}
           >
             <FieldBlock label="Status">
-              <FilterSelect
-                value={statusFilter}
-                onValueChange={(value) => updateFilterParams({ status: value })}
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
                 options={requestStatusOptions}
-                placeholder="All statuses"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Request type">
-              <FilterSelect
-                value={typeFilter}
-                onValueChange={(value) => updateFilterParams({ type: value })}
+              <MultiFilterChecklist
+                values={typeFilters}
+                onValuesChange={(values) => updateFilterParams({ type: values })}
                 options={requestTypeOptions}
-                placeholder="All request types"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Recency">
-              <FilterSelect
-                value={rangeFilter}
-                onValueChange={(value) => updateFilterParams({ range: value })}
+              <MultiFilterChecklist
+                values={rangeFilters}
+                onValuesChange={(values) => updateFilterParams({ range: values })}
                 options={recencyOptions}
-                placeholder="Any time"
-                className="w-full"
               />
             </FieldBlock>
           </FiltersPopover>
+        </div>
+
+        <div className="hidden md:flex md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Status"
+              values={statusFilters}
+              onValuesChange={(values) => updateFilterParams({ status: values })}
+              options={requestStatusOptions}
+              placeholder="All statuses"
+              className="min-w-40"
+            />
+            <MultiFilterDropdown
+              title="Request type"
+              values={typeFilters}
+              onValuesChange={(values) => updateFilterParams({ type: values })}
+              options={requestTypeOptions}
+              placeholder="All request types"
+              className="min-w-48"
+            />
+            <MultiFilterDropdown
+              title="Recency"
+              values={rangeFilters}
+              onValuesChange={(values) => updateFilterParams({ range: values })}
+              options={recencyOptions}
+              placeholder="Any time"
+              className="min-w-36"
+            />
+          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search requests"
+            className="ml-auto w-80"
+          />
         </div>
 
         <DataTableShell>

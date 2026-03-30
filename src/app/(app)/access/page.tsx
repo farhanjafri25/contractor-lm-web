@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { accessApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { CheckCheck, RotateCcw, IconDotGrid1x3VerticalTight, IconGoogle, IconSlack } from '@/components/icons';
-import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, StatusBadge, SummaryPill } from '@/components/app-ui';
+import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,10 +50,6 @@ interface GroupedByContractor {
   status: string;
 }
 
-function formatStatusLabel(status: string) {
-  return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
-}
-
 function getApplicationLabel(slug: string) {
   if (slug === 'google-workspace') {
     return 'Google';
@@ -66,6 +62,28 @@ function getApplicationLabel(slug: string) {
   return slug
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function getApplicationDetails(app: Record<string, unknown> | Application | undefined) {
+  const linkedApplication =
+    app && typeof app.application_id === 'object' && app.application_id
+      ? app.application_id as { _id?: string; name?: string; slug?: string }
+      : undefined;
+  const value = String(linkedApplication?.slug ?? linkedApplication?._id ?? app?.app_key ?? app?.display_name ?? '').trim();
+  const label = String(linkedApplication?.name ?? app?.display_name ?? app?.app_key ?? (value ? getApplicationLabel(value) : '')).trim();
+
+  return { label, value };
+}
+
+function getSourceDetails(grantedBy: Record<string, unknown> | undefined | null) {
+  if (!grantedBy) {
+    return { label: 'Tenurio', value: 'tenurio' };
+  }
+
+  const label = String(grantedBy.name ?? grantedBy.full_name ?? grantedBy.display_name ?? grantedBy.email ?? 'Unknown source').trim();
+  const value = String(grantedBy.email ?? grantedBy._id ?? label).trim();
+
+  return { label, value };
 }
 
 function renderAppIcon(slug: string, status: string) {
@@ -232,21 +250,21 @@ export default function AccessPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const statusFilter = searchParams.get('status') ?? '';
-  const appFilter = searchParams.get('app') ?? '';
-  const sourceFilter = searchParams.get('source') ?? '';
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
+  const appFilters = searchParams.getAll('app').filter(Boolean);
+  const sourceFilters = searchParams.getAll('source').filter(Boolean);
+  const [search, setSearch] = useState('');
   const [reviewingContractorKey, setReviewingContractorKey] = useState<string | null>(null);
   const [revokeLoadingId, setRevokeLoadingId] = useState<string | null>(null);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const query = params.toString();
@@ -263,45 +281,70 @@ export default function AccessPage() {
 
   const applicationOptions = [
     { label: 'All applications', value: '' },
-    ...Array.from<string>(
-      new Set<string>(
-        records
-          .map((record) => {
-            const app = record.tenant_application_id as Record<string, unknown> | undefined;
-            return String(app?.application_id ?? app?.display_name ?? app?.app_key ?? '').trim();
-          })
-          .filter(Boolean),
-      ),
+    ...Array.from(
+      records.reduce((options, record) => {
+        const app = record.tenant_application_id as Record<string, unknown> | undefined;
+        const details = getApplicationDetails(app);
+
+        if (details.value && details.label) {
+          options.set(details.value, details.label);
+        }
+
+        return options;
+      }, new Map<string, string>()),
     )
-      .sort((left, right) => left.localeCompare(right))
-      .map((value) => ({ label: value, value })),
+      .sort((left, right) => left[1].localeCompare(right[1]))
+      .map(([value, label]) => ({ label, value })),
   ];
   const sourceOptions = [
     { label: 'All sources', value: '' },
-    { label: 'Tenurio', value: 'tenurio' },
-    { label: 'Team member', value: 'member' },
+    ...Array.from(
+      records.reduce((options, record) => {
+        const grantedBy = record.granted_by as Record<string, unknown> | undefined;
+        const details = getSourceDetails(grantedBy);
+        options.set(details.value, details.label);
+        return options;
+      }, new Map<string, string>()),
+    )
+      .sort((left, right) => left[1].localeCompare(right[1]))
+      .map(([value, label]) => ({ label, value })),
   ];
 
   const filteredRecords = records.filter((record) => {
+    const contractor = record.contractor_id as Record<string, unknown> | undefined;
     const app = record.tenant_application_id as Record<string, unknown> | undefined;
-    const applicationName = String(app?.application_id ?? app?.display_name ?? app?.app_key ?? '').trim();
     const grantedBy = record.granted_by as Record<string, unknown> | undefined;
-    const source = grantedBy ? 'member' : 'tenurio';
+    const application = getApplicationDetails(app);
+    const source = getSourceDetails(grantedBy);
     const status = String(record.provisioning_status ?? record.status ?? '');
-    const statusMatches = !statusFilter || status === statusFilter;
-    const appMatches = !appFilter || applicationName === appFilter;
-    const sourceMatches = !sourceFilter || source === sourceFilter;
-    return statusMatches && appMatches && sourceMatches;
+    const searchNeedle = search.trim().toLowerCase();
+    const searchMatches =
+      !searchNeedle ||
+      [
+        contractor?.name,
+        contractor?.department,
+        application.label,
+        application.value,
+        app?.app_key,
+        app?.display_name,
+        typeof app?.application_id === 'object' ? (app.application_id as { name?: string }).name : app?.application_id,
+        grantedBy?.name,
+        grantedBy?.full_name,
+        grantedBy?.display_name,
+        grantedBy?.email,
+        source.label,
+        status,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(searchNeedle));
+    const statusMatches = statusFilters.length === 0 || statusFilters.includes(status);
+    const appMatches = appFilters.length === 0 || appFilters.includes(application.value);
+    const sourceMatches = sourceFilters.length === 0 || sourceFilters.includes(source.value);
+    return searchMatches && statusMatches && appMatches && sourceMatches;
   });
 
-  const activeFilterCount = [statusFilter, appFilter, sourceFilter].filter(Boolean).length;
-  const hasFilters = Boolean(statusFilter || appFilter || sourceFilter);
-
-  const counts = records.reduce<Record<string, number>>((accumulator, record) => {
-    const status = String(record.provisioning_status ?? record.status ?? '');
-    accumulator[status] = (accumulator[status] ?? 0) + 1;
-    return accumulator;
-  }, {});
+  const activeFilterCount = statusFilters.length + appFilters.length + sourceFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
 
   const groupedByContractor = filteredRecords.reduce<Record<string, GroupedByContractor>>((acc, record) => {
     const contractor = record.contractor_id as unknown as Contractor;
@@ -318,8 +361,8 @@ export default function AccessPage() {
     }
 
     const app = record.tenant_application_id as unknown as Application;
-    const application = app?.application_id;
-    const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
+    const application = getApplicationDetails(app);
+    const appSlug = application.value;
 
     // Only add unique application slugs to the list
     const existingApp = acc[contractorId].apps.find(a => a.application_slug === appSlug);
@@ -381,58 +424,75 @@ export default function AccessPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          {!isLoading && Object.keys(counts).length ? (
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(counts).map(([status, count]) => (
-                <SummaryPill
-                  key={status}
-                  label={formatStatusLabel(status)}
-                  count={count}
-                  active={statusFilter === status}
-                  onClick={() => updateFilterParams({ status: statusFilter === status ? '' : status })}
-                />
-              ))}
-            </div>
-          ) : null}
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={setSearch} placeholder="Search access" className="flex-1" />
+          <FiltersPopover
+            activeCount={activeFilterCount}
+            onClear={() => updateFilterParams({ status: [], app: [], source: [] })}
+          >
+            <FieldBlock label="Status">
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
+                options={statuses.map((status) => ({
+                  label: status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'All statuses',
+                  value: status,
+                }))}
+              />
+            </FieldBlock>
+            <FieldBlock label="Application">
+              <MultiFilterChecklist
+                values={appFilters}
+                onValuesChange={(values) => updateFilterParams({ app: values })}
+                options={applicationOptions}
+              />
+            </FieldBlock>
+            <FieldBlock label="Assigned by">
+              <MultiFilterChecklist
+                values={sourceFilters}
+                onValuesChange={(values) => updateFilterParams({ source: values })}
+                options={sourceOptions}
+              />
+            </FieldBlock>
+          </FiltersPopover>
+        </div>
 
-          <div className="ml-auto">
-            <FiltersPopover
-              activeCount={activeFilterCount}
-              onClear={() => updateFilterParams({ status: '', app: '', source: '' })}
-            >
-              <FieldBlock label="Status">
-                <FilterSelect
-                  value={statusFilter}
-                  onValueChange={(value) => updateFilterParams({ status: value })}
-                  options={statuses.map((status) => ({
-                    label: status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'All statuses',
-                    value: status,
-                  }))}
-                  placeholder="All statuses"
-                  className="w-full"
-                />
-              </FieldBlock>
-              <FieldBlock label="Application">
-                <FilterSelect
-                  value={appFilter}
-                  onValueChange={(value) => updateFilterParams({ app: value })}
-                  options={applicationOptions}
-                  placeholder="All applications"
-                  className="w-full"
-                />
-              </FieldBlock>
-              <FieldBlock label="Assigned by">
-                <FilterSelect
-                  value={sourceFilter}
-                  onValueChange={(value) => updateFilterParams({ source: value })}
-                  options={sourceOptions}
-                  placeholder="All sources"
-                  className="w-full"
-                />
-              </FieldBlock>
-            </FiltersPopover>
+        <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Status"
+              values={statusFilters}
+              onValuesChange={(values) => updateFilterParams({ status: values })}
+              options={statuses.map((status) => ({
+                label: status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'All statuses',
+                value: status,
+              }))}
+              placeholder="All statuses"
+              className="min-w-40"
+            />
+            <MultiFilterDropdown
+              title="Application"
+              values={appFilters}
+              onValuesChange={(values) => updateFilterParams({ app: values })}
+              options={applicationOptions}
+              placeholder="All applications"
+              className="min-w-48"
+            />
+            <MultiFilterDropdown
+              title="Assigned by"
+              values={sourceFilters}
+              onValuesChange={(values) => updateFilterParams({ source: values })}
+              options={sourceOptions}
+              placeholder="All sources"
+              className="min-w-40"
+            />
           </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search access"
+            className="ml-auto w-80"
+          />
         </div>
 
         <DataTableShell>
@@ -544,7 +604,7 @@ export default function AccessPage() {
               {!isLoading && groupedRecords.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={isAdmin ? 5 : 4} className="py-14 text-center text-muted-foreground">
-                    {hasFilters ? 'No access matches this filter. Matching records will show here.' : 'No access records yet. Linked accounts will show here.'}
+                    {hasSearchOrFilters ? 'No access matches this search or filter. Matching records will show here.' : 'No access records yet. Linked accounts will show here.'}
                   </TableCell>
                 </TableRow>
               ) : null}

@@ -8,7 +8,6 @@ import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  Bell,
   CheckCircle,
   ChevronGrabberVertical,
   Group2,
@@ -574,9 +573,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="flex items-center gap-2">
               <FeedbackPopover />
-              <Button variant="outline" size="icon-sm" aria-label="Notifications" title="Notifications">
-                <Bell size={16} />
-              </Button>
               <Button
                 variant="outline"
                 size="icon-sm"

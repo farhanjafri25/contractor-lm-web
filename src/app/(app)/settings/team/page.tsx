@@ -100,6 +100,10 @@ function countByStatus(members: TeamMember[], status: string) {
   return members.filter((member) => normalizeStatus(getTextValue(member.status)) === status).length;
 }
 
+function getMemberId(member: TeamMember) {
+  return getTextValue(member._id);
+}
+
 function matchesMember(member: TeamMember, query: string) {
   if (!query) {
     return true;
@@ -227,17 +231,7 @@ function PendingApprovalsCard({
   }
 
   if (!members.length) {
-    return (
-      <Card size="sm" className="border-border/70 bg-muted/15 dark:border-border/70">
-        <CardContent className="flex flex-col gap-2 pt-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Pending approvals</p>
-            <p className="text-sm text-muted-foreground">No join requests are waiting on an admin right now.</p>
-          </div>
-          <StatusBadge status="all clear" />
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (
@@ -465,9 +459,28 @@ function MembersTable({
                           <Checkmark2 className="size-[11px]" />
                           {activeAction?.type === 'reactivate' && isBusy(memberId) ? 'Reactivating…' : 'Reactivate'}
                         </Button>
+                      ) : normalizedStatus === 'invited' ? (
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="rounded-[min(var(--radius-md),12px)] outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+                              <span className="flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background text-base leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                                ⋯
+                              </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-40">
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => toast.info('Cancel invite will be wired once the backend endpoint is ready.')}
+                              >
+                                <IconCrossLarge size={14} />
+                                Cancel invite
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">
-                          {normalizedStatus === 'invited' ? 'Awaiting acceptance' : 'No action'}
+                          No action
                         </span>
                       )}
                     </TableCell>
@@ -515,10 +528,22 @@ export default function TeamPage() {
 
 
   const members = useMemo(() => (Array.isArray(data?.data) ? (data.data as TeamMember[]) : []), [data]);
-  const pendingMembers = useMemo(
-    () => (Array.isArray(pendingData?.data) ? (pendingData.data as TeamMember[]) : []),
-    [pendingData],
-  );
+  const pendingMembers = useMemo(() => {
+    const pendingFromEndpoint = Array.isArray(pendingData?.data) ? (pendingData.data as TeamMember[]) : [];
+    const pendingFromMembers = members.filter((member) => normalizeStatus(getTextValue(member.status)) === 'pending');
+    const byId = new Map<string, TeamMember>();
+
+    for (const member of [...pendingFromEndpoint, ...pendingFromMembers]) {
+      const memberId = getMemberId(member);
+      if (!memberId) {
+        continue;
+      }
+
+      byId.set(memberId, member);
+    }
+
+    return Array.from(byId.values());
+  }, [members, pendingData]);
 
   const managedMembers = useMemo(
     () => members.filter((member) => normalizeStatus(getTextValue(member.status)) !== 'pending'),
