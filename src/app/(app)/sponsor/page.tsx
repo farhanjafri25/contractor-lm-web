@@ -7,13 +7,11 @@ import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
-import { CheckCircle, Clock, Eye, XCircle } from '@/components/icons';
+import { CheckCircle, Checkmark2, Clock, IconCrossLarge, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
-import { Textarea } from '@/components/ui/textarea';
 
 const requestStatusOptions = [
   { label: 'All statuses', value: '' },
@@ -72,86 +70,19 @@ function getRecencyMatch(dateValue: unknown, range: string) {
   return true;
 }
 
-function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; onOpenChange: (open: boolean) => void }) {
-  const [decision, setDecision] = useState<'approved' | 'rejected'>('approved');
-  const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const queryClient = useQueryClient();
-
-  const submit = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      await sponsorApi.review(id, decision, note || undefined);
-      queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] });
-      toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
-      onOpenChange(false);
-    } catch (err: unknown) {
-      const message = getApiErrorMessage(err, 'Review failed. Try again.');
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <div>
-            <DialogTitle>Review request</DialogTitle>
-            <DialogDescription>Approve it or reject it with a note.</DialogDescription>
-          </div>
-        </DialogHeader>
-        <div className="mt-6 space-y-5">
-          {error ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(['approved', 'rejected'] as const).map((value) => (
-              <Button
-                key={value}
-                type="button"
-                variant={decision === value ? value === 'approved' ? 'default' : 'destructive' : 'secondary'}
-                onClick={() => setDecision(value)}
-                className="w-full"
-              >
-                {value === 'approved' ? 'Approve' : 'Reject'}
-              </Button>
-            ))}
-          </div>
-          <FieldBlock label="Note">
-            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explain your decision" />
-          </FieldBlock>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" variant={decision === 'approved' ? 'default' : 'destructive'} onClick={submit} disabled={loading}>
-            {loading ? 'Saving…' : decision === 'approved' ? 'Approve' : 'Reject'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function SponsorPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState<{ requestId: string; decision: 'approved' | 'rejected' } | null>(null);
   const [search, setSearch] = useState('');
+  const [actionError, setActionError] = useState('');
   const statusFilter = searchParams.get('status') ?? '';
   const typeFilter = searchParams.get('type') ?? '';
   const rangeFilter = searchParams.get('range') ?? '';
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['sponsor-actions', statusFilter],
@@ -223,6 +154,32 @@ export default function SponsorPage() {
     rejected: <XCircle size={12} />,
   };
 
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard-pending-requests'] }),
+    ]);
+  };
+
+  const runRequestAction = async (requestId: string, decision: 'approved' | 'rejected') => {
+    setActionError('');
+    setActiveAction({ requestId, decision });
+
+    try {
+      await sponsorApi.review(requestId, decision);
+      await refresh();
+      toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Review failed. Try again.');
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  const isBusy = (requestId: string) => activeAction?.requestId === requestId;
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -231,6 +188,11 @@ export default function SponsorPage() {
       />
 
       <div className="space-y-4">
+        {actionError ? (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {actionError}
+          </div>
+        ) : null}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="md:w-80" />
           <FiltersPopover
@@ -324,16 +286,33 @@ export default function SponsorPage() {
                         {isAdmin ? (
                           <TableCell className="text-right">
                             {status === 'pending' ? (
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => setReviewingId(String(request._id))}
-                                aria-label="Review request"
-                                title="Review request"
-                              >
-                                <Eye size={14} />
-                                <span className="sr-only">Review request</span>
-                              </Button>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="secondary"
+                                  size="icon-sm"
+                                  onClick={() => runRequestAction(String(request._id), 'rejected')}
+                                  disabled={isBusy(String(request._id))}
+                                  aria-label={activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
+                                  title={activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
+                                >
+                                  <IconCrossLarge size={14} />
+                                  <span className="sr-only">
+                                    {activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
+                                  </span>
+                                </Button>
+                                <Button
+                                  size="icon-sm"
+                                  onClick={() => runRequestAction(String(request._id), 'approved')}
+                                  disabled={isBusy(String(request._id))}
+                                  aria-label={activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
+                                  title={activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
+                                >
+                                  <Checkmark2 className="size-[11px]" />
+                                  <span className="sr-only">
+                                    {activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
+                                  </span>
+                                </Button>
+                              </div>
                             ) : null}
                           </TableCell>
                         ) : null}
@@ -351,10 +330,6 @@ export default function SponsorPage() {
           </Table>
         </DataTableShell>
       </div>
-
-      {reviewingId ? (
-        <ReviewDialog id={reviewingId} open={Boolean(reviewingId)} onOpenChange={(open) => !open && setReviewingId(null)} />
-      ) : null}
     </div>
   );
 }
