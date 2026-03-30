@@ -96,16 +96,21 @@ export function StatusBadge({
   className?: string;
 }) {
   const normalized = status.toLowerCase();
+  const isDisconnectedState = normalized.includes('not connected') || normalized.includes('disconnected');
   const variant: BadgeVariant =
-    normalized.includes('active') ||
-    normalized.includes('approved') ||
-    normalized.includes('provisioned') ||
-    normalized.includes('complete') ||
-    normalized.includes('completed') ||
-    normalized.includes('resolved') ||
-    normalized.includes('done')
-      ? 'emerald'
-      : normalized.includes('pending') ||
+    isDisconnectedState
+      ? 'danger'
+      : normalized.includes('connected') ||
+          normalized.includes('active') ||
+          normalized.includes('approved') ||
+          normalized.includes('provisioned') ||
+          normalized.includes('complete') ||
+          normalized.includes('completed') ||
+          normalized.includes('resolved') ||
+          normalized.includes('done')
+        ? 'emerald'
+        : normalized.includes('pending') ||
+          normalized.includes('coming soon') ||
           normalized.includes('review') ||
           normalized.includes('invited')
         ? 'blue'
@@ -119,12 +124,12 @@ export function StatusBadge({
             normalized.includes('hold') ||
             normalized.includes('warning')
           ? 'violet'
-          : normalized.includes('reject') ||
-              normalized.includes('expire') ||
-              normalized.includes('terminate') ||
-              normalized.includes('revoked') ||
-              normalized.includes('deactivate') ||
-              normalized.includes('failed') ||
+        : normalized.includes('reject') ||
+            normalized.includes('expire') ||
+            normalized.includes('terminate') ||
+            normalized.includes('revoked') ||
+            normalized.includes('deactivate') ||
+            normalized.includes('failed') ||
               normalized.includes('error') ||
               normalized.includes('danger')
             ? 'danger'

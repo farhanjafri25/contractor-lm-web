@@ -61,3 +61,6 @@ export { IconUserAdd as UserPlus } from '@central-icons-react/round-filled-radiu
 export { IconCircleX as XCircle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCircleX';
 export { IconGoogle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGoogle';
 export { IconSlack } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSlack';
+export { IconCheckmark1 as Checkmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckmark1';
+export { IconCloudSimpleUpload as CloudUpload } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCloudSimpleUpload';
+export { IconArrowRight as ArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRight';

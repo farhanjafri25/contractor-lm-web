@@ -215,7 +215,7 @@ export default function AccessPage() {
 
   const renderAppIcon = (slug: string, status: string) => {
     const isFailed = status === 'failed';
-    const baseClass = "h-5 w-5 transition-opacity";
+    const baseClass = "h-4 w-4 transition-opacity";
     const opacityClass = status === 'pending' ? "opacity-40 animate-pulse" : "opacity-100";
     
     if (slug === 'google-workspace') {

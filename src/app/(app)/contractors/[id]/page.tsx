@@ -261,6 +261,37 @@ function ActionDialog({
   );
 }
 
+function getTimelineEventLabel(
+  eventType: string,
+  eventDate: unknown,
+  timelineItems: Record<string, unknown>[],
+) {
+  if (eventType !== 'contract.reactivated') {
+    return getEventLabel(eventType);
+  }
+
+  const currentTime = new Date(String(eventDate)).getTime();
+  const hasEarlierSuspension = timelineItems.some((item) => {
+    if (String(item.event_type ?? '') !== 'contract.suspended') {
+      return false;
+    }
+
+    const itemTime = new Date(String(item.created_at ?? item.createdAt ?? '')).getTime();
+
+    if (Number.isNaN(itemTime)) {
+      return false;
+    }
+
+    if (Number.isNaN(currentTime)) {
+      return true;
+    }
+
+    return itemTime < currentTime;
+  });
+
+  return hasEarlierSuspension ? 'Contract reactivated' : 'Contract activated';
+}
+
 function DetailRow({
   label,
   value,
@@ -852,7 +883,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                         <EventIcon size={16} />
                       </div>
                       <div className="min-w-0 space-y-1.5">
-                        <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {getTimelineEventLabel(eventType, eventDate, timelineItems)}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
                         </p>

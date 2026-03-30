@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SummaryPill } from '@/components/app-ui';
+import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
 import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
 const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
@@ -24,6 +24,7 @@ export default function AuditLogPage() {
   const category = searchParams.get('category') ?? '';
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const updateFilterParams = (updates: Record<string, string>) => {
@@ -43,13 +44,14 @@ export default function AuditLogPage() {
   };
 
   const params: Record<string, unknown> = { page, limit: pageSize };
+  if (search) params.search = search;
   if (eventType) params.event_type = eventType;
   if (category) params.category = category;
   if (from) params.from = from;
   if (to) params.to = to;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['events', params],
+    queryKey: ['events', search, params],
     queryFn: async () => (await eventsApi.list(params)).data,
     placeholderData: (previous) => previous,
   });
@@ -95,7 +97,8 @@ export default function AuditLogPage() {
       ) : null}
 
       <div className="space-y-4">
-        <div className="flex justify-end">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <SearchField value={search} onChange={setSearch} placeholder="Search activity" className="md:w-80" />
           <FiltersPopover
             activeCount={activeFilterCount}
             onClear={() => updateFilterParams({ event_type: '', category: '', from: '', to: '' })}

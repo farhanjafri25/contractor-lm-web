@@ -190,7 +190,7 @@ export default function NewContractorPage() {
               />
               {fieldErrors.name ? <p className="text-xs text-destructive">{fieldErrors.name}</p> : null}
             </FieldBlock>
-            <FieldBlock label="Email">
+            <FieldBlock label="Work email">
               <Input
                 type="email"
                 value={form.email}
