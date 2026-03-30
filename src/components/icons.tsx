@@ -13,6 +13,8 @@ export { IconChevronLeft as ChevronLeft } from '@central-icons-react/round-outli
 export { IconChevronRight as ChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronRight';
 export { IconCrossLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossLarge';
 export { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCrossMedium';
+export { IconDotGrid1x3HorizontalTight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconDotGrid1x3HorizontalTight';
+export { IconDotGrid1x3VerticalTight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconDotGrid1x3VerticalTight';
 export { IconEyeOpen as Eye } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeOpen';
 export { IconEyeSlash as EyeOff } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconEyeSlash';
 export { IconFileText as FileText } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconFileText';

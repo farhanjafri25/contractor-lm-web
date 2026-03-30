@@ -1,8 +1,7 @@
 'use client';
 
 import { use, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -18,7 +17,7 @@ import {
   ChevronBottom,
   Clock,
   FileText,
-  History,
+  IconDotGrid1x3HorizontalTight,
   IconTrashCanSimple,
   Pencil,
   RotateCcw,
@@ -36,9 +35,10 @@ import { EmptyState, FieldBlock, FilterSelect, SectionCard, StatusBadge } from '
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ContractorDetailSkeleton } from '@/components/page-skeletons';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -273,14 +273,14 @@ function ActionDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(640px,85svh)] flex-col overflow-hidden">
+      <DialogContent className="flex max-h-[min(640px,85svh)] flex-col">
         <DialogHeader>
           <div>
             <DialogTitle>{title}</DialogTitle>
             {description ? <DialogDescription>{description}</DialogDescription> : null}
           </div>
         </DialogHeader>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">{children}</div>
+        <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-1">{children}</div>
         <DialogFooter>{footer}</DialogFooter>
       </DialogContent>
     </Dialog>
@@ -302,34 +302,16 @@ function DetailRow({
   );
 }
 
-function ActionItem({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-      <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
-      </div>
-      <div className="sm:justify-self-end">{children}</div>
-    </div>
-  );
-}
-
 export default function ContractorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const isAdmin = user?.role === 'admin';
+  const requestedAction = searchParams.get('action');
 
-  const [modal, setModal] = useState<
+  const [manualModal, setModal] = useState<
     | 'suspend'
     | 'reactivate'
     | 'extend'
@@ -392,13 +374,13 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const { data: usersData } = useQuery({
     queryKey: ['tenant-users'],
     queryFn: async () => (await tenantApi.listUsers()).data,
-    enabled: modal === 'change-sponsor',
+    enabled: manualModal === 'change-sponsor',
   });
 
   const { data: appsData } = useQuery({
     queryKey: ['applications-list'],
     queryFn: async () => (await applicationsApi.list()).data,
-    enabled: modal === 'assign-access',
+    enabled: manualModal === 'assign-access',
   });
 
   const accessEntries = (accessData as unknown as AccessData)?.access ?? [];
@@ -451,10 +433,76 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const canEditBasic = !isAdmin && Boolean(activeContract);
 
   const hasManageActions = Boolean(
-    canSuspend || canExtend || canTerminate || canReactivate ||
-    canEdit || canDelete || canChangeSponsor || canAssignAccess ||
+    canTerminate || canReactivate ||
+    canDelete || canChangeSponsor ||
     canRequestReactivate || canRequestAccess || canRequestDeactivate || canEditBasic,
   );
+  const headerActions = [
+    ...(canReactivate
+      ? [{
+          key: 'reactivate',
+          label: 'Reactivate',
+          description: 'Return the contractor to active.',
+          onSelect: () => setModal('reactivate'),
+        }]
+      : []),
+    ...(canChangeSponsor
+      ? [{
+          key: 'change-sponsor',
+          label: 'Change sponsor',
+          description: 'Reassign the owner of this contractor.',
+          onSelect: () => setModal('change-sponsor'),
+        }]
+      : []),
+    ...(canRequestReactivate
+      ? [{
+          key: 'request-reactivate',
+          label: 'Request reactivation',
+          description: 'Ask admin to restore active status.',
+          onSelect: () => setModal('request-reactivate'),
+        }]
+      : []),
+    ...(canRequestAccess
+      ? [{
+          key: 'request-access',
+          label: 'Request access changes',
+          description: 'Ask admin to adjust app access.',
+          onSelect: () => setModal('request-access'),
+        }]
+      : []),
+    ...(canRequestDeactivate
+      ? [{
+          key: 'request-deactivate',
+          label: 'Initiate deactivation',
+          description: 'Submit an end-of-engagement request.',
+          onSelect: () => setModal('request-deactivate'),
+        }]
+      : []),
+    ...(canTerminate
+      ? [{
+          key: 'terminate',
+          label: 'Deactivate',
+          description: 'End the contract and remove access.',
+          onSelect: () => setModal('terminate'),
+          variant: 'destructive' as const,
+        }]
+      : []),
+    ...(canDelete
+      ? [{
+          key: 'delete',
+          label: 'Delete',
+          description: 'Permanently remove this record.',
+          onSelect: () => setModal('delete'),
+          variant: 'destructive' as const,
+        }]
+      : []),
+  ];
+  const modal =
+    requestedAction === 'suspend' && canSuspend
+      ? 'suspend'
+      : requestedAction === 'extend' && canExtend
+        ? 'extend'
+        : manualModal;
 
   async function refresh() {
     await Promise.all([
@@ -474,6 +522,15 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setRequestNote('');
     setNewSponsorId('');
     setSelectedAppIds([]);
+
+    if (!requestedAction) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('action');
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `/contractors/${id}?${nextQuery}` : `/contractors/${id}`, { scroll: false });
   }
 
   function openEditModal() {
@@ -677,7 +734,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               seed={profileSeed}
               label={profileName === 'Contractor' ? profileEmail : profileName}
               size="lg"
-              shape="rounded"
+              className="size-[60px]"
             />
             <div className="min-w-0 space-y-3">
               <div className="space-y-2">
@@ -699,308 +756,248 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
           </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {canSuspend ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setModal('suspend')}>
+                Suspend
+              </Button>
+            ) : null}
+            {canExtend ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setModal('extend')}>
+                {isAdmin ? 'Extend' : 'Request extension'}
+              </Button>
+            ) : null}
+            {hasManageActions ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="More actions"
+                      title="More actions"
+                    />
+                  }
+                >
+                  <IconDotGrid1x3HorizontalTight size={14} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 min-w-64">
+                  {headerActions.map((action) => (
+                    <DropdownMenuItem
+                      key={action.key}
+                      variant={action.variant}
+                      className="items-start py-2"
+                      onClick={action.onSelect}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{action.label}</p>
+                        <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{action.description}</p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <SectionCard
-          title="Contract summary"
-          className="xl:self-start"
-        >
-            {activeContract ? (
-              <div className="space-y-6">
-                <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
-                  {[
-                    ['Start date', formatDateLabel(activeContract.start_date)],
-                    ['End date', formatDateLabel(activeContract.end_date)],
-                    ['Lifecycle state', contractStatusLabel],
-                    ['Created', formatDateLabel(activeContract.createdAt || activeContract.created_at)],
-                  ].map(([label, value]) => (
-                    <div key={label} className="bg-background p-5">
-                      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                      <p className="mt-3 text-base font-semibold text-foreground">{value}</p>
-                    </div>
-                  ))}
-                </div>
+      <div className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div className="space-y-6 xl:col-start-1 xl:row-start-1 xl:self-start">
+          <SectionCard
+            title="Contract summary"
+            className="xl:self-start"
+          >
+              {activeContract ? (
+                <div className="space-y-6">
+                  <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
+                    {[
+                      ['Start date', formatDateLabel(activeContract.start_date)],
+                      ['End date', formatDateLabel(activeContract.end_date)],
+                      ['Lifecycle state', contractStatusLabel],
+                      ['Created', formatDateLabel(activeContract.createdAt || activeContract.created_at)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="bg-background p-5">
+                        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                        <p className="mt-3 text-base font-semibold text-foreground">{value}</p>
+                      </div>
+                    ))}
+                  </div>
 
-                <div className="rounded-[12px] border border-border/60 bg-background p-5">
-                  <p className="text-xs font-medium text-muted-foreground">Current timing</p>
-                  <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">{contractWindowCopy}</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {contractGuidance} Status is currently {contractStatusLabel.toLowerCase()}. Review the activity feed below before making changes.
-                  </p>
+                  <div className="rounded-[12px] border border-border/60 bg-background p-5">
+                    <p className="text-xs font-medium text-muted-foreground">Current timing</p>
+                    <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">{contractWindowCopy}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {contractGuidance} Status is currently {contractStatusLabel.toLowerCase()}. Review the activity feed below before making changes.
+                    </p>
+                  </div>
                 </div>
+              ) : (
+                <EmptyState
+                  title="No active contract"
+                  description="This contractor record does not currently include an active contract to manage."
+                />
+              )}
+            </SectionCard>
+
+          <SectionCard
+            title="Activity timeline"
+            className="xl:self-start"
+            actions={
+              timelineLoading ? (
+                <Skeleton className="h-7 w-20 rounded-full" />
+              ) : (
+                <Badge variant="neutral">
+                  {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
+                </Badge>
+              )
+            }
+          >
+            {timelineLoading ? (
+              <div className="space-y-0">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
+                  >
+                    <Skeleton className="size-8 rounded-md" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40 rounded-full" />
+                      <Skeleton className="h-3.5 w-32 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
+                  </div>
+                ))}
+              </div>
+            ) : timelineItems.length ? (
+              <div className="space-y-0">
+                {timelineItems.map((event: Record<string, unknown>) => {
+                  const actor = event.actor_id as Record<string, unknown> | undefined;
+                  const eventDate = event.created_at || event.createdAt;
+                  const eventType = String(event.event_type ?? '');
+                  const eventMeta = getTimelineEventMeta(eventType);
+                  const EventIcon = eventMeta.icon;
+
+                  return (
+                    <div
+                      key={String(event._id)}
+                      className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
+                    >
+                      <div className={`flex size-8 items-center justify-center rounded-md ${eventMeta.className}`}>
+                        <EventIcon size={16} />
+                      </div>
+                      <div className="min-w-0 space-y-1.5">
+                        <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground sm:pt-1 sm:text-right">{formatRelativeLabel(eventDate)}</p>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <EmptyState
-                title="No active contract"
-                description="This contractor record does not currently include an active contract to manage."
+                title="No activity yet"
+                description="Lifecycle changes, access updates, and sponsor requests will appear here once work starts moving."
               />
             )}
           </SectionCard>
-        <SectionCard
-          title="Profile details"
-          className="xl:self-start"
-          actions={
-            canEdit || canEditBasic ? (
-              <Button type="button" variant="outline" onClick={openEditModal}>
-                <Pencil size={14} />
-                Edit details
-              </Button>
-            ) : null
-          }
-        >
-          <div>
-            <DetailRow label="Email" value={profileEmail} />
-            <DetailRow label="Phone" value={profilePhone} />
-            <DetailRow label="Department" value={profileDepartment} />
-            <DetailRow label="Title" value={profileRole} />
-            <DetailRow label="Sponsor" value={sponsorName !== '—' ? `${sponsorName} (${sponsorEmail})` : sponsorEmail} />
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start xl:col-start-2 xl:row-span-12 xl:row-start-1">
-
-          {hasManageActions ? (
-            <SectionCard title="Manage contract">
-              <div className="space-y-0">
-                {/* ── Admin: contract lifecycle ── */}
-                {canReactivate ? (
-                  <ActionItem title="Reactivate contractor" description="Restore active status once the contractor is ready to resume work.">
-                    <Button type="button" variant="outline" onClick={() => setModal('reactivate')}>
-                      <RotateCcw size={14} />
-                      Reactivate
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {canSuspend ? (
-                  <ActionItem title="Suspend contractor" description="Pause work and capture the reason so the timeline stays clear.">
-                    <Button type="button" variant="outline" onClick={() => setModal('suspend')}>
-                      <CalendarClock4 size={14} />
-                      Suspend
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-
-                {canExtend ? (
-                  <ActionItem
-                    title={isAdmin ? 'Extend tenure' : 'Request extension'}
-                    description={isAdmin ? 'Move the end date without leaving the detail page.' : 'Send an extension request for admin review.'}
-                  >
-                    <Button type="button" variant="outline" onClick={() => setModal('extend')}>
-                      <CalendarIcon size={14} />
-                      {isAdmin ? 'Extend' : 'Request extension'}
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {/* ── Admin: contractor management ── */}
-                {canChangeSponsor ? (
-                  <ActionItem title="Change sponsor" description="Reassign this contractor to a different team member as their sponsor.">
-                    <Button type="button" variant="outline" onClick={() => setModal('change-sponsor')}>
-                      <Users size={14} />
-                      Change sponsor
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {canAssignAccess ? (
-                  <ActionItem title="Assign / Modify access" description="Add or change which applications this contractor can access.">
-                    <Button type="button" variant="outline" onClick={openAssignAccessModal}>
-                      <ShieldCheck size={14} />
-                      Manage access
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-
-                {/* ── Sponsor actions ── */}
-                {canRequestReactivate ? (
-                  <ActionItem title="Request reactivation" description="Submit a reactivation request for admin review.">
-                    <Button type="button" variant="outline" onClick={() => setModal('request-reactivate')}>
-                      <RotateCcw size={14} />
-                      Request reactivation
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {canRequestAccess ? (
-                  <ActionItem title="Request access changes" description="Ask the admin to add, change, or remove application access.">
-                    <Button type="button" variant="outline" onClick={() => setModal('request-access')}>
-                      <ShieldAlert size={14} />
-                      Request access changes
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-
-                {/* ── Audit logs (all roles) ── */}
-                <ActionItem title="View audit logs" description="See the full activity history for this contractor across all events.">
-                  <Link href="/events" className={buttonVariants({ variant: 'outline' })}>
-                    <History size={14} />
-                    View audit logs
-                  </Link>
-                </ActionItem>
-
-                {/* ── Destructive actions ── */}
-                {canRequestDeactivate ? (
-                  <ActionItem title="Initiate deactivation" description="Submit a deactivation request to end this contractor's engagement.">
-                    <Button type="button" variant="outline" onClick={() => setModal('request-deactivate')}>
-                      <CalendarRemove4 size={14} />
-                      Initiate deactivation
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {canTerminate ? (
-                  <ActionItem title="Deactivate contractor" description="End the engagement and kick off access removal for connected systems.">
-                    <Button type="button" variant="destructive" onClick={() => setModal('terminate')}>
-                      <CalendarRemove4 size={14} />
-                      Deactivate
-                    </Button>
-                  </ActionItem>
-                ) : null}
-
-                {canDelete ? (
-                  <ActionItem title="Delete contractor" description="Permanently remove this contractor record. This cannot be undone.">
-                    <Button type="button" variant="destructive" onClick={() => setModal('delete')}>
-                      <IconTrashCanSimple size={14} />
-                      Delete
-                    </Button>
-                  </ActionItem>
-                ) : null}
-              </div>
-            </SectionCard>
-          ) : null}
         </div>
-
-        <SectionCard
-          title="System access"
-          className="xl:self-start"
-          actions={
-            accessLoading ? (
-              <Skeleton className="h-7 w-16 rounded-full" />
-            ) : (
-              <Badge variant="neutral">
-                {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
-              </Badge>
-            )
-          }
-        >
-          {accessLoading ? (
-            <div className="overflow-hidden rounded-[12px] border border-border/60">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
-                >
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-40 rounded-full" />
-                    <Skeleton className="h-3.5 w-28 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-              ))}
+        <div className="space-y-6 xl:col-start-2 xl:row-start-1 xl:self-start">
+          <SectionCard
+            title="Profile details"
+            className="xl:self-start"
+            actions={
+              canEdit || canEditBasic ? (
+                <Button type="button" variant="outline" size="sm" onClick={openEditModal}>
+                  Edit details
+                </Button>
+              ) : null
+            }
+          >
+            <div>
+              <DetailRow label="Email" value={profileEmail} />
+              <DetailRow label="Phone" value={profilePhone} />
+              <DetailRow label="Department" value={profileDepartment} />
+              <DetailRow label="Title" value={profileRole} />
+              <DetailRow label="Sponsor" value={sponsorName !== '—' ? `${sponsorName} (${sponsorEmail})` : sponsorEmail} />
             </div>
-          ) : accessEntries.length ? (
-            <div className="overflow-hidden rounded-[12px] border border-border/60">
-              {accessEntries.map((entry) => {
-                const app = entry.tenant_application_id;
-                const application = app?.application_id;
-                const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
+          </SectionCard>
 
-                return (
+          <SectionCard
+            title={
+              <div className="flex items-center gap-2">
+                <span>System access</span>
+                {accessLoading ? (
+                  <Skeleton className="h-6 w-14 rounded-full" />
+                ) : (
+                  <Badge variant="neutral">
+                    {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
+                  </Badge>
+                )}
+              </div>
+            }
+            className="xl:self-start"
+            actions={
+              canAssignAccess ? (
+                <Button type="button" variant="outline" size="sm" onClick={openAssignAccessModal}>
+                  Manage access
+                </Button>
+              ) : null
+            }
+          >
+            {accessLoading ? (
+              <div className="overflow-hidden rounded-[12px] border border-border/60">
+                {Array.from({ length: 3 }).map((_, index) => (
                   <div
-                    key={String(entry._id)}
+                    key={index}
                     className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                       {renderAppIcon(appSlug)}
-                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-foreground">
-                            {app ? String(app.display_name ?? application?.name ?? app.app_key ?? '') : 'Unknown application'}
-                        </p>
-                       </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40 rounded-full" />
+                      <Skeleton className="h-3.5 w-28 rounded-full" />
                     </div>
-                    <StatusBadge status={String(entry.provisioning_status ?? entry.status ?? 'unknown')} />
+                    <Skeleton className="h-6 w-20 rounded-full" />
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyState
-              title="No linked applications"
-              description="Provisioned apps will show here once this contract has system access attached."
-            />
-          )}
-        </SectionCard>
+                ))}
+              </div>
+            ) : accessEntries.length ? (
+              <div className="overflow-hidden rounded-[12px] border border-border/60">
+                {accessEntries.map((entry) => {
+                  const app = entry.tenant_application_id;
+                  const application = app?.application_id;
+                  const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
 
-        <SectionCard
-          title="Activity timeline"
-          className="xl:self-start"
-          actions={
-            timelineLoading ? (
-              <Skeleton className="h-7 w-20 rounded-full" />
+                  return (
+                    <div
+                      key={String(entry._id)}
+                      className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                         {renderAppIcon(appSlug)}
+                         <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                              {app ? String(app.display_name ?? application?.name ?? app.app_key ?? '') : 'Unknown application'}
+                          </p>
+                         </div>
+                      </div>
+                      <StatusBadge status={String(entry.provisioning_status ?? entry.status ?? 'unknown')} />
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
-              <Badge variant="neutral">
-                {timelineItems.length} {timelineItems.length === 1 ? 'event' : 'events'}
-              </Badge>
-            )
-          }
-        >
-          {timelineLoading ? (
-            <div className="space-y-0">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
-                >
-                  <Skeleton className="size-8 rounded-md" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-40 rounded-full" />
-                    <Skeleton className="h-3.5 w-32 rounded-full" />
-                  </div>
-                  <Skeleton className="h-3.5 w-20 rounded-full sm:mt-1" />
-                </div>
-              ))}
-            </div>
-          ) : timelineItems.length ? (
-            <div className="space-y-0">
-              {timelineItems.map((event: Record<string, unknown>) => {
-                const actor = event.actor_id as Record<string, unknown> | undefined;
-                const eventDate = event.created_at || event.createdAt;
-                const eventType = String(event.event_type ?? '');
-                const eventMeta = getTimelineEventMeta(eventType);
-                const EventIcon = eventMeta.icon;
+              <EmptyState
+                title="No linked applications"
+                description="Provisioned apps will show here once this contract has system access attached."
+              />
+            )}
+          </SectionCard>
+        </div>
 
-                return (
-                  <div
-                    key={String(event._id)}
-                    className="grid gap-4 border-b border-border/60 py-5 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start"
-                  >
-                    <div className={`flex size-8 items-center justify-center rounded-md ${eventMeta.className}`}>
-                      <EventIcon size={16} />
-                    </div>
-                    <div className="min-w-0 space-y-1.5">
-                      <p className="text-sm font-semibold text-foreground">{getEventLabel(eventType)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {actor ? String(actor.email ?? '') : 'Tenurio'} · {formatDateLabel(eventDate)}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground sm:pt-1 sm:text-right">{formatRelativeLabel(eventDate)}</p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyState
-              title="No activity yet"
-              description="Lifecycle changes, access updates, and sponsor requests will appear here once work starts moving."
-            />
-          )}
-        </SectionCard>
       </div>
 
       {/* ── Dialogs ── */}

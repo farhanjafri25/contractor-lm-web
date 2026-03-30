@@ -6,11 +6,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
-import { ChevronRight } from '@/components/icons';
+import { ChevronRight, IconDotGrid1x3VerticalTight } from '@/components/icons';
+import { useAuth } from '@/context/auth-context';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { CsvImporter } from '@/components/csv-importer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 const statusOptions = [
@@ -68,6 +70,7 @@ export default function ContractorsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const status = searchParams.get('status') ?? '';
   const department = searchParams.get('department') ?? '';
@@ -198,12 +201,22 @@ export default function ContractorsPage() {
                       const contractorId = String(contractor._id);
                       const contractorHref = `/contractors/${contractorId}`;
                       const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
+                      const contractStatus = String(activeContract?.status ?? '');
                       const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
                       const sponsorName = sponsor ? String(sponsor.name ?? sponsor.full_name ?? sponsor.display_name ?? '') : '';
                       const sponsorEmail = sponsor ? String(sponsor.email ?? '') : '';
                       const contractorName = String(contractor.name ?? '');
                       const contractorEmail = String(contractor.email ?? '');
                       const contractorSeed = getAvatarSeed(contractor._id, contractorEmail, contractorName);
+                      const isAdmin = user?.role === 'admin';
+                      const actions = [
+                        ...(isAdmin && contractStatus === 'active'
+                          ? [{ key: 'suspend', label: 'Suspend' as const }]
+                          : []),
+                        ...(contractStatus === 'active'
+                          ? [{ key: 'extend', label: isAdmin ? 'Extend' : 'Request extension' }]
+                          : []),
+                      ];
 
                       return (
                         <TableRow
@@ -242,15 +255,44 @@ export default function ContractorsPage() {
                             <StatusBadge status={String(activeContract?.status ?? 'no contract')} />
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link
-                              href={contractorHref}
-                              className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-                              aria-label="Open contractor"
-                              title="Open contractor"
-                            >
-                              <ChevronRight size={14} />
-                              <span className="sr-only">Open contractor</span>
-                            </Link>
+                            <div className="flex items-center justify-end gap-1">
+                              {actions.length ? (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={`Open actions for ${contractorName || contractorEmail}`}
+                                        title="Contract actions"
+                                      />
+                                    }
+                                  >
+                                    <IconDotGrid1x3VerticalTight size={14} />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="min-w-36">
+                                    {actions.map((action) => (
+                                      <DropdownMenuItem
+                                        key={action.key}
+                                        onClick={() => router.push(`${contractorHref}?action=${action.key}`)}
+                                      >
+                                        {action.label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              ) : null}
+                              <Link
+                                href={contractorHref}
+                                className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                                aria-label="Open contractor"
+                                title="Open contractor"
+                              >
+                                <ChevronRight size={14} />
+                                <span className="sr-only">Open contractor</span>
+                              </Link>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

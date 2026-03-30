@@ -148,7 +148,7 @@ export function SectionCard({
   children,
   className,
 }: {
-  title?: string;
+  title?: React.ReactNode;
   description?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
@@ -157,12 +157,12 @@ export function SectionCard({
   return (
     <Card className={className}>
       {(title || description || actions) ? (
-        <div className="flex flex-col gap-4 border-b px-6 py-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-4 border-b px-6 py-4 md:min-h-16 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-h-8 flex-col justify-center space-y-1">
             {title ? <h2 className="text-base font-semibold text-foreground">{title}</h2> : null}
             {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
           </div>
-          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex min-h-8 flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
       <div className="px-6 py-5">{children}</div>
