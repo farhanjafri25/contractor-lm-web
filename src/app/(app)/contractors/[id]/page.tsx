@@ -45,6 +45,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { getEventLabel } from '@/lib/event-labels';
 
+interface Application {
+  _id: string;
+  name?: string;
+  slug?: string;
+  auth_type?: string;
+}
+
+interface TenantApplication {
+  _id: string;
+  display_name?: string;
+  app_key?: string;
+  application_id?: Application;
+}
+
+interface AccessEntry {
+  _id: string;
+  tenant_application_id: TenantApplication;
+  provisioning_status?: string;
+  status?: string;
+}
+
+interface AccessData {
+  access: AccessEntry[];
+}
+
 const suspendReasons = [
   { value: 'compliance', label: 'Compliance issue' },
   { value: 'performance', label: 'Performance' },
@@ -376,12 +401,12 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     enabled: modal === 'assign-access',
   });
 
-  const accessEntries = (accessData as any)?.access ?? [];
+  const accessEntries = (accessData as unknown as AccessData)?.access ?? [];
   const tenantUsers = (Array.isArray(usersData?.data) ? usersData.data : []) as Record<string, unknown>[];
   const availableApps = (Array.isArray(appsData) ? appsData : []) as Record<string, unknown>[];
   const assignedAppIds = new Set<string>(
-    accessEntries.map((e: Record<string, unknown>) => {
-      const app = e.tenant_application_id as any;
+    accessEntries.map((e) => {
+      const app = e.tenant_application_id;
       return String(app?._id ?? app ?? '');
     }),
   );
@@ -401,10 +426,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     [profileRole !== 'No title' ? profileRole : null, profileDepartment !== 'No department' ? profileDepartment : null]
       .filter(Boolean)
       .join(' · ') || 'No title or department assigned';
-  const accessSummary =
-    accessEntries.length === 0
-      ? 'No linked applications for this contract.'
-      : `${accessEntries.length} connected ${accessEntries.length === 1 ? 'application' : 'applications'}`;
 
   const renderAppIcon = (slug: string) => {
     const baseClass = "h-5 w-5 shrink-0";
@@ -885,9 +906,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
             </div>
           ) : accessEntries.length ? (
             <div className="overflow-hidden rounded-[12px] border border-border/60">
-              {accessEntries.map((entry: Record<string, unknown>, index: number) => {
-                const app = entry.tenant_application_id as any;
-                const application = app?.application_id as any;
+              {accessEntries.map((entry) => {
+                const app = entry.tenant_application_id;
+                const application = app?.application_id;
                 const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
 
                 return (
@@ -1212,9 +1233,9 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <p className="text-sm text-muted-foreground">No applications available to assign.</p>
         ) : (
           <div className="space-y-2">
-            {availableApps.map((app) => {
+            {availableApps.map((app: Record<string, unknown>) => {
               const appId = String(app._id);
-              const appIdRef = app.application_id as any;
+              const appIdRef = app.application_id as Application | undefined;
               const appSlug = appIdRef?.slug || String(app.app_key ?? '').trim();
               const appName = String(app.display_name ?? appIdRef?.name ?? app.app_key ?? 'Unnamed app');
               const isChecked = selectedAppIds.includes(appId);

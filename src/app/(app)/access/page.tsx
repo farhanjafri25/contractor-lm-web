@@ -14,6 +14,39 @@ import { useAuth } from '@/context/auth-context';
 
 const statuses = ['', 'active', 'pending', 'revoked', 'failed'];
 
+interface Contractor {
+  _id: string;
+  name?: string;
+  department?: string;
+}
+
+interface Application {
+  _id: string;
+  display_name?: string;
+  app_key?: string;
+  application_id?: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+}
+
+interface GroupedApp extends Application {
+  application_slug: string;
+  access_id: string;
+  status: string;
+  failure_reason?: string;
+  access_role?: string;
+}
+
+interface GroupedByContractor {
+  contractor: Contractor;
+  apps: GroupedApp[];
+  grantedBy: { email?: string } | null;
+  status: string;
+  failureReasons: string[];
+}
+
 function formatStatusLabel(status: string) {
   return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
 }
@@ -125,28 +158,22 @@ export default function AccessPage() {
     return accumulator;
   }, {});
 
-  const groupedByContractor = filteredRecords.reduce<Record<string, {
-    contractor: any;
-    apps: any[];
-    grantedBy: any;
-    status: string;
-    failureReasons: string[];
-  }>>((acc, record) => {
-    const contractor = record.contractor_id as any;
+  const groupedByContractor = filteredRecords.reduce<Record<string, GroupedByContractor>>((acc, record) => {
+    const contractor = record.contractor_id as unknown as Contractor;
     const contractorId = String(contractor?._id || 'unknown');
     
     if (!acc[contractorId]) {
       acc[contractorId] = {
         contractor,
         apps: [],
-        grantedBy: record.granted_by,
+        grantedBy: record.granted_by as { email?: string } | null,
         status: 'active',
         failureReasons: [],
       };
     }
 
-    const app = record.tenant_application_id as any;
-    const application = app?.application_id as any;
+    const app = record.tenant_application_id as unknown as Application;
+    const application = app?.application_id;
     const appSlug = application?.slug || String(app?.display_name ?? app?.app_key ?? '').trim();
 
     // Only add unique application slugs to the list
@@ -155,18 +182,18 @@ export default function AccessPage() {
       acc[contractorId].apps.push({
         ...app,
         application_slug: appSlug,
-        access_id: record._id,
+        access_id: record._id as string,
         status: String(record.provisioning_status ?? record.status ?? ''),
-        failure_reason: record.failure_reason,
-        access_role: record.access_role,
+        failure_reason: record.failure_reason as string,
+        access_role: record.access_role as string,
       });
     } else {
       // If we encounter a 'failed' record for the same app, prioritize it for the aggregate view
       const currentStatus = String(record.provisioning_status ?? record.status ?? '');
       if (currentStatus === 'failed') {
         existingApp.status = 'failed';
-        existingApp.failure_reason = record.failure_reason;
-        existingApp.access_id = record._id;
+        existingApp.failure_reason = record.failure_reason as string;
+        existingApp.access_id = record._id as string;
       }
     }
 
