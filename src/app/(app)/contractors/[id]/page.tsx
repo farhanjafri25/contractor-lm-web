@@ -230,32 +230,6 @@ function getContractWindowCopy(endDate: unknown, status: string) {
   return `Ended ${Math.abs(days)} days ago`;
 }
 
-function getContractGuidance(status: string, isAdmin: boolean) {
-  const normalized = status.toLowerCase();
-
-  if (normalized.includes('active')) {
-    return isAdmin
-      ? 'This contractor is active. Use suspend to pause work, extend to move the end date, or deactivate to begin access removal.'
-      : 'This contractor is active. You can submit requests for extension, access changes, or deactivation.';
-  }
-
-  if (normalized.includes('suspend')) {
-    return isAdmin
-      ? 'This contractor is suspended. Review recent activity, then reactivate once work is ready to resume.'
-      : 'This contractor is suspended. You can request reactivation once the issue is resolved.';
-  }
-
-  if (normalized.includes('expire')) {
-    return 'This contract has expired. Review the timeline and connected systems to confirm follow-up actions are complete.';
-  }
-
-  if (normalized.includes('terminate')) {
-    return 'This contract has ended. Keep the activity log and access list handy for audit and cleanup checks.';
-  }
-
-  return 'Review the contract timeline and details before taking the next action.';
-}
-
 function ActionDialog({
   open,
   onOpenChange,
@@ -407,7 +381,6 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const sponsorName = sponsor ? String(sponsor.name ?? sponsor.full_name ?? '—') : '—';
   const sponsorEmail = sponsor ? String(sponsor.email ?? '—') : '—';
   const contractWindowCopy = getContractWindowCopy(activeContract?.end_date, contractStatus);
-  const contractGuidance = getContractGuidance(contractStatus, isAdmin);
   const contractStatusLabel = formatStatusLabel(contractStatus);
   const profileSubtitle =
     [profileRole !== 'No title' ? profileRole : null, profileDepartment !== 'No department' ? profileDepartment : null]
@@ -752,7 +725,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
                 <div className="inline-flex items-center gap-2">
                   <CalendarIcon size={14} />
-                  <span>{activeContract ? `Ends ${formatDateLabel(activeContract.end_date)}` : 'No active contract'}</span>
+                  <span>{activeContract ? contractWindowCopy : 'No active contract'}</span>
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <ShieldCheck size={14} />
@@ -815,28 +788,14 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
             className="xl:self-start"
           >
               {activeContract ? (
-                <div className="space-y-6">
-                  <div className="grid gap-px overflow-hidden rounded-[12px] border border-border/60 bg-border/60 md:grid-cols-2">
-                    {[
-                      ['Start date', formatDateLabel(activeContract.start_date)],
-                      ['End date', formatDateLabel(activeContract.end_date)],
-                      ['Lifecycle state', contractStatusLabel],
-                      ['Created', formatDateLabel(activeContract.createdAt || activeContract.created_at)],
-                    ].map(([label, value]) => (
-                      <div key={label} className="bg-background p-5">
-                        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                        <p className="mt-3 text-base font-semibold text-foreground">{value}</p>
-                      </div>
-                    ))}
+                <div>
+                  <div>
+                    <DetailRow label="Start date" value={formatDateLabel(activeContract.start_date)} />
+                    <DetailRow label="End date" value={formatDateLabel(activeContract.end_date)} />
+                    <DetailRow label="Lifecycle state" value={contractStatusLabel} />
+                    <DetailRow label="Created" value={formatDateLabel(activeContract.createdAt || activeContract.created_at)} />
                   </div>
 
-                  <div className="rounded-[12px] border border-border/60 bg-background p-5">
-                    <p className="text-xs font-medium text-muted-foreground">Current timing</p>
-                    <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">{contractWindowCopy}</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {contractGuidance} Status is currently {contractStatusLabel.toLowerCase()}. Review the activity feed below before making changes.
-                    </p>
-                  </div>
                 </div>
               ) : (
                 <EmptyState
@@ -933,18 +892,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </SectionCard>
 
           <SectionCard
-            title={
-              <div className="flex items-center gap-2">
-                <span>System access</span>
-                {accessLoading ? (
-                  <Skeleton className="h-6 w-14 rounded-full" />
-                ) : (
-                  <Badge variant="neutral">
-                    {accessEntries.length} {accessEntries.length === 1 ? 'app' : 'apps'}
-                  </Badge>
-                )}
-              </div>
-            }
+            title="System access"
             className="xl:self-start"
             actions={
               canAssignAccess ? (
@@ -955,22 +903,22 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
             }
           >
             {accessLoading ? (
-              <div className="overflow-hidden rounded-[12px] border border-border/60">
+              <div>
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                    className="flex items-center justify-between gap-3 border-b border-border/60 py-3 last:border-b-0 last:pb-0 first:pt-0"
                   >
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-40 rounded-full" />
-                      <Skeleton className="h-3.5 w-28 rounded-full" />
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-5 rounded" />
+                      <Skeleton className="h-4 w-36 rounded-full" />
                     </div>
                     <Skeleton className="h-6 w-20 rounded-full" />
                   </div>
                 ))}
               </div>
             ) : accessEntries.length ? (
-              <div className="overflow-hidden rounded-[12px] border border-border/60">
+              <div>
                 {accessEntries.map((entry) => {
                   const app = entry.tenant_application_id;
                   const application = app?.application_id;
@@ -979,15 +927,13 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                   return (
                     <div
                       key={String(entry._id)}
-                      className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-4 last:border-b-0"
+                      className="flex items-center justify-between gap-3 border-b border-border/60 py-3 last:border-b-0 last:pb-0 first:pt-0"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                          {renderAppIcon(appSlug)}
-                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">
-                              {app ? String(app.display_name ?? application?.name ?? app.app_key ?? '') : 'Unknown application'}
-                          </p>
-                         </div>
+                         <p className="truncate text-sm font-medium text-foreground">
+                            {app ? String(app.display_name ?? application?.name ?? app.app_key ?? '') : 'Unknown application'}
+                         </p>
                       </div>
                       <StatusBadge status={String(entry.provisioning_status ?? entry.status ?? 'unknown')} />
                     </div>
