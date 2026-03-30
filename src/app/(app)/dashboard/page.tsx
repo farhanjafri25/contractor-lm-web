@@ -2,19 +2,15 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { differenceInCalendarDays, format, formatDistanceToNow } from 'date-fns';
+import { differenceInCalendarDays, format, formatDistanceToNow, isSameMonth } from 'date-fns';
 import Image from 'next/image';
 import { contractorsApi, dashboardApi, eventsApi, sponsorApi, tenantApi } from '@/lib/api';
 import activityEmptyLight from '@/assets/activity-empty-light.svg';
 import activityEmptyDark from '@/assets/activity-empty-dark.svg';
 import expiringEmptyLight from '@/assets/expiring-light.svg';
 import expiringEmptyDark from '@/assets/expiring-dark.svg';
-import syncEmptyLight from '@/assets/sync-empty-light.svg';
-import syncEmptyDark from '@/assets/sync-empty-dark.svg';
-import { AlertTriangle, CalendarClock4, CalendarRemove4, ChevronRight, Clock, ShieldOff, Users } from '@/components/icons';
+import { AlertTriangle, CalendarClock4, CheckCircleDashed, ChevronRight, ClockAlert, Group2, PeopleAdd } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -50,19 +46,10 @@ type KpiCardConfig = {
 
 type PanelState = 'loading' | 'empty' | 'ready';
 
-type SyncHealthState = {
-  label: 'Healthy' | 'Needs attention' | 'Not connected';
-  description: string;
-  badgeVariant: 'emerald' | 'danger' | 'neutral';
-  accentClass: string;
-};
-
 type ContractorRecord = Record<string, unknown> & {
-  _id?: unknown;
-  name?: unknown;
-  department?: unknown;
-  job_title?: unknown;
   contracts?: Record<string, unknown>[];
+  created_at?: unknown;
+  createdAt?: unknown;
 };
 
 const HIGH_PRIORITY_EVENTS = new Set([
@@ -149,34 +136,18 @@ function getPrimaryContract(contractor: ContractorRecord) {
   return (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
 }
 
-function getSyncHealthState(tenantProfile: Record<string, unknown> | undefined): SyncHealthState {
-  const isConnected = tenantProfile?.is_google_connected === true;
-  const syncFailed = tenantProfile?.google_workspace_sync_failed === true;
+function getContractorCreatedDate(contractor: ContractorRecord) {
+  const primaryContract = getPrimaryContract(contractor);
+  const rawDate =
+    contractor.createdAt ??
+    contractor.created_at ??
+    primaryContract?.createdAt ??
+    primaryContract?.created_at;
 
-  if (isConnected && syncFailed) {
-    return {
-      label: 'Needs attention',
-      description: 'The latest directory sync failed. Last sync time is unavailable.',
-      badgeVariant: 'danger',
-      accentClass: 'bg-destructive',
-    };
-  }
+  if (!rawDate) return null;
 
-  if (isConnected) {
-    return {
-      label: 'Healthy',
-      description: 'Directory sync is connected and running. Last sync time is unavailable.',
-      badgeVariant: 'emerald',
-      accentClass: 'bg-emerald-500',
-    };
-  }
-
-  return {
-    label: 'Not connected',
-    description: 'Connect your directory to monitor sync health here.',
-    badgeVariant: 'neutral',
-    accentClass: 'bg-muted-foreground/50',
-  };
+  const parsedDate = new Date(String(rawDate));
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
 function DashboardSurface({
@@ -336,28 +307,27 @@ export default function DashboardPage() {
     queryFn: async () => (await sponsorApi.list({ status: 'pending' })).data as DashboardCollectionResponse,
   });
 
-  const { data: contractorsData, isLoading: missingExpiryLoading } = useQuery({
-    queryKey: ['dashboard-missing-expiry'],
+  const { data: contractorsData, isLoading: newThisMonthLoading } = useQuery({
+    queryKey: ['dashboard-new-this-month'],
     queryFn: async () => (await contractorsApi.list()).data as DashboardCollectionResponse,
   });
 
   const expiringContracts = (expiring?.data ?? []) as Record<string, unknown>[];
   const allEvents = (events?.data ?? []) as Record<string, unknown>[];
   const contractors = (contractorsData?.data ?? []) as ContractorRecord[];
-  const missingExpiryContractors = contractors.filter((contractor) => {
-    const contract = getPrimaryContract(contractor);
-    return Boolean(contract) && !contract?.end_date;
-  });
+  const now = new Date();
+  const newThisMonth = contractors.filter((contractor) => {
+    const createdDate = getContractorCreatedDate(contractor);
+    return createdDate ? isSameMonth(createdDate, now) : false;
+  }).length;
   const pendingApprovals = pendingLoading
     ? '—'
     : pendingRequests?.pagination?.total ?? pendingRequests?.data?.length ?? 0;
   const firstName = getUserFirstName(user);
   const greeting = getGreetingForHour(new Date().getHours());
   const workspaceName = deriveWorkspaceName(tenantProfile, user?.email);
-  const syncHealth = getSyncHealthState(tenantProfile);
   const expiringPanelState = getPanelState(expiringLoading, expiringContracts.length);
   const activityPanelState = getPanelState(eventsLoading, allEvents.length);
-  const missingExpiryPanelState = getPanelState(missingExpiryLoading, missingExpiryContractors.length);
 
   const kpiCards: KpiCardConfig[] = [
     {
@@ -365,7 +335,7 @@ export default function DashboardPage() {
       value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.active_contractors ?? 0,
       description: summaryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Currently under active contract.',
       href: '/contractors?status=active',
-      icon: Users,
+      icon: Group2,
       tone: 'emerald',
     },
     {
@@ -377,11 +347,27 @@ export default function DashboardPage() {
       tone: 'cyan',
     },
     {
+      label: 'New This Month',
+      value: newThisMonthLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : newThisMonth,
+      description: newThisMonthLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Contractors added during the current month.',
+      href: '/contractors',
+      icon: PeopleAdd,
+      tone: 'cyan',
+    },
+    {
+      label: 'Pending Approval',
+      value: pendingLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : pendingApprovals,
+      description: pendingLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Requests waiting for review.',
+      href: '/sponsor?status=pending',
+      icon: CheckCircleDashed,
+      tone: 'blue',
+    },
+    {
       label: 'Overdue',
       value: summaryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : summary?.overdue_access ?? 0,
       description: summaryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Ended contracts with access still open.',
       href: '/dashboard/overdue',
-      icon: ShieldOff,
+      icon: ClockAlert,
       tone: 'danger',
     },
     {
@@ -391,21 +377,6 @@ export default function DashboardPage() {
       href: '/contractors?status=suspended',
       icon: AlertTriangle,
       tone: 'violet',
-    },
-    {
-      label: 'Pending Approval',
-      value: pendingLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : pendingApprovals,
-      description: pendingLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Requests waiting for review.',
-      href: '/sponsor?status=pending',
-      icon: Clock,
-      tone: 'blue',
-    },
-    {
-      label: 'Missing Expiry',
-      value: missingExpiryLoading ? <Skeleton className="h-8 w-16 rounded-md" /> : missingExpiryContractors.length,
-      description: missingExpiryLoading ? <Skeleton className="h-4 w-40 rounded-full" /> : 'Contractors missing an end date.',
-      icon: CalendarRemove4,
-      tone: 'cyan',
     },
   ];
 
@@ -565,112 +536,6 @@ export default function DashboardPage() {
           )}
         </DashboardSurface>
 
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-2">
-          <DashboardSurface
-            title="Sync health"
-            description="Directory connection status and sync state."
-          >
-            {syncHealth.label === 'Not connected' ? (
-              <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
-                <span className="block dark:hidden">
-                  <Image src={syncEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
-                </span>
-                <span className="hidden dark:block">
-                  <Image src={syncEmptyDark} alt="" width={266} height={102} className="w-full max-w-60" />
-                </span>
-                <p className="mt-5 text-sm font-semibold text-foreground">Directory not connected</p>
-                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Connect your directory to see sync health here.
-                </p>
-                {user?.role === 'admin' ? (
-                  <Button
-                    size="sm"
-                    className="mt-5"
-                    render={<Link href="/settings/integrations" />}
-                    nativeButton={false}
-                  >
-                    Connect
-                  </Button>
-                ) : null}
-              </div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                <div className="flex items-center justify-between gap-4 py-4 first:pt-0">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground">Health</p>
-                    <p className="text-sm text-muted-foreground">Current sync status.</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={syncHealth.badgeVariant} className="gap-2">
-                      <span className={cn('size-1.5 rounded-full', syncHealth.accentClass)} />
-                      {syncHealth.label}
-                    </Badge>
-                  </div>
-                </div>
-
-              </div>
-            )}
-          </DashboardSurface>
-
-        <DashboardSurface
-          title="Missing expiry"
-          description="Contractors whose current contract is missing an end date."
-        >
-          {missingExpiryPanelState === 'loading' ? (
-            <DashboardListSkeleton rows={4} />
-          ) : missingExpiryPanelState === 'ready' ? (
-            <div className="divide-y divide-border/60">
-              {missingExpiryContractors.slice(0, 5).map((contractor, index) => {
-                const contractorId = String(contractor._id ?? '');
-                const contract = getPrimaryContract(contractor);
-                const status = String(contract?.status ?? 'active');
-
-                return (
-                  <Link
-                    key={contractorId}
-                    href={contractorId ? `/contractors/${contractorId}` : '/contractors'}
-                    className={cn(
-                      'flex items-center justify-between gap-4 py-4 transition-colors hover:text-foreground',
-                      index === 0 && 'pt-0',
-                      index === Math.min(missingExpiryContractors.length, 5) - 1 && 'pb-0',
-                    )}
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {String(contractor.name ?? 'Unknown contractor')}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {String(contractor.department ?? contractor.job_title ?? 'No department')}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-foreground">Missing end date</p>
-                        <p className="text-xs text-muted-foreground capitalize">{status}</p>
-                      </div>
-                      <ChevronRight size={14} className="text-muted-foreground" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex h-full flex-1 flex-col items-center justify-center px-6 py-4 text-center">
-              <span className="block dark:hidden">
-                <Image src={expiringEmptyLight} alt="" width={266} height={102} className="w-full max-w-60" />
-              </span>
-              <span className="hidden dark:block">
-                <Image src={expiringEmptyDark} alt="" width={266} height={102} className="w-full max-w-60" />
-              </span>
-              <p className="mt-5 text-sm font-semibold text-foreground">No missing expiries</p>
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Contractors whose current contract is missing an end date will show up here for review.
-              </p>
-            </div>
-          )}
-        </DashboardSurface>
         </section>
       </div>
     </div>

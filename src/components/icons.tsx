@@ -6,6 +6,7 @@ export { IconBell as Bell } from '@central-icons-react/round-outlined-radius-3-s
 export { IconCalendar1 as Calendar } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendar1';
 export { IconCalendarClock4 as CalendarClock4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarClock4';
 export { IconCalendarRemove4 as CalendarRemove4 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCalendarRemove4';
+export { IconCheckCircleDashed as CheckCircleDashed } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckCircleDashed';
 export { IconChevronBottom as ChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronBottom';
 export { IconChevronGrabberVertical as ChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronGrabberVertical';
 export { IconChevronLeft as ChevronLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconChevronLeft';
@@ -43,6 +44,7 @@ export { IconCheckCircle2 as CheckCircle } from '@central-icons-react/round-fill
 export { IconCheckmark2 as Checkmark2 } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2';
 export { IconCheckmark2Small as Checkmark2Small } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCheckmark2Small';
 export { IconClock as Clock } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClock';
+export { IconClockAlert as ClockAlert } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconClockAlert';
 export { IconCirclePlus as CirclePlus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconCirclePlus as Plus } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCirclePlus';
 export { IconMinusLarge as MinusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMinusLarge';

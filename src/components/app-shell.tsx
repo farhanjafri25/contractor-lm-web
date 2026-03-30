@@ -377,6 +377,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { showGettingStarted } = useGettingStarted();
   const isAdmin = user?.role === 'admin';
   const { data: pendingData } = useQuery({
     queryKey: ['pending-users'],
@@ -386,8 +387,15 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
   const pendingCount = pendingData?.data?.length || 0;
 
   const visible = useMemo(
-    () => NAV.filter((item) => !item.roles || item.roles.includes(user?.role ?? '')),
-    [user?.role],
+    () =>
+      NAV.filter((item) => {
+        if (item.href === '/getting-started' && !showGettingStarted) {
+          return false;
+        }
+
+        return !item.roles || item.roles.includes(user?.role ?? '');
+      }),
+    [showGettingStarted, user?.role],
   );
 
   return (
