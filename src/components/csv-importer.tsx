@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { contractorsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -159,7 +159,6 @@ export function CsvImporter() {
 
   type ValidationError = { row: number; message: string };
   const [validationErrors, setValidationErrors] = React.useState<ValidationError[]>([]);
-  const [validRows, setValidRows] = React.useState(0);
   const [duplicates, setDuplicates] = React.useState(0);
   const [excludedRows, setExcludedRows] = React.useState<Set<number>>(new Set());
 
@@ -171,7 +170,6 @@ export function CsvImporter() {
     setCsvData([]);
     setMapping({});
     setValidationErrors([]);
-    setValidRows(0);
     setDuplicates(0);
     setExcludedRows(new Set());
     setIsDragOver(false);
@@ -305,10 +303,9 @@ export function CsvImporter() {
       return;
     }
 
-    const { errors, duplicates, validCount } = validateData(csvData);
+    const { errors, duplicates } = validateData(csvData);
     setValidationErrors(errors);
     setDuplicates(duplicates);
-    setValidRows(validCount);
 
     setStep('REVIEW');
   };
@@ -317,10 +314,9 @@ export function CsvImporter() {
     const validData = csvData.filter((row, i) => !validationErrors.some(err => err.row === i + 2));
     setCsvData(validData);
 
-    const { errors, duplicates, validCount } = validateData(validData);
+    const { errors, duplicates } = validateData(validData);
     setValidationErrors(errors);
     setDuplicates(duplicates);
-    setValidRows(validCount);
   };
 
   const { mutate: bulkCreate, isPending } = useMutation({
@@ -414,7 +410,7 @@ export function CsvImporter() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="shrink-0">
+          <Button variant="secondary" className="shrink-0">
             Import CSV
           </Button>
         }

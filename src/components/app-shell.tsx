@@ -244,7 +244,7 @@ function FeedbackPopover() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="secondary" size="sm" className="hidden border-transparent sm:inline-flex" type="button">
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex" type="button">
             Feedback
           </Button>
         }
@@ -574,13 +574,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="flex items-center gap-2">
               <FeedbackPopover />
-              <Button variant="secondary" size="icon-sm" className="border-transparent" aria-label="Notifications" title="Notifications">
+              <Button variant="outline" size="icon-sm" aria-label="Notifications" title="Notifications">
                 <Bell size={16} />
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="icon-sm"
-                className="border-transparent"
                 aria-label={resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
                 title={resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
                 onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}

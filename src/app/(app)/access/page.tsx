@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,7 +8,9 @@ import { accessApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { CheckCheck, RotateCcw, IconGoogle, IconSlack } from '@/components/icons';
 import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, StatusBadge, SummaryPill } from '@/components/app-ui';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 
@@ -40,15 +42,187 @@ interface GroupedApp extends Application {
 }
 
 interface GroupedByContractor {
+  contractorKey: string;
   contractor: Contractor;
   apps: GroupedApp[];
   grantedBy: { email?: string } | null;
   status: string;
-  failureReasons: string[];
 }
 
 function formatStatusLabel(status: string) {
   return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
+}
+
+function getApplicationLabel(slug: string) {
+  if (slug === 'google-workspace') {
+    return 'Google';
+  }
+
+  if (slug === 'slack') {
+    return 'Slack';
+  }
+
+  return slug
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function renderAppIcon(slug: string, status: string) {
+  const isFailed = status === 'failed';
+  const baseClass = 'h-4 w-4 transition-opacity';
+  const opacityClass = status === 'pending' ? 'opacity-40 animate-pulse' : 'opacity-100';
+
+  if (slug === 'google-workspace') {
+    return (
+      <div key={slug} className="relative" title="Google Workspace">
+        <IconGoogle className={`${baseClass} ${opacityClass}`} />
+        {isFailed ? <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full border border-background bg-destructive" /> : null}
+      </div>
+    );
+  }
+
+  if (slug === 'slack') {
+    return (
+      <div key={slug} className="relative" title="Slack">
+        <IconSlack className={`${baseClass} ${opacityClass}`} />
+        {isFailed ? <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full border border-background bg-destructive" /> : null}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function ReviewIssuesDialog({
+  row,
+  open,
+  onOpenChange,
+}: {
+  row: GroupedByContractor | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState<{ id: string; type: 'retry' | 'resolve' } | null>(null);
+  const failedApps = row?.apps.filter((app) => app.status === 'failed') ?? [];
+  const contractorName = row?.contractor ? String(row.contractor.name ?? '—') : '—';
+  const contractorDepartment = row?.contractor ? String(row.contractor.department ?? '') : '';
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setError('');
+    setActionLoading(null);
+  }, [open, row?.contractorKey]);
+
+  const runAccessAction = async (
+    id: string,
+    type: 'retry' | 'resolve',
+    request: () => Promise<unknown>,
+    successMessage: string,
+  ) => {
+    setError('');
+    setActionLoading({ id, type });
+
+    try {
+      await request();
+      await queryClient.invalidateQueries({ queryKey: ['access-all'] });
+      toast.success(successMessage);
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Action failed. Try again.');
+      setError(message);
+      toast.error(message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (!row) {
+    return null;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex flex-col overflow-hidden sm:max-w-lg">
+        <DialogHeader>
+          <div className="pr-10">
+            <DialogTitle>Review access issues</DialogTitle>
+            <DialogDescription>
+              {contractorName}
+              {contractorDepartment ? ` · ${contractorDepartment}` : ''}
+            </DialogDescription>
+          </div>
+        </DialogHeader>
+
+        <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-1">
+          {error ? (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          {failedApps.map((app) => {
+            const appName = getApplicationLabel(app.application_slug);
+            const isRetrying = actionLoading?.id === app.access_id && actionLoading.type === 'retry';
+            const isResolving = actionLoading?.id === app.access_id && actionLoading.type === 'resolve';
+            const isBusy = actionLoading?.id === app.access_id;
+
+            return (
+              <div key={app.access_id} className="rounded-lg border bg-card p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      {renderAppIcon(app.application_slug, app.status)}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">{appName}</p>
+                      <Badge variant="danger">Failed</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+                  {app.failure_reason || 'No failure reason was provided.'}
+                </div>
+
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => runAccessAction(app.access_id, 'retry', () => accessApi.retryRevocation(app.access_id), 'Access retry started.')}
+                    disabled={Boolean(isBusy)}
+                  >
+                    <RotateCcw size={14} className={isRetrying ? 'animate-spin' : undefined} />
+                    {isRetrying ? 'Retrying…' : 'Retry'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => runAccessAction(app.access_id, 'resolve', () => accessApi.markResolved(app.access_id), 'Access issue marked as resolved.')}
+                    disabled={Boolean(isBusy)}
+                  >
+                    <CheckCheck size={14} />
+                    {isResolving ? 'Resolving…' : 'Mark resolved'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={Boolean(actionLoading)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function AccessPage() {
@@ -57,12 +231,10 @@ export default function AccessPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
   const statusFilter = searchParams.get('status') ?? '';
   const appFilter = searchParams.get('app') ?? '';
   const sourceFilter = searchParams.get('source') ?? '';
-  const [actionError, setActionError] = useState('');
-  const [actionLoading, setActionLoading] = useState<{ id: string; type: 'retry' | 'resolve' } | null>(null);
+  const [reviewingContractorKey, setReviewingContractorKey] = useState<string | null>(null);
 
   const updateFilterParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -86,35 +258,6 @@ export default function AccessPage() {
 
   const records: Record<string, unknown>[] = data?.data ?? [];
   const total = data?.total ?? records.length;
-
-  const runAccessAction = async (
-    id: string,
-    type: 'retry' | 'resolve',
-    request: () => Promise<unknown>,
-    successMessage: string,
-  ) => {
-    setActionError('');
-    setActionLoading({ id, type });
-    try {
-      await request();
-      await queryClient.invalidateQueries({ queryKey: ['access-all'] });
-      toast.success(successMessage);
-    } catch (err) {
-      const message = getApiErrorMessage(err, 'Action failed. Try again.');
-      setActionError(message);
-      toast.error(message);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleRetry = async (id: string) => {
-    await runAccessAction(id, 'retry', () => accessApi.retryRevocation(id), 'Access retry started.');
-  };
-
-  const handleMarkResolved = async (id: string) => {
-    await runAccessAction(id, 'resolve', () => accessApi.markResolved(id), 'Access issue marked as resolved.');
-  };
 
   const applicationOptions = [
     { label: 'All applications', value: '' },
@@ -164,11 +307,11 @@ export default function AccessPage() {
     
     if (!acc[contractorId]) {
       acc[contractorId] = {
+        contractorKey: contractorId,
         contractor,
         apps: [],
         grantedBy: record.granted_by as { email?: string } | null,
         status: 'active',
-        failureReasons: [],
       };
     }
 
@@ -204,38 +347,16 @@ export default function AccessPage() {
       acc[contractorId].status = currentStatus;
     }
 
-    if (record.failure_reason) {
-      acc[contractorId].failureReasons.push(String(record.failure_reason));
-    }
-
     return acc;
   }, {});
 
   const groupedRecords = Object.values(groupedByContractor);
-
-  const renderAppIcon = (slug: string, status: string) => {
-    const isFailed = status === 'failed';
-    const baseClass = "h-4 w-4 transition-opacity";
-    const opacityClass = status === 'pending' ? "opacity-40 animate-pulse" : "opacity-100";
-    
-    if (slug === 'google-workspace') {
-      return (
-        <div key={slug} className="relative group" title="Google Workspace">
-          <IconGoogle className={`${baseClass} ${opacityClass}`} />
-          {isFailed && <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive border border-background" />}
-        </div>
-      );
-    }
-    if (slug === 'slack') {
-      return (
-        <div key={slug} className="relative group" title="Slack">
-          <IconSlack className={`${baseClass} ${opacityClass}`} />
-          {isFailed && <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive border border-background" />}
-        </div>
-      );
-    }
-    return null;
-  };
+  const reviewingGroup = groupedRecords.find((group) => group.contractorKey === reviewingContractorKey) ?? null;
+  const reviewDialogOpen = Boolean(
+    reviewingContractorKey &&
+    reviewingGroup &&
+    reviewingGroup.apps.some((app) => app.status === 'failed'),
+  );
 
   return (
     <div className="space-y-8">
@@ -243,12 +364,6 @@ export default function AccessPage() {
         title="Access"
         description={`${total.toLocaleString()} access permissions across your team.`}
       />
-
-      {actionError ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
-          {actionError}
-        </div>
-      ) : null}
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -319,11 +434,11 @@ export default function AccessPage() {
             <TableBody>
               {isLoading
                 ? <TableLoadingRows rows={5} columns={isAdmin ? 5 : 4} actionColumn={isAdmin} />
-                : groupedRecords.map(({ contractor, apps, status, grantedBy, failureReasons }) => {
-                    const contractorId = String(contractor?._id || Math.random());
+                : groupedRecords.map(({ contractorKey, contractor, apps, status, grantedBy }) => {
+                    const failedApps = apps.filter((app) => app.status === 'failed');
                     
                     return (
-                      <TableRow key={contractorId}>
+                      <TableRow key={contractorKey}>
                         <TableCell>
                           <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '—') : '—'}</p>
                           <p className="text-sm text-muted-foreground">{contractor ? String(contractor.department ?? '') : ''}</p>
@@ -335,44 +450,25 @@ export default function AccessPage() {
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={status} />
-                          {failureReasons.length > 0 && (
-                             <p className="mt-2 max-w-[16rem] text-xs text-destructive">
-                                {failureReasons[0].slice(0, 70)}
-                                {failureReasons.length > 1 && ` (+${failureReasons.length - 1} more)`}
+                          {failedApps.length > 0 && (
+                             <p className="mt-2 max-w-[16rem] text-xs text-muted-foreground">
+                                {failedApps.length === 1 ? '1 app needs review.' : `${failedApps.length} apps need review.`}
                              </p>
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{grantedBy ? String(grantedBy.email ?? '—') : 'Tenurio'}</TableCell>
                         {isAdmin ? (
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                                {apps.filter(a => a.status === 'failed').map((app) => {
-                                    const appName = app.application_slug === 'google-workspace' ? 'Google' : 'Slack';
-                                    const isActing = actionLoading?.id === app.access_id;
-                                    return (
-                                        <div key={app.access_id} className="flex gap-1.5 border-l border-border pl-2 first:border-0 first:pl-0">
-                                            <Button
-                                                variant="secondary"
-                                                size="icon-sm"
-                                                onClick={() => handleRetry(app.access_id)}
-                                                disabled={!!actionLoading}
-                                                title={`Retry ${appName} provisioning`}
-                                            >
-                                                <RotateCcw size={12} className={isActing && actionLoading?.type === 'retry' ? 'animate-spin' : undefined} />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                onClick={() => handleMarkResolved(app.access_id)}
-                                                disabled={!!actionLoading}
-                                                title={`Mark ${appName} as resolved`}
-                                            >
-                                                <CheckCheck size={12} />
-                                            </Button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            {failedApps.length ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReviewingContractorKey(contractorKey)}
+                              >
+                                Review issues
+                              </Button>
+                            ) : null}
                           </TableCell>
                         ) : null}
                       </TableRow>
@@ -389,6 +485,12 @@ export default function AccessPage() {
           </Table>
         </DataTableShell>
       </div>
+
+      <ReviewIssuesDialog
+        row={reviewingGroup}
+        open={reviewDialogOpen}
+        onOpenChange={(open) => !open && setReviewingContractorKey(null)}
+      />
     </div>
   );
 }

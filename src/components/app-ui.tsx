@@ -309,7 +309,10 @@ export function FiltersPopover({
     <Popover>
       <PopoverTrigger
         render={
-          <Button variant="outline" className="justify-between shadow-xs">
+          <Button
+            variant="ghost"
+            className="justify-between border border-transparent bg-background/90 shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 dark:bg-input/25 dark:hover:bg-input/50"
+          >
             <span>{activeCount ? `${title} (${activeCount})` : title}</span>
             <ChevronBottom data-icon="inline-end" size={16} />
           </Button>
@@ -369,7 +372,7 @@ export function FieldBlock({
   description,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   description?: string;
   children: React.ReactNode;
 }) {

@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
-import { CheckCircle, Checkmark2, Clock, IconCrossLarge, XCircle } from '@/components/icons';
+import { CheckCircle, Clock, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const requestStatusOptions = [
   { label: 'All statuses', value: '' },
@@ -33,6 +36,8 @@ const actionTypeLabels: Record<string, string> = {
   access_change: 'Access change',
   deactivate: 'Deactivation',
 };
+
+type SponsorRequest = Record<string, unknown>;
 
 function getActionTypeLabel(value: string) {
   return actionTypeLabels[value] ?? value
@@ -70,19 +75,185 @@ function getRecencyMatch(dateValue: unknown, range: string) {
   return true;
 }
 
+function ReviewDialog({
+  request,
+  open,
+  onOpenChange,
+}: {
+  request: SponsorRequest;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const id = String(request._id ?? '');
+  const [decision, setDecision] = useState<'approved' | 'rejected'>('approved');
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
+  const contract = request.contract_id as Record<string, unknown> | undefined;
+  const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
+  const submitter = request.sponsor_id as Record<string, unknown> | undefined;
+  const requestType = getActionTypeLabel(String(request.action_type ?? ''));
+  const requestDate = request.createdAt || request.created_at;
+  const contractorName = contractor ? String(contractor.name ?? '') : '';
+  const contractorEmail = contractor ? String(contractor.email ?? '') : '';
+  const contractorDepartment = contractor ? String(contractor.department ?? '') : '';
+  const submitterName = submitter ? String(submitter.name ?? submitter.full_name ?? submitter.display_name ?? '') : '';
+  const submitterEmail = submitter ? String(submitter.email ?? '') : '';
+  const contractorSeed = getAvatarSeed(contractor?._id, contractorEmail, contractorName);
+  const isRejecting = decision === 'rejected';
+  const trimmedNote = note.trim();
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setDecision('approved');
+    setNote('');
+    setError('');
+  }, [id, open]);
+
+  const submit = async () => {
+    if (isRejecting && !trimmedNote) {
+      setError('Add a short reason before rejecting this request.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await sponsorApi.review(id, decision, trimmedNote || undefined);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-pending-requests'] }),
+      ]);
+      toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
+      onOpenChange(false);
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Review failed. Try again.');
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex flex-col overflow-hidden sm:max-w-lg">
+        <DialogHeader>
+          <div className="pr-10">
+            <DialogTitle>Review {requestType.toLowerCase()} request</DialogTitle>
+          </div>
+        </DialogHeader>
+        <div className="-mx-1 min-h-0 flex-1 space-y-5 overflow-y-auto px-1 pb-1">
+          {error ? (
+            <div className="rounded-lg border border-destructive/15 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-center gap-3">
+                <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail || 'Contractor'} />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">{contractorName || 'Unknown contractor'}</p>
+                  <p className="text-sm text-muted-foreground">{contractorDepartment || contractorEmail || 'No contractor details available'}</p>
+                </div>
+              </div>
+              <StatusBadge status={String(request.status ?? 'pending')} icon={<Clock size={12} />} className="w-fit shrink-0" />
+            </div>
+
+            <div className="mt-4 grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Submitted by</p>
+                <p className="text-sm font-medium text-foreground">{submitterName || submitterEmail || 'Unknown'}</p>
+                {submitterName && submitterEmail ? <p className="text-xs text-muted-foreground">{submitterEmail}</p> : null}
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Submitted</p>
+                <p className="text-sm font-medium text-foreground">
+                  {requestDate ? new Date(String(requestDate)).toLocaleString() : 'Unknown'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <FieldBlock label="Decision">
+            <ToggleGroup
+              aria-label="Review decision"
+              className="w-full"
+              spacing={2}
+              value={[decision]}
+              onValueChange={(values) => {
+                const next = values[0];
+
+                if (next === 'approved' || next === 'rejected') {
+                  setDecision(next);
+                }
+              }}
+              variant="outline"
+            >
+              <ToggleGroupItem value="approved" className="flex-1 px-4">
+                Approve
+              </ToggleGroupItem>
+              <ToggleGroupItem value="rejected" className="flex-1 px-4">
+                Reject
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </FieldBlock>
+
+          <FieldBlock
+            label={isRejecting ? <span>Reason for rejection <span className="text-destructive">*</span></span> : 'Review note'}
+            description={
+              isRejecting
+                ? 'Required. Give the sponsor enough detail to understand what needs to change.'
+                : 'Optional. Add context that will help your team understand why this was approved.'
+            }
+          >
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={
+                isRejecting
+                  ? 'Explain why this request is being rejected and what needs to change.'
+                  : 'Add approval context, next steps, or anything useful for the audit trail.'
+              }
+              className="min-h-24"
+            />
+          </FieldBlock>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant={decision === 'approved' ? 'default' : 'destructive'}
+            onClick={submit}
+            disabled={loading || (isRejecting && !trimmedNote)}
+          >
+            {loading ? 'Saving…' : decision === 'approved' ? 'Approve request' : 'Reject request'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function SponsorPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [activeAction, setActiveAction] = useState<{ requestId: string; decision: 'approved' | 'rejected' } | null>(null);
+  const [reviewingRequest, setReviewingRequest] = useState<SponsorRequest | null>(null);
   const [search, setSearch] = useState('');
-  const [actionError, setActionError] = useState('');
   const statusFilter = searchParams.get('status') ?? '';
   const typeFilter = searchParams.get('type') ?? '';
   const rangeFilter = searchParams.get('range') ?? '';
-  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['sponsor-actions', statusFilter],
@@ -154,32 +325,6 @@ export default function SponsorPage() {
     rejected: <XCircle size={12} />,
   };
 
-  const refresh = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] }),
-      queryClient.invalidateQueries({ queryKey: ['dashboard-pending-requests'] }),
-    ]);
-  };
-
-  const runRequestAction = async (requestId: string, decision: 'approved' | 'rejected') => {
-    setActionError('');
-    setActiveAction({ requestId, decision });
-
-    try {
-      await sponsorApi.review(requestId, decision);
-      await refresh();
-      toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
-    } catch (err: unknown) {
-      const message = getApiErrorMessage(err, 'Review failed. Try again.');
-      setActionError(message);
-      toast.error(message);
-    } finally {
-      setActiveAction(null);
-    }
-  };
-
-  const isBusy = (requestId: string) => activeAction?.requestId === requestId;
-
   return (
     <div className="space-y-8">
       <PageHeader
@@ -188,11 +333,6 @@ export default function SponsorPage() {
       />
 
       <div className="space-y-4">
-        {actionError ? (
-          <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {actionError}
-          </div>
-        ) : null}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="md:w-80" />
           <FiltersPopover
@@ -244,7 +384,7 @@ export default function SponsorPage() {
             <TableBody>
               {isLoading
                 ? <TableLoadingRows rows={4} columns={isAdmin ? 6 : 5} actionColumn={isAdmin} />
-                : filteredRequests.map((request: Record<string, unknown>) => {
+                : filteredRequests.map((request: SponsorRequest) => {
                     const contract = request.contract_id as Record<string, unknown> | undefined;
                     const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
                     const submitter = request.sponsor_id as Record<string, unknown> | undefined;
@@ -286,33 +426,13 @@ export default function SponsorPage() {
                         {isAdmin ? (
                           <TableCell className="text-right">
                             {status === 'pending' ? (
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="secondary"
-                                  size="icon-sm"
-                                  onClick={() => runRequestAction(String(request._id), 'rejected')}
-                                  disabled={isBusy(String(request._id))}
-                                  aria-label={activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
-                                  title={activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
-                                >
-                                  <IconCrossLarge size={14} />
-                                  <span className="sr-only">
-                                    {activeAction?.decision === 'rejected' && isBusy(String(request._id)) ? 'Rejecting request' : 'Reject request'}
-                                  </span>
-                                </Button>
-                                <Button
-                                  size="icon-sm"
-                                  onClick={() => runRequestAction(String(request._id), 'approved')}
-                                  disabled={isBusy(String(request._id))}
-                                  aria-label={activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
-                                  title={activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
-                                >
-                                  <Checkmark2 className="size-[11px]" />
-                                  <span className="sr-only">
-                                    {activeAction?.decision === 'approved' && isBusy(String(request._id)) ? 'Approving request' : 'Approve request'}
-                                  </span>
-                                </Button>
-                              </div>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setReviewingRequest(request)}
+                              >
+                                Review
+                              </Button>
                             ) : null}
                           </TableCell>
                         ) : null}
@@ -330,6 +450,13 @@ export default function SponsorPage() {
           </Table>
         </DataTableShell>
       </div>
+      {reviewingRequest ? (
+        <ReviewDialog
+          request={reviewingRequest}
+          open={Boolean(reviewingRequest)}
+          onOpenChange={(open) => !open && setReviewingRequest(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -13,9 +13,9 @@ const buttonVariants = cva(
         default:
           "border-[0.5px] border-white/10 bg-primary text-primary-foreground shadow-md shadow-black/15 ring-[0.5px] ring-(--button-ring) [--button-ring:color-mix(in_oklab,black_15%,var(--color-primary))] [&_svg]:drop-shadow-sm text-shadow-sm hover:bg-primary/90 dark:border-transparent dark:[--button-ring:color-mix(in_oklab,white_15%,var(--color-primary))]",
         outline:
-          "border-transparent bg-card shadow-sm shadow-black/15 hover:bg-muted/50 hover:text-foreground aria-expanded:bg-muted/50 aria-expanded:text-foreground dark:hover:bg-input/50",
+          "border-border bg-card hover:bg-muted/50 hover:text-foreground aria-expanded:bg-muted/50 aria-expanded:text-foreground dark:hover:bg-input/50",
         secondary:
-          "border-border bg-secondary text-secondary-foreground shadow-sm shadow-black/12 hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:bg-background dark:hover:bg-muted",
+          "border-transparent bg-secondary text-secondary-foreground shadow-sm ring-1 ring-foreground/[0.08] hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:bg-background dark:hover:bg-muted",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
