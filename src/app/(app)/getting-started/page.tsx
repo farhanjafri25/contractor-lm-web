@@ -120,6 +120,8 @@ function GettingStartedContent() {
     checklistItems.find((item) => item.label === selectedLabel) ??
     nextItem ??
     checklistItems[0];
+  const activeItemCtaLabel =
+    activeItem?.label === 'Add your first contractor' ? 'Add contractor' : activeItem?.label ?? 'Get started';
 
   return (
     <div className="space-y-10">
@@ -127,7 +129,7 @@ function GettingStartedContent() {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome to Tenurio</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Follow these steps to get the most out of Tenurio.
+            Secure contractor access with automated lifecycle management.
           </p>
         </div>
 
@@ -218,7 +220,7 @@ function GettingStartedContent() {
                 render={<Link href={activeItem?.href ?? '/dashboard'} />}
                 nativeButton={false}
               >
-                Get Started
+                {activeItemCtaLabel}
               </Button>
             )}
           </div>

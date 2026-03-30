@@ -64,25 +64,25 @@ export function useGettingStarted() {
   const checklistItems: SetupChecklistItem[] = [
     {
       label: 'Add your first contractor',
-      description: 'Import or add contractors to start managing their access and documents.',
+      description: 'Import from CSV or add contractor manually—start controlling access quickly.',
       href: '/contractors/new',
       done: hasAnyContractor,
     },
     {
       label: 'Connect Google Workspace',
-      description: 'Sync your directory to automatically discover and manage contractors.',
+      description: 'Bring your users into Tenurio and manage contractor access with real-time sync.',
       href: '/settings/directory',
       done: isGoogleConnected,
     },
     {
-      label: 'Invite a sponsor',
-      description: 'Sponsors approve contractor requests and are notified about expiring agreements.',
+      label: 'Invite sponsor',
+      description: 'Assign ownership by inviting team members to manage contractor access and lifecycle.',
       href: '/settings/team?invite=sponsor',
       done: sponsorCount > 0,
     },
     {
-      label: 'Configure Slack notifications',
-      description: 'Get notified in Slack when contracts are expiring or need attention.',
+      label: 'Connect Slack',
+      description: 'Get expiry reminders and approve contractor actions directly from Slack.',
       href: '/settings/slack',
       done: isSlackConnected,
     },
