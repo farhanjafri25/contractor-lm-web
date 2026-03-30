@@ -6,11 +6,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { accessApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { CheckCheck, RotateCcw, IconGoogle, IconSlack } from '@/components/icons';
+import { CheckCheck, RotateCcw, IconDotGrid1x3VerticalTight, IconGoogle, IconSlack } from '@/components/icons';
 import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, StatusBadge, SummaryPill } from '@/components/app-ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 
@@ -179,9 +180,9 @@ function ReviewIssuesDialog({
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-foreground">{appName}</p>
-                      <Badge variant="danger">Failed</Badge>
                     </div>
                   </div>
+                  <Badge variant="danger">Failed</Badge>
                 </div>
 
                 <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
@@ -235,6 +236,7 @@ export default function AccessPage() {
   const appFilter = searchParams.get('app') ?? '';
   const sourceFilter = searchParams.get('source') ?? '';
   const [reviewingContractorKey, setReviewingContractorKey] = useState<string | null>(null);
+  const [revokeLoadingId, setRevokeLoadingId] = useState<string | null>(null);
 
   const updateFilterParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -357,6 +359,19 @@ export default function AccessPage() {
     reviewingGroup &&
     reviewingGroup.apps.some((app) => app.status === 'failed'),
   );
+  const handleRevoke = async (id: string) => {
+    setRevokeLoadingId(id);
+
+    try {
+      await accessApi.revoke(id);
+      await queryClient.invalidateQueries({ queryKey: ['access-all'] });
+      toast.success('Access revocation started.');
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'Could not revoke access. Try again.'));
+    } finally {
+      setRevokeLoadingId(null);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -436,6 +451,7 @@ export default function AccessPage() {
                 ? <TableLoadingRows rows={5} columns={isAdmin ? 5 : 4} actionColumn={isAdmin} />
                 : groupedRecords.map(({ contractorKey, contractor, apps, status, grantedBy }) => {
                     const failedApps = apps.filter((app) => app.status === 'failed');
+                    const revocableApps = apps.filter((app) => app.status === 'active');
                     
                     return (
                       <TableRow key={contractorKey}>
@@ -450,25 +466,76 @@ export default function AccessPage() {
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={status} />
-                          {failedApps.length > 0 && (
-                             <p className="mt-2 max-w-[16rem] text-xs text-muted-foreground">
-                                {failedApps.length === 1 ? '1 app needs review.' : `${failedApps.length} apps need review.`}
-                             </p>
+                        </TableCell>
+                        <TableCell>
+                          {grantedBy ? (
+                            (() => {
+                              const displayName = String(
+                                grantedBy.name ?? grantedBy.full_name ?? grantedBy.display_name ?? grantedBy.email ?? '—',
+                              );
+                              const email = grantedBy.email ? String(grantedBy.email) : '';
+
+                              return (
+                                <div className="space-y-0.5">
+                                  <p className="font-medium text-foreground">{displayName}</p>
+                                  {email && email !== displayName ? (
+                                    <p className="text-sm text-muted-foreground">{email}</p>
+                                  ) : null}
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <p className="text-muted-foreground">Tenurio</p>
                           )}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{grantedBy ? String(grantedBy.email ?? '—') : 'Tenurio'}</TableCell>
                         {isAdmin ? (
                           <TableCell className="text-right">
-                            {failedApps.length ? (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setReviewingContractorKey(contractorKey)}
-                              >
-                                Review issues
-                              </Button>
-                            ) : null}
+                            <div className="flex items-center justify-end gap-1">
+                              {failedApps.length ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setReviewingContractorKey(contractorKey)}
+                                >
+                                  Review issues
+                                </Button>
+                              ) : null}
+                              {revocableApps.length ? (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={`Open actions for ${String(contractor?.name ?? 'contractor access')}`}
+                                        title="Access actions"
+                                      />
+                                    }
+                                  >
+                                    <IconDotGrid1x3VerticalTight size={14} />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="min-w-44">
+                                    {revocableApps.map((app) => {
+                                      const appName = getApplicationLabel(app.application_slug);
+                                      const isRevoking = revokeLoadingId === app.access_id;
+
+                                      return (
+                                        <DropdownMenuItem
+                                          key={app.access_id}
+                                          variant="destructive"
+                                          disabled={Boolean(revokeLoadingId)}
+                                          onClick={() => handleRevoke(app.access_id)}
+                                        >
+                                          {isRevoking ? `Revoking ${appName}…` : `Revoke ${appName} access`}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              ) : null}
+                            </div>
                           </TableCell>
                         ) : null}
                       </TableRow>
