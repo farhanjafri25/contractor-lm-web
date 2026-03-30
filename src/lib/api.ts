@@ -151,3 +151,8 @@ export interface AiChatMessage {
 export const aiApi = {
     chat: (messages: AiChatMessage[]) => api.post('/ai/chat', { messages }),
 };
+
+export const feedbackApi = {
+    submit: (data: { category: string; message: string; rating?: number; metadata?: Record<string, any> }) =>
+        api.post('/feedback', data),
+};

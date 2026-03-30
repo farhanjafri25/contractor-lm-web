@@ -28,7 +28,7 @@ import {
 
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
-import { tenantApi } from '@/lib/api';
+import { tenantApi, feedbackApi } from '@/lib/api';
 import { InitialAvatar, getAvatarSeed, getAvatarTone } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { Logo, LogoMark } from '@/components/logo';
@@ -223,22 +223,43 @@ function routeBreadcrumbs(pathname: string) {
 function FeedbackPopover() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [category, setCategory] = useState<'bug' | 'feature_request' | 'support' | 'general'>('general');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const trimmedMessage = message.trim();
 
   const handleSubmit = async () => {
-    if (!trimmedMessage) {
+    if (!trimmedMessage || isSubmitting) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      await navigator.clipboard.writeText(trimmedMessage);
-      toast.info("Feedback submission isn't connected yet, so your note was copied to the clipboard.");
-    } catch {
-      toast.info("Feedback submission isn't connected yet in this environment.");
+      await feedbackApi.submit({
+        category,
+        message: trimmedMessage,
+        metadata: {
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+        }
+      });
+      toast.success("Thank you for your feedback! We've received it.");
+      setMessage('');
+      setCategory('general');
+      setOpen(false);
+    } catch (error) {
+      console.error('Feedback submission failed:', error);
+      toast.error("Failed to submit feedback. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
     }
-    setMessage('');
-    setOpen(false);
   };
+
+  const categories = [
+    { value: 'general', label: 'General' },
+    { value: 'bug', label: 'Bug' },
+    { value: 'feature_request', label: 'Feature' },
+    { value: 'support', label: 'Support' },
+  ] as const;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -252,23 +273,50 @@ function FeedbackPopover() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-[min(24rem,calc(100vw-1rem))] gap-3 rounded-[0.8rem] border bg-background/98 p-3.5 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)] backdrop-blur-xl"
+        className="flex w-[min(24rem,calc(100vw-1rem))] flex-col gap-3 rounded-[0.8rem] border bg-background/98 p-3.5 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)] backdrop-blur-xl"
       >
-        <Textarea
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="What’s working, what’s confusing, or what should we build next?"
-          aria-label="Feedback"
-          autoFocus
-          rows={5}
-        />
-        <div className="flex justify-end">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Category</p>
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setCategory(cat.value)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
+                  category === cat.value 
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" 
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Message</p>
+          <Textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="What’s working, what’s confusing, or what should we build next?"
+            aria-label="Feedback message"
+            className="resize-none border-border/50 bg-muted/20 focus-visible:ring-primary/20"
+            autoFocus
+            rows={5}
+          />
+        </div>
+
+        <div className="flex justify-end pt-1">
           <Button
             type="button"
-            disabled={!trimmedMessage}
+            disabled={!trimmedMessage || isSubmitting}
             onClick={handleSubmit}
+            className="min-w-[5rem]"
           >
-            Submit
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </div>
       </PopoverContent>
