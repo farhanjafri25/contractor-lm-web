@@ -264,7 +264,7 @@ function FeedbackPopover() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="outline" size="sm" className="hidden sm:inline-flex" type="button">
+          <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
             Feedback
           </Button>
         }

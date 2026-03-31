@@ -330,7 +330,7 @@ export default function SponsorPage() {
     <div className="space-y-8">
       <PageHeader
         title="Requests"
-        description="Review extension and change requests from sponsors."
+        description="View and take action on pending approvals and access requests from sponsors"
       />
 
       <div className="space-y-4">
