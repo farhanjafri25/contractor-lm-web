@@ -8,15 +8,28 @@ import { toast } from 'sonner';
 import { AuthPageLayout, AuthWelcomeAside } from '@/components/auth-page-layout';
 import {
   CheckCircle,
+  ChevronGrabberVertical,
   Eye,
   EyeOff,
+  HomeCircle,
+  Users,
+  ShieldCheck,
+  History,
+  SettingsGear1,
+  User,
+  Group2,
+  Connectors,
 } from '@/components/icons';
+import { Logo } from '@/components/logo';
 import { FieldBlock } from '@/components/app-ui';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { prepareImageForUpload } from '@/lib/image-upload';
@@ -86,63 +99,206 @@ function getInitials(value: string) {
   return parts || 'TW';
 }
 
-function WorkspacePreview({ workspaceName }: { workspaceName: string }) {
+const SIDEBAR_NAV = [
+  { label: 'Dashboard', icon: HomeCircle, active: true },
+  { label: 'Contractors', icon: Users },
+  { label: 'Access', icon: ShieldCheck },
+  { label: 'Activity', icon: History },
+  { label: 'Integrations', icon: Connectors },
+];
+
+const SIDEBAR_SETTINGS_NAV = [
+  { label: 'Profile', icon: User },
+  { label: 'Organization', icon: SettingsGear1 },
+  { label: 'Team', icon: Group2 },
+];
+
+function AppPreview({
+  workspaceName,
+  logoPreview,
+  avatarPreview,
+  displayName,
+}: {
+  workspaceName: string;
+  logoPreview: string | null;
+  avatarPreview: string | null;
+  displayName: string;
+}) {
   return (
-    <div className="flex h-full min-h-[400px] w-full flex-col bg-muted/30 lg:rounded-2xl lg:border lg:border-border/60">
-      <div className="px-6 py-6 border-b border-border/60 flex items-center gap-3">
-        <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-          {getInitials(workspaceName || 'Tenurio Workspace')}
+    <div className="flex h-160 w-full overflow-hidden rounded-2xl border border-border/60 bg-sidebar text-sidebar-foreground">
+      {/* Sidebar */}
+      <div className="flex w-56 shrink-0 flex-col border-r border-sidebar-border">
+        {/* Logo */}
+        <div className="flex h-14 items-center px-4">
+          <div className="flex items-center gap-2">
+            <Logo priority />
+            <Badge
+              variant="secondary"
+              className="min-h-0 border-sidebar-border bg-sidebar-accent px-1 py-px text-[9px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/75"
+            >
+              Beta
+            </Badge>
+          </div>
         </div>
-        <p className="text-sm font-semibold truncate capitalize max-w-[200px]">{workspaceName || 'Your Workspace'}</p>
+
+        {/* Org switcher */}
+        <div className="px-2 pt-2 pb-4">
+          <div className="flex h-9 w-full items-center gap-2 rounded-lg border bg-background px-2 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]">
+            <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-primary text-[8px] font-bold text-primary-foreground">
+              {logoPreview ? (
+                <Image src={logoPreview} alt="Logo" fill unoptimized sizes="20px" className="object-cover" />
+              ) : (
+                getInitials(workspaceName || 'T')
+              )}
+            </div>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium leading-5">{workspaceName || 'Your Workspace'}</span>
+            </span>
+            <ChevronGrabberVertical size={16} className="shrink-0 text-muted-foreground" />
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <div className="flex-1 overflow-y-auto">
+          <nav className="grid gap-6 px-2">
+            <div className="space-y-1">
+              {SIDEBAR_NAV.map(({ label, icon: Icon, active }) => (
+                <div
+                  key={label}
+                  className={cn(
+                    'flex h-8 items-center gap-2 rounded-md px-2',
+                    active
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                      : 'text-sidebar-foreground/70',
+                  )}
+                >
+                  <span className="flex size-[18px] shrink-0 items-center justify-center">
+                    <Icon size={18} />
+                  </span>
+                  <div className={cn('h-3 rounded-sm', active ? 'w-20 bg-sidebar-primary-foreground/15' : 'w-16 bg-sidebar-foreground/6')} />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-1">
+              <div className="px-2 pb-1">
+                <div className="h-3 w-14 rounded-sm bg-sidebar-foreground/6" />
+              </div>
+              {SIDEBAR_SETTINGS_NAV.map(({ icon: Icon }, i) => (
+                <div
+                  key={i}
+                  className="flex h-8 items-center gap-2 rounded-md px-2 text-sidebar-foreground/70"
+                >
+                  <span className="flex size-[18px] shrink-0 items-center justify-center">
+                    <Icon size={18} />
+                  </span>
+                  <div className={cn('h-3 rounded-sm bg-sidebar-foreground/6', i === 0 ? 'w-12' : i === 1 ? 'w-20' : 'w-10')} />
+                </div>
+              ))}
+            </div>
+          </nav>
+        </div>
+
+        {/* Profile */}
+        <div className="px-2 pb-4">
+          <div className="py-3">
+            <Separator className="bg-sidebar-border" />
+          </div>
+          <div className="flex h-9 w-full items-center gap-2 rounded-lg px-2">
+            <div className="relative flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-[8px] font-semibold text-primary/80">
+              {avatarPreview ? (
+                <Image src={avatarPreview} alt="Avatar" fill unoptimized sizes="20px" className="object-cover" />
+              ) : (
+                getInitials(displayName || 'U')
+              )}
+            </div>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium leading-5">{displayName || 'Your Name'}</span>
+            </span>
+            <ChevronGrabberVertical size={16} className="shrink-0 text-muted-foreground" />
+          </div>
+        </div>
       </div>
-      <div className="flex flex-1">
-        <div className="w-16 sm:w-56 shrink-0 border-r border-border/60 bg-muted/10 p-3 hidden sm:block">
-          <div className="space-y-1">
-            <div className="h-8 rounded-md bg-muted/60" />
-            <div className="h-8 rounded-md bg-transparent" />
-            <div className="h-8 rounded-md bg-transparent" />
+
+      {/* Main content — dashboard skeleton */}
+      <div className="min-w-0 flex-1 overflow-hidden bg-background p-4">
+        <div className="space-y-4">
+          {/* Header skeleton: workspace name + greeting */}
+          <div className="space-y-1.5">
+            <div className="h-2.5 w-16 rounded-full bg-muted/40" />
+            <div className="h-5 w-36 rounded-full bg-muted/40" />
           </div>
-        </div>
-        <div className="flex-1 p-6 space-y-6">
-          <div className="h-6 w-32 rounded-md bg-muted/50" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-             <div className="h-24 rounded-xl border border-border/50 bg-background" />
-             <div className="h-24 rounded-xl border border-border/50 bg-background" />
-             <div className="h-24 rounded-xl border border-border/50 bg-background hidden lg:block" />
+
+          {/* KPI cards grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2 rounded-lg border border-border/40 bg-card p-3">
+                <div className="size-3.5 rounded bg-muted/30" />
+                <div className={cn('h-2.5 rounded-full bg-muted/30', i % 2 === 0 ? 'w-16' : 'w-12')} />
+                <div className="h-5 w-8 rounded bg-muted/25" />
+              </div>
+            ))}
           </div>
-          <div className="h-48 rounded-xl border border-border/50 bg-background" />
+
+          {/* Bottom panel — expiring soon */}
+          <div className="rounded-lg border border-border/40 bg-card">
+            <div className="border-b border-border/40 px-3.5 py-3 space-y-1">
+              <div className="h-3.5 w-20 rounded-full bg-muted/30" />
+              <div className="h-2 w-32 rounded-full bg-muted/20" />
+            </div>
+            <div className="px-3.5 py-3 space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-5 rounded-full bg-muted/20" />
+                    <div className="space-y-1">
+                      <div className={cn('h-2.5 rounded-full bg-muted/25', i % 2 === 0 ? 'w-20' : 'w-16')} />
+                      <div className="h-2 w-10 rounded-full bg-muted/15" />
+                    </div>
+                  </div>
+                  <div className="h-2.5 w-12 rounded-full bg-muted/20" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom panel — activity */}
+          <div className="rounded-lg border border-border/40 bg-card">
+            <div className="border-b border-border/40 px-3.5 py-3 space-y-1">
+              <div className="h-3.5 w-14 rounded-full bg-muted/30" />
+              <div className="h-2 w-28 rounded-full bg-muted/20" />
+            </div>
+            <div className="px-3.5 py-3 space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <div className="relative flex flex-col items-center">
+                    <div className="size-1.5 rounded-full bg-muted/30" />
+                    {i < 2 && <div className="mt-0.5 h-6 w-px bg-border/40" />}
+                  </div>
+                  <div className="space-y-1 pt-px">
+                    <div className={cn('h-2.5 rounded-full bg-muted/25', i % 2 === 0 ? 'w-24' : 'w-20')} />
+                    <div className="h-2 w-12 rounded-full bg-muted/15" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function RadioOption({ 
-  label, 
-  selected, 
-  onClick 
-}: { 
-  label: string; 
-  selected: boolean; 
-  onClick: () => void 
-}) {
+function ChoiceCard({ value, label }: { value: string; label: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <label
       className={cn(
-        "flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-muted/50",
-        selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-background"
+        "flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-muted/50",
+        "has-data-checked:border-primary has-data-checked:bg-primary/5 has-data-checked:ring-1 has-data-checked:ring-primary",
       )}
     >
-      <span className={cn("text-sm font-medium", selected ? "text-primary" : "text-foreground")}>{label}</span>
-      <div className={cn(
-        "flex size-5 items-center justify-center rounded-full border",
-        selected ? "border-primary bg-primary" : "border-muted-foreground/30"
-      )}>
-        {selected && <div className="size-2 rounded-full bg-background" />}
-      </div>
-    </button>
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <RadioGroupItem value={value} />
+    </label>
   );
 }
 
@@ -284,7 +440,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await tenantApi.updateProfile({ 
+      await tenantApi.updateProfile({
         name: workspaceName.trim(),
         slug: slugify(workspaceHandle),
         billing_country: billingCountry,
@@ -293,7 +449,7 @@ export default function SignupPage() {
       });
       setStep('tracking');
     } catch (err: unknown) {
-      const message = getApiErrorMessage(err, 'We couldn’t save your workspace details. Try again.');
+      const message = getApiErrorMessage(err, "We couldn't save your workspace details. Try again.");
       setError(message);
     } finally {
       setLoading(false);
@@ -335,7 +491,8 @@ export default function SignupPage() {
 
   return (
     <AuthPageLayout
-      aside={isWorkspaceStep || isProfileStep ? <WorkspacePreview workspaceName={workspaceName} /> : <AuthWelcomeAside />}
+      hideHeader={isWorkspaceStep || isProfileStep}
+      aside={isWorkspaceStep || isProfileStep ? <AppPreview workspaceName={workspaceName} logoPreview={logoPreview} avatarPreview={avatarPreview} displayName={`${firstName} ${lastName}`.trim()} /> : <AuthWelcomeAside />}
       gridClassName={(isWorkspaceStep || isProfileStep) ? 'pr-0 lg:grid-cols-[minmax(0,430px)_minmax(0,1fr)] lg:gap-20 lg:pr-0' : undefined}
       contentClassName={(isWorkspaceStep || isProfileStep) ? 'max-w-[430px] my-auto' : undefined}
       asideClassName={(isWorkspaceStep || isProfileStep) ? 'w-full max-w-none max-h-screen my-auto py-10 px-8' : undefined}
@@ -349,7 +506,7 @@ export default function SignupPage() {
       {step === 'account' ? (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create an account</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Create an account</h1>
             <p className="text-sm leading-6 text-muted-foreground">
               Use your work email to create an account and get your workspace set up.
             </p>
@@ -411,7 +568,7 @@ export default function SignupPage() {
       {step === 'verify' ? (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Check your email</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Check your email</h1>
             <p className="text-sm leading-6 text-muted-foreground">Enter the 6-digit code we sent to {email}.</p>
           </div>
           <form className="space-y-5" onSubmit={handleVerifyOtp}>
@@ -424,12 +581,12 @@ export default function SignupPage() {
                 </InputOTPGroup>
               </InputOTP>
             </FieldBlock>
-            <div className="space-y-3">
-              <Button type="submit" className="w-full" size="lg" disabled={loading || otp.length !== 6}>
-                {loading ? 'Checking…' : 'Verify code'}
-              </Button>
-              <Button type="button" variant="secondary" className="w-full" onClick={() => { setError(''); setStep('account'); }}>
+            <div className="flex justify-between gap-3">
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('account'); }}>
                 Back
+              </Button>
+              <Button type="submit" size="lg" disabled={loading || otp.length !== 6}>
+                {loading ? 'Checking…' : 'Verify code'}
               </Button>
             </div>
           </form>
@@ -439,8 +596,8 @@ export default function SignupPage() {
       {step === 'profile' ? (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">1 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Let&apos;s get to know you</h1>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Step 1 of 5</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Let&apos;s get to know you</h1>
             <p className="text-sm leading-6 text-muted-foreground">
               Add your profile details so your team can recognize you.
             </p>
@@ -492,9 +649,14 @@ export default function SignupPage() {
               </span>
             </label>
 
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? 'Saving…' : 'Continue'}
-            </Button>
+            <div className="flex justify-between gap-3">
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('verify'); }}>
+                Back
+              </Button>
+              <Button type="submit" size="lg" disabled={loading}>
+                {loading ? 'Saving…' : 'Continue'}
+              </Button>
+            </div>
           </form>
         </div>
       ) : null}
@@ -502,28 +664,28 @@ export default function SignupPage() {
       {step === 'workspace' ? (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
           <div className="space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">2 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your workspace</h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Add a few details so your team lands in the right place from day one.
-            </p>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Step 2 of 5</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Create your workspace</h1>
           </div>
           <form className="space-y-5" onSubmit={handleWorkspaceSetup}>
             <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelection(e, setLogoPreview)} />
-            <div className="flex items-start gap-4 rounded-xl border border-border/70 bg-secondary/20 p-4">
-              <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-base font-semibold text-foreground">
+            <div className="flex items-center gap-5">
+              <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-xl font-semibold text-primary/80">
                 {logoPreview ? (
-                  <Image src={logoPreview} alt="Logo" fill unoptimized sizes="72px" className="object-cover" />
+                  <Image src={logoPreview} alt="Logo" fill unoptimized sizes="64px" className="object-cover" />
                 ) : (
                   getInitials(workspaceName || 'T')
                 )}
               </div>
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>Upload image</Button>
-                  {logoPreview && <Button type="button" variant="secondary" size="sm" onClick={() => setLogoPreview(null)}>Remove</Button>}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>
+                    {logoPreview ? 'Replace' : 'Upload image'}
+                  </Button>
+                  {logoPreview && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setLogoPreview(null)}>Remove</Button>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">PNG or JPG up to 10MB.</p>
               </div>
             </div>
 
@@ -533,7 +695,7 @@ export default function SignupPage() {
 
             <FieldBlock label="Workspace handle">
               <div className="flex rounded-md border border-input focus-within:ring-1 focus-within:ring-ring">
-                <span className="flex items-center px-3 text-sm text-muted-foreground bg-muted/40 border-r border-input rounded-l-md font-mono select-none">
+                <span className="flex items-center px-3 text-sm text-muted-foreground bg-muted/40 border-r border-input rounded-l-md select-none">
                   tenurio.com/
                 </span>
                 <Input 
@@ -569,89 +731,107 @@ export default function SignupPage() {
               </FieldBlock>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? 'Saving…' : 'Continue'}
-            </Button>
+            <div className="flex justify-between gap-3">
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('profile'); }}>
+                Back
+              </Button>
+              <Button type="submit" size="lg" disabled={loading}>
+                {loading ? 'Saving…' : 'Continue'}
+              </Button>
+            </div>
           </form>
         </div>
       ) : null}
 
       {step === 'tracking' ? (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-          <div className="space-y-2 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">3 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">How do you currently track contractor access?</h1>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground mb-3">Step 3 of 5</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">How do you currently track contractor access?</h1>
           </div>
-          <div className="space-y-3 mt-8">
+          <RadioGroup value={trackingMethod} onValueChange={setTrackingMethod} className="gap-3">
             {['Spreadsheet (Google Sheets / Excel)', 'HR system', 'Identity provider (Okta, Entra ID, etc)', 'No structured process'].map((opt) => (
-              <RadioOption key={opt} label={opt} selected={trackingMethod === opt} onClick={() => setTrackingMethod(opt)} />
+              <ChoiceCard key={opt} value={opt} label={opt} />
             ))}
+          </RadioGroup>
+          <div className="flex justify-between gap-3">
+            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('workspace'); }}>
+              Back
+            </Button>
+            <Button
+              size="lg" disabled={!trackingMethod || loading}
+              onClick={() => handleSurveyStep('volume', { tracking_method: trackingMethod })}
+            >
+              {loading ? '...' : 'Continue'}
+            </Button>
           </div>
-          <Button 
-            className="w-full mt-8" size="lg" disabled={!trackingMethod || loading} 
-            onClick={() => handleSurveyStep('volume', { tracking_method: trackingMethod })}
-          >
-            {loading ? '...' : 'Continue'}
-          </Button>
         </div>
       ) : null}
 
       {step === 'volume' ? (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-          <div className="space-y-2 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">4 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">How many contractors does your team manage?</h1>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground mb-3">Step 4 of 5</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">How many contractors does your team manage?</h1>
           </div>
-          <div className="space-y-3 mt-8">
+          <RadioGroup value={contractorVolume} onValueChange={setContractorVolume} className="gap-3">
             {['Less than 10', '10 - 50', '50 - 200', '200 - 500', '500+'].map((opt) => (
-              <RadioOption key={opt} label={opt} selected={contractorVolume === opt} onClick={() => setContractorVolume(opt)} />
+              <ChoiceCard key={opt} value={opt} label={opt} />
             ))}
+          </RadioGroup>
+          <div className="flex justify-between gap-3">
+            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('tracking'); }}>
+              Back
+            </Button>
+            <Button
+              size="lg" disabled={!contractorVolume || loading}
+              onClick={() => handleSurveyStep('directory', { contractor_volume: contractorVolume })}
+            >
+              {loading ? '...' : 'Continue'}
+            </Button>
           </div>
-          <Button 
-            className="w-full mt-8" size="lg" disabled={!contractorVolume || loading} 
-            onClick={() => handleSurveyStep('directory', { contractor_volume: contractorVolume })}
-          >
-            {loading ? '...' : 'Continue'}
-          </Button>
         </div>
       ) : null}
 
       {step === 'directory' ? (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-          <div className="space-y-2 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">5 / 5</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Which directory does your company use?</h1>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground mb-3">Step 5 of 5</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Which directory does your company use?</h1>
           </div>
-          <div className="space-y-3 mt-8">
+          <RadioGroup value={directoryProvider} onValueChange={setDirectoryProvider} className="gap-3">
             {['Google Workspace', 'Microsoft Entra (Azure AD)', 'Okta', 'Not sure'].map((opt) => (
-              <RadioOption key={opt} label={opt} selected={directoryProvider === opt} onClick={() => setDirectoryProvider(opt)} />
+              <ChoiceCard key={opt} value={opt} label={opt} />
             ))}
+          </RadioGroup>
+          <div className="flex justify-between gap-3">
+            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('volume'); }}>
+              Back
+            </Button>
+            <Button
+              size="lg" disabled={!directoryProvider || loading}
+              onClick={() => handleSurveyStep('success', { directory_provider: directoryProvider })}
+            >
+              {loading ? '...' : 'Go to dashboard'}
+            </Button>
           </div>
-          <Button 
-            className="w-full mt-8" size="lg" disabled={!directoryProvider || loading} 
-            onClick={() => handleSurveyStep('success', { directory_provider: directoryProvider })}
-          >
-            {loading ? '...' : 'Go to dashboard'}
-          </Button>
         </div>
       ) : null}
 
       {step === 'success' ? (
-        <div className="space-y-8 animate-in zoom-in-95 duration-700 text-center flex flex-col items-center">
-          <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-            <CheckCircle size={40} />
+        <div className="space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-primary/10 text-primary">
+            <CheckCircle size={32} />
           </div>
-          <div className="space-y-3 max-w-sm">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">You&apos;re ready to start securing contractor access</h1>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold tracking-tight text-foreground text-pretty">You&apos;re ready to start securing contractor access</h3>
             <p className="text-sm leading-6 text-muted-foreground">
                Track identities, assign sponsors, prevent orphan accounts, and get clear visibility across your workforce.
             </p>
           </div>
-          <div className="pt-4 w-full">
-            <a href="/dashboard" className="block w-full">
-              <Button className="w-full" size="lg">Go to Dashboard</Button>
-            </a>
-          </div>
+          <Link href="/dashboard" className="block mt-6">
+            <Button className="w-full" size="lg">Go to Dashboard</Button>
+          </Link>
         </div>
       ) : null}
 
@@ -668,9 +848,9 @@ export default function SignupPage() {
             <p className="text-xs font-medium text-muted-foreground">Workspace</p>
             <p className="mt-2 text-base font-semibold text-foreground">{tenantName}</p>
           </div>
-          <a href="/login" className="block mt-6">
+          <Link href="/login" className="block mt-6">
             <Button className="w-full" size="lg">Return to Login</Button>
-          </a>
+          </Link>
         </div>
       ) : null}
     </AuthPageLayout>

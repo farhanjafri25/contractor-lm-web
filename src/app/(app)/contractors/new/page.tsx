@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,11 +60,6 @@ export default function NewContractorPage() {
   const { data: appsData } = useQuery({
     queryKey: ['applications-list'],
     queryFn: async () => (await applicationsApi.list()).data as TenantApplication[],
-  });
-
-  const availableApps = (appsData ?? []).filter((app: TenantApplication) => {
-    const slug = app.application_id?.slug;
-    return slug !== 'google-workspace' && slug !== 'slack';
   });
 
   const { isGoogleConnected, isSlackConnected } = useGettingStarted();
@@ -196,7 +190,7 @@ export default function NewContractorPage() {
               />
               {fieldErrors.name ? <p className="text-xs text-destructive">{fieldErrors.name}</p> : null}
             </FieldBlock>
-            <FieldBlock label="Email">
+            <FieldBlock label="Work email">
               <Input
                 type="email"
                 value={form.email}

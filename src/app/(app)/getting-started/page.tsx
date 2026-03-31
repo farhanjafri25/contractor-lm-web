@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
@@ -56,10 +56,13 @@ function GettingStartedContent() {
     checklistItems,
     completedCount,
     allChecklistDone,
+    showGettingStarted,
     nextItem,
+    markChecklistItemDone,
   } = useGettingStarted();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
@@ -79,6 +82,12 @@ function GettingStartedContent() {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!gettingStartedLoading && !showGettingStarted) {
+      router.replace('/dashboard');
+    }
+  }, [gettingStartedLoading, router, showGettingStarted]);
 
   async function handleConnectGoogle() {
     setConnecting(true);
@@ -116,10 +125,25 @@ function GettingStartedContent() {
     );
   }
 
+  if (!showGettingStarted) {
+    return null;
+  }
+
   const activeItem =
     checklistItems.find((item) => item.label === selectedLabel) ??
     nextItem ??
     checklistItems[0];
+  const activeItemCtaLabel =
+    activeItem?.label === 'Add your first contractor' ? 'Add contractor' : activeItem?.label ?? 'Get started';
+
+  function handleMarkAsDone() {
+    if (!activeItem || activeItem.done) {
+      return;
+    }
+
+    markChecklistItemDone(activeItem.label);
+    toast.success(`Marked "${activeItem.label}" as done.`);
+  }
 
   return (
     <div className="space-y-10">
@@ -127,7 +151,7 @@ function GettingStartedContent() {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome to Tenurio</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Follow these steps to get the most out of Tenurio.
+            Secure contractor access with automated lifecycle management.
           </p>
         </div>
 
@@ -135,9 +159,6 @@ function GettingStartedContent() {
           <Badge variant="neutral">
             {completedCount} of {checklistItems.length} complete
           </Badge>
-          <Button variant="secondary" size="sm" type="button">
-            Read the docs
-          </Button>
         </div>
       </div>
 
@@ -196,31 +217,39 @@ function GettingStartedContent() {
                   : activeItem?.description}
               </p>
             </div>
-            {activeItem?.label === 'Connect Google Workspace' ? (
-              <Button
-                size="sm"
-                onClick={handleConnectGoogle}
-                disabled={connecting}
-              >
-                {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
-              </Button>
-            ) : activeItem?.label === 'Configure Slack notifications' ? (
-              <Button
-                size="sm"
-                onClick={handleConnectSlack}
-                disabled={connecting}
-              >
-                {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                render={<Link href={activeItem?.href ?? '/dashboard'} />}
-                nativeButton={false}
-              >
-                Get Started
-              </Button>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {activeItem?.label === 'Connect Google Workspace' ? (
+                <Button
+                  size="sm"
+                  onClick={handleConnectGoogle}
+                  disabled={connecting}
+                >
+                  {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
+                </Button>
+              ) : activeItem?.label === 'Connect Slack' ? (
+                <Button
+                  size="sm"
+                  onClick={handleConnectSlack}
+                  disabled={connecting}
+                >
+                  {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  render={<Link href={activeItem?.href ?? '/dashboard'} />}
+                  nativeButton={false}
+                >
+                  {activeItemCtaLabel}
+                </Button>
+              )}
+
+              {!allChecklistDone && activeItem && !activeItem.done ? (
+                <Button size="sm" variant="secondary" type="button" onClick={handleMarkAsDone}>
+                  Mark as done
+                </Button>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

@@ -124,6 +124,7 @@ export const accessApi = {
     list: (params?: Record<string, unknown>) => api.get('/access', { params }),
     getByContract: (contractId: string) => api.get(`/access/contract/${contractId}`),
     assign: (contractId: string, appIds: string[]) => api.post(`/access/contract/${contractId}/assign`, { app_ids: appIds }),
+    revoke: (id: string) => api.post(`/access/${id}/revoke`),
     retryRevocation: (id: string) => api.post(`/access/${id}/retry-revocation`),
     markResolved: (id: string) => api.post(`/access/${id}/mark-resolved`),
 };
@@ -157,4 +158,9 @@ export interface AiChatMessage {
 
 export const aiApi = {
     chat: (messages: AiChatMessage[]) => api.post('/ai/chat', { messages }),
+};
+
+export const feedbackApi = {
+    submit: (data: { category: string; message: string; rating?: number; metadata?: Record<string, unknown> }) =>
+        api.post('/feedback', data),
 };

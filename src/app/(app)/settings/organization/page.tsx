@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { CirclePlus, Pencil, RefreshCw } from '@/components/icons';
 import { SettingsPageSkeleton } from '@/components/page-skeletons';
 import { useAuth } from '@/context/auth-context';
-import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
+import { PageHeader, SettingsRow } from '@/components/app-ui';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { prepareImageForUpload } from '@/lib/image-upload';
@@ -254,135 +254,135 @@ export default function OrganizationSettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 pt-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6 pt-6">
       <PageHeader
         title="Organization"
         description="Manager your organization details and other information. Changes save automatically."
       />
 
-      <div className="space-y-12">
-      <input
-        ref={logoInputRef}
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={handleLogoUpload}
-      />
+      <div className="space-y-20">
+        <input
+          ref={logoInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={handleLogoUpload}
+        />
 
-      <SettingsCard>
-        <SettingsRow
-          label="Organization logo"
-          align="center"
-        >
-          <div className="flex justify-start md:justify-end">
-            <AvatarUploadButton
-              image={resolvedLogo || null}
-              alt="Organization picture"
-              loading={logoUploading}
-              onClick={() => logoInputRef.current?.click()}
-            />
-          </div>
-        </SettingsRow>
-
-        <SettingsRow
-          label="Organization name"
-          align="center"
-        >
-          <div className="w-full md:ml-auto md:max-w-sm">
-            <Input
-              value={resolvedName}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Acme Corp"
-            />
-          </div>
-        </SettingsRow>
-
-        <SettingsRow
-          label="Workspace slug"
-          noBorder
-          align="center"
-        >
-          <div className="w-full md:ml-auto md:max-w-sm">
-            <Input
-              value={resolvedSlug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="acme-corp"
-            />
-          </div>
-        </SettingsRow>
-      </SettingsCard>
-
-      <div className="space-y-5">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">Configure</h2>
-        <SettingsCard>
+        <div>
           <SettingsRow
-            label="Company size"
+            label="Organization logo"
             align="center"
           >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Select value={resolvedCompanySize} onValueChange={(val: string | null) => setCompanySize(val || undefined)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select size" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMPANY_SIZES.map((s) => <SelectItem key={s} value={s}>{s} employees</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="flex justify-start md:justify-end">
+              <AvatarUploadButton
+                image={resolvedLogo || null}
+                alt="Organization picture"
+                loading={logoUploading}
+                onClick={() => logoInputRef.current?.click()}
+              />
             </div>
           </SettingsRow>
 
           <SettingsRow
-            label="Contractor volume"
+            label="Organization name"
             align="center"
           >
             <div className="w-full md:ml-auto md:max-w-sm">
-              <Select value={resolvedContractorVolume} onValueChange={(val: string | null) => setContractorVolume(val || undefined)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select volume" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTRACTOR_VOLUMES.map((s) => <SelectItem key={s} value={s}>{s} active</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Input
+                value={resolvedName}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Acme Corp"
+              />
             </div>
           </SettingsRow>
 
           <SettingsRow
-            label="Tracking method"
-            description="How your team currently manages contractor records today."
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Select value={resolvedTrackingMethod} onValueChange={(val: string | null) => setTrackingMethod(val || undefined)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRACKING_METHODS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Central directory"
-            description="The identity provider your company uses for workforce access."
+            label="Workspace slug"
             noBorder
             align="center"
           >
             <div className="w-full md:ml-auto md:max-w-sm">
-              <Select value={resolvedDirectoryProvider} onValueChange={(val: string | null) => setDirectoryProvider(val || undefined)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIRECTORY_PROVIDERS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Input
+                value={resolvedSlug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="acme-corp"
+              />
             </div>
           </SettingsRow>
-        </SettingsCard>
-      </div>
+        </div>
+
+        <div className="space-y-5">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Configure</h2>
+          <div>
+            <SettingsRow
+              label="Company size"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Select value={resolvedCompanySize} onValueChange={(val: string | null) => setCompanySize(val || undefined)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPANY_SIZES.map((s) => <SelectItem key={s} value={s}>{s} employees</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Contractor volume"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Select value={resolvedContractorVolume} onValueChange={(val: string | null) => setContractorVolume(val || undefined)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select volume" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTRACTOR_VOLUMES.map((s) => <SelectItem key={s} value={s}>{s} active</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Tracking method"
+              description="How your team currently manages contractor records today."
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Select value={resolvedTrackingMethod} onValueChange={(val: string | null) => setTrackingMethod(val || undefined)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TRACKING_METHODS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Central directory"
+              description="The identity provider your company uses for workforce access."
+              noBorder
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Select value={resolvedDirectoryProvider} onValueChange={(val: string | null) => setDirectoryProvider(val || undefined)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIRECTORY_PROVIDERS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SettingsRow>
+          </div>
+        </div>
       </div>
     </div>
   );

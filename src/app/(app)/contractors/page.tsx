@@ -6,11 +6,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contractorsApi } from '@/lib/api';
-import { ChevronRight } from '@/components/icons';
+import { ChevronRight, IconDotGrid1x3VerticalTight } from '@/components/icons';
+import { useAuth } from '@/context/auth-context';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
-import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
-import { buttonVariants } from '@/components/ui/button';
+import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { CsvImporter } from '@/components/csv-importer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
 const statusOptions = [
@@ -68,15 +70,16 @@ export default function ContractorsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const status = searchParams.get('status') ?? '';
-  const department = searchParams.get('department') ?? '';
-  const timing = searchParams.get('timing') ?? '';
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
+  const departmentFilters = searchParams.getAll('department').filter(Boolean);
+  const timingFilters = searchParams.getAll('timing').filter(Boolean);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['contractors', search, status],
+    queryKey: ['contractors', search],
     queryFn: async () =>
-      (await contractorsApi.list({ search: search || undefined, status: status || undefined })).data,
+      (await contractorsApi.list({ search: search || undefined })).data,
   });
 
   const contractors = Array.isArray(data?.data) ? data.data : [];
@@ -93,23 +96,26 @@ export default function ContractorsPage() {
       .map((value) => ({ label: value, value })),
   ];
   const filteredContractors = contractors.filter((contractor: Record<string, unknown>) => {
-    const departmentMatches = !department || String(contractor.department ?? '') === department;
     const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
-    const timingMatches = getContractTimingMatch(activeContract?.end_date, timing);
-    return departmentMatches && timingMatches;
+    const contractStatus = String(activeContract?.status ?? '');
+    const departmentMatches = departmentFilters.length === 0 || departmentFilters.includes(String(contractor.department ?? ''));
+    const statusMatches = statusFilters.length === 0 || statusFilters.includes(contractStatus);
+    const timingMatches =
+      timingFilters.length === 0 ||
+      timingFilters.some((timing) => getContractTimingMatch(activeContract?.end_date, timing));
+    return departmentMatches && statusMatches && timingMatches;
   });
-  const activeFilterCount = [status, department, timing].filter(Boolean).length;
-  const hasSearchOrFilters = Boolean(search || status || department || timing);
+  const activeFilterCount = statusFilters.length + departmentFilters.length + timingFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const query = params.toString();
@@ -142,40 +148,69 @@ export default function ContractorsPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="md:w-80" />
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: '', department: '', timing: '' })}
+            onClear={() => updateFilterParams({ status: [], department: [], timing: [] })}
           >
             <FieldBlock label="Status">
-              <FilterSelect
-                value={status}
-                onValueChange={(value) => updateFilterParams({ status: value })}
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
                 options={statusOptions}
-                placeholder="All statuses"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Department">
-              <FilterSelect
-                value={department}
-                onValueChange={(value) => updateFilterParams({ department: value })}
+              <MultiFilterChecklist
+                values={departmentFilters}
+                onValuesChange={(values) => updateFilterParams({ department: values })}
                 options={departmentOptions}
-                placeholder="All departments"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Contract timing">
-              <FilterSelect
-                value={timing}
-                onValueChange={(value) => updateFilterParams({ timing: value })}
+              <MultiFilterChecklist
+                values={timingFilters}
+                onValuesChange={(values) => updateFilterParams({ timing: values })}
                 options={timingOptions}
-                placeholder="Any contract date"
-                className="w-full"
               />
             </FieldBlock>
           </FiltersPopover>
+        </div>
+
+        <div className="hidden md:flex md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Status"
+              values={statusFilters}
+              onValuesChange={(values) => updateFilterParams({ status: values })}
+              options={statusOptions}
+              placeholder="All statuses"
+              className="min-w-40"
+            />
+            <MultiFilterDropdown
+              title="Department"
+              values={departmentFilters}
+              onValuesChange={(values) => updateFilterParams({ department: values })}
+              options={departmentOptions}
+              placeholder="All departments"
+              className="min-w-44"
+            />
+            <MultiFilterDropdown
+              title="Contract timing"
+              values={timingFilters}
+              onValuesChange={(values) => updateFilterParams({ timing: values })}
+              options={timingOptions}
+              placeholder="Any contract date"
+              className="min-w-48"
+            />
+          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name or email"
+            className="ml-auto w-80"
+          />
         </div>
 
         <DataTableShell>
@@ -198,12 +233,22 @@ export default function ContractorsPage() {
                       const contractorId = String(contractor._id);
                       const contractorHref = `/contractors/${contractorId}`;
                       const activeContract = (contractor.contracts as Record<string, unknown>[] | undefined)?.[0];
+                      const contractStatus = String(activeContract?.status ?? '');
                       const sponsor = contractor.sponsor_id as Record<string, unknown> | undefined;
                       const sponsorName = sponsor ? String(sponsor.name ?? sponsor.full_name ?? sponsor.display_name ?? '') : '';
                       const sponsorEmail = sponsor ? String(sponsor.email ?? '') : '';
                       const contractorName = String(contractor.name ?? '');
                       const contractorEmail = String(contractor.email ?? '');
                       const contractorSeed = getAvatarSeed(contractor._id, contractorEmail, contractorName);
+                      const isAdmin = user?.role === 'admin';
+                      const actions = [
+                        ...(isAdmin && contractStatus === 'active'
+                          ? [{ key: 'suspend', label: 'Suspend' as const }]
+                          : []),
+                        ...(contractStatus === 'active'
+                          ? [{ key: 'extend', label: isAdmin ? 'Extend' : 'Request extension' }]
+                          : []),
+                      ];
 
                       return (
                         <TableRow
@@ -242,15 +287,44 @@ export default function ContractorsPage() {
                             <StatusBadge status={String(activeContract?.status ?? 'no contract')} />
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link
-                              href={contractorHref}
-                              className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-                              aria-label="Open contractor"
-                              title="Open contractor"
-                            >
-                              <ChevronRight size={14} />
-                              <span className="sr-only">Open contractor</span>
-                            </Link>
+                            <div className="flex items-center justify-end gap-1">
+                              {actions.length ? (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={`Open actions for ${contractorName || contractorEmail}`}
+                                        title="Contract actions"
+                                      />
+                                    }
+                                  >
+                                    <IconDotGrid1x3VerticalTight size={14} />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="min-w-36">
+                                    {actions.map((action) => (
+                                      <DropdownMenuItem
+                                        key={action.key}
+                                        onClick={() => router.push(`${contractorHref}?action=${action.key}`)}
+                                      >
+                                        {action.label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              ) : null}
+                              <Link
+                                href={contractorHref}
+                                className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                                aria-label="Open contractor"
+                                title="Open contractor"
+                              >
+                                <ChevronRight size={14} />
+                                <span className="sr-only">Open contractor</span>
+                              </Link>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

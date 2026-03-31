@@ -1,19 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
-import { CheckCircle, Clock, Eye, XCircle } from '@/components/icons';
+import { CheckCircle, Clock, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const requestStatusOptions = [
   { label: 'All statuses', value: '' },
@@ -35,6 +36,8 @@ const actionTypeLabels: Record<string, string> = {
   access_change: 'Access change',
   deactivate: 'Deactivation',
 };
+
+type SponsorRequest = Record<string, unknown>;
 
 function getActionTypeLabel(value: string) {
   return actionTypeLabels[value] ?? value
@@ -72,19 +75,59 @@ function getRecencyMatch(dateValue: unknown, range: string) {
   return true;
 }
 
-function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; onOpenChange: (open: boolean) => void }) {
+function ReviewDialog({
+  request,
+  open,
+  onOpenChange,
+}: {
+  request: SponsorRequest;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const id = String(request._id ?? '');
   const [decision, setDecision] = useState<'approved' | 'rejected'>('approved');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
+  const contract = request.contract_id as Record<string, unknown> | undefined;
+  const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
+  const submitter = request.sponsor_id as Record<string, unknown> | undefined;
+  const requestType = getActionTypeLabel(String(request.action_type ?? ''));
+  const requestDate = request.createdAt || request.created_at;
+  const contractorName = contractor ? String(contractor.name ?? '') : '';
+  const contractorEmail = contractor ? String(contractor.email ?? '') : '';
+  const contractorDepartment = contractor ? String(contractor.department ?? '') : '';
+  const submitterName = submitter ? String(submitter.name ?? submitter.full_name ?? submitter.display_name ?? '') : '';
+  const submitterEmail = submitter ? String(submitter.email ?? '') : '';
+  const contractorSeed = getAvatarSeed(contractor?._id, contractorEmail, contractorName);
+  const isRejecting = decision === 'rejected';
+  const trimmedNote = note.trim();
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setDecision('approved');
+    setNote('');
+    setError('');
+  }, [id, open]);
 
   const submit = async () => {
+    if (isRejecting && !trimmedNote) {
+      setError('Add a short reason before rejecting this request.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      await sponsorApi.review(id, decision, note || undefined);
-      queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] });
+      await sponsorApi.review(id, decision, trimmedNote || undefined);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-pending-requests'] }),
+      ]);
       toast.success(decision === 'approved' ? 'Request approved.' : 'Request rejected.');
       onOpenChange(false);
     } catch (err: unknown) {
@@ -98,42 +141,101 @@ function ReviewDialog({ id, open, onOpenChange }: { id: string; open: boolean; o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="flex flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader>
-          <div>
-            <DialogTitle>Review request</DialogTitle>
-            <DialogDescription>Approve it or reject it with a note.</DialogDescription>
+          <div className="pr-10">
+            <DialogTitle>Review {requestType.toLowerCase()} request</DialogTitle>
           </div>
         </DialogHeader>
-        <div className="mt-6 space-y-5">
+        <div className="-mx-1 min-h-0 flex-1 space-y-5 overflow-y-auto px-1 pb-1">
           {error ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-lg border border-destructive/15 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(['approved', 'rejected'] as const).map((value) => (
-              <Button
-                key={value}
-                type="button"
-                variant={decision === value ? value === 'approved' ? 'default' : 'destructive' : 'secondary'}
-                onClick={() => setDecision(value)}
-                className="w-full"
-              >
-                {value === 'approved' ? 'Approve' : 'Reject'}
-              </Button>
-            ))}
+
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-center gap-3">
+                <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail || 'Contractor'} />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">{contractorName || 'Unknown contractor'}</p>
+                  <p className="text-sm text-muted-foreground">{contractorDepartment || contractorEmail || 'No contractor details available'}</p>
+                </div>
+              </div>
+              <StatusBadge status={String(request.status ?? 'pending')} icon={<Clock size={12} />} className="w-fit shrink-0" />
+            </div>
+
+            <div className="mt-4 grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Submitted by</p>
+                <p className="text-sm font-medium text-foreground">{submitterName || submitterEmail || 'Unknown'}</p>
+                {submitterName && submitterEmail ? <p className="text-xs text-muted-foreground">{submitterEmail}</p> : null}
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Submitted</p>
+                <p className="text-sm font-medium text-foreground">
+                  {requestDate ? new Date(String(requestDate)).toLocaleString() : 'Unknown'}
+                </p>
+              </div>
+            </div>
           </div>
-          <FieldBlock label="Note">
-            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explain your decision" />
+
+          <FieldBlock label="Decision">
+            <ToggleGroup
+              aria-label="Review decision"
+              className="w-full"
+              spacing={2}
+              value={[decision]}
+              onValueChange={(values) => {
+                const next = values[0];
+
+                if (next === 'approved' || next === 'rejected') {
+                  setDecision(next);
+                }
+              }}
+              variant="outline"
+            >
+              <ToggleGroupItem value="approved" className="flex-1 px-4">
+                Approve
+              </ToggleGroupItem>
+              <ToggleGroupItem value="rejected" className="flex-1 px-4">
+                Reject
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </FieldBlock>
+
+          <FieldBlock
+            label={isRejecting ? <span>Reason for rejection <span className="text-destructive">*</span></span> : 'Review note'}
+            description={
+              isRejecting
+                ? 'Required. Give the sponsor enough detail to understand what needs to change.'
+                : 'Optional. Add context that will help your team understand why this was approved.'
+            }
+          >
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={
+                isRejecting
+                  ? 'Explain why this request is being rejected and what needs to change.'
+                  : 'Add approval context, next steps, or anything useful for the audit trail.'
+              }
+              className="min-h-24"
+            />
           </FieldBlock>
         </div>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
-          <Button type="button" variant={decision === 'approved' ? 'default' : 'destructive'} onClick={submit} disabled={loading}>
-            {loading ? 'Saving…' : decision === 'approved' ? 'Approve' : 'Reject'}
+          <Button
+            type="button"
+            variant={decision === 'approved' ? 'default' : 'destructive'}
+            onClick={submit}
+            disabled={loading || (isRejecting && !trimmedNote)}
+          >
+            {loading ? 'Saving…' : decision === 'approved' ? 'Approve request' : 'Reject request'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -147,15 +249,15 @@ export default function SponsorPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reviewingRequest, setReviewingRequest] = useState<SponsorRequest | null>(null);
   const [search, setSearch] = useState('');
-  const statusFilter = searchParams.get('status') ?? '';
-  const typeFilter = searchParams.get('type') ?? '';
-  const rangeFilter = searchParams.get('range') ?? '';
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
+  const typeFilters = searchParams.getAll('type').filter(Boolean);
+  const rangeFilters = searchParams.getAll('range').filter(Boolean);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sponsor-actions', statusFilter],
-    queryFn: async () => (await sponsorApi.list({ status: statusFilter || undefined })).data,
+    queryKey: ['sponsor-actions'],
+    queryFn: async () => (await sponsorApi.list()).data,
   });
 
   const requests = Array.isArray(data?.data) ? data.data : [];
@@ -175,10 +277,12 @@ export default function SponsorPage() {
   const filteredRequests = requests.filter((request: Record<string, unknown>) => {
       const requestType = String(request.action_type ?? '');
       const requestDate = request.createdAt || request.created_at;
-      const typeMatches = !typeFilter || requestType === typeFilter;
-      const rangeMatches = getRecencyMatch(requestDate, rangeFilter);
+      const status = String(request.status ?? '');
+      const typeMatches = typeFilters.length === 0 || typeFilters.includes(requestType);
+      const statusMatches = statusFilters.length === 0 || statusFilters.includes(status);
+      const rangeMatches = rangeFilters.length === 0 || rangeFilters.some((range) => getRecencyMatch(requestDate, range));
 
-      if (!typeMatches || !rangeMatches) {
+      if (!statusMatches || !typeMatches || !rangeMatches) {
         return false;
       }
 
@@ -194,23 +298,22 @@ export default function SponsorPage() {
           contractor ? String(contractor.department ?? '') : '',
           submitter ? String(submitter.email ?? '') : '',
           getActionTypeLabel(requestType),
-          String(request.status ?? ''),
+          status,
         ];
 
         return values.some((value) => value.toLowerCase().includes(query));
       });
-  const activeFilterCount = [statusFilter, typeFilter, rangeFilter].filter(Boolean).length;
-  const hasSearchOrFilters = Boolean(search || statusFilter || typeFilter || rangeFilter);
+  const activeFilterCount = statusFilters.length + typeFilters.length + rangeFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const queryString = params.toString();
@@ -231,40 +334,69 @@ export default function SponsorPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="md:w-80" />
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: '', type: '', range: '' })}
+            onClear={() => updateFilterParams({ status: [], type: [], range: [] })}
           >
             <FieldBlock label="Status">
-              <FilterSelect
-                value={statusFilter}
-                onValueChange={(value) => updateFilterParams({ status: value })}
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
                 options={requestStatusOptions}
-                placeholder="All statuses"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Request type">
-              <FilterSelect
-                value={typeFilter}
-                onValueChange={(value) => updateFilterParams({ type: value })}
+              <MultiFilterChecklist
+                values={typeFilters}
+                onValuesChange={(values) => updateFilterParams({ type: values })}
                 options={requestTypeOptions}
-                placeholder="All request types"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Recency">
-              <FilterSelect
-                value={rangeFilter}
-                onValueChange={(value) => updateFilterParams({ range: value })}
+              <MultiFilterChecklist
+                values={rangeFilters}
+                onValuesChange={(values) => updateFilterParams({ range: values })}
                 options={recencyOptions}
-                placeholder="Any time"
-                className="w-full"
               />
             </FieldBlock>
           </FiltersPopover>
+        </div>
+
+        <div className="hidden md:flex md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Status"
+              values={statusFilters}
+              onValuesChange={(values) => updateFilterParams({ status: values })}
+              options={requestStatusOptions}
+              placeholder="All statuses"
+              className="min-w-40"
+            />
+            <MultiFilterDropdown
+              title="Request type"
+              values={typeFilters}
+              onValuesChange={(values) => updateFilterParams({ type: values })}
+              options={requestTypeOptions}
+              placeholder="All request types"
+              className="min-w-48"
+            />
+            <MultiFilterDropdown
+              title="Recency"
+              values={rangeFilters}
+              onValuesChange={(values) => updateFilterParams({ range: values })}
+              options={recencyOptions}
+              placeholder="Any time"
+              className="min-w-36"
+            />
+          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search requests"
+            className="ml-auto w-80"
+          />
         </div>
 
         <DataTableShell>
@@ -282,7 +414,7 @@ export default function SponsorPage() {
             <TableBody>
               {isLoading
                 ? <TableLoadingRows rows={4} columns={isAdmin ? 6 : 5} actionColumn={isAdmin} />
-                : filteredRequests.map((request: Record<string, unknown>) => {
+                : filteredRequests.map((request: SponsorRequest) => {
                     const contract = request.contract_id as Record<string, unknown> | undefined;
                     const contractor = contract?.contractor_id as Record<string, unknown> | undefined;
                     const submitter = request.sponsor_id as Record<string, unknown> | undefined;
@@ -325,14 +457,11 @@ export default function SponsorPage() {
                           <TableCell className="text-right">
                             {status === 'pending' ? (
                               <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => setReviewingId(String(request._id))}
-                                aria-label="Review request"
-                                title="Review request"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setReviewingRequest(request)}
                               >
-                                <Eye size={14} />
-                                <span className="sr-only">Review request</span>
+                                Review
                               </Button>
                             ) : null}
                           </TableCell>
@@ -351,9 +480,12 @@ export default function SponsorPage() {
           </Table>
         </DataTableShell>
       </div>
-
-      {reviewingId ? (
-        <ReviewDialog id={reviewingId} open={Boolean(reviewingId)} onOpenChange={(open) => !open && setReviewingId(null)} />
+      {reviewingRequest ? (
+        <ReviewDialog
+          request={reviewingRequest}
+          open={Boolean(reviewingRequest)}
+          onOpenChange={(open) => !open && setReviewingRequest(null)}
+        />
       ) : null}
     </div>
   );

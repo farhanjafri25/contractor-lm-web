@@ -16,7 +16,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     role: 'assistant',
     content:
-      'Hi! I am Tenu-bot. I can tell you about your active, suspended, and expiring contractors. How can I help?',
+      'Hi, I’m Tenurio AI. Ask me about expiring contractors, access status, or risks. How can i help?',
   },
 ];
 
@@ -279,7 +279,7 @@ export function TenuBotWidget() {
                   </div>
                   {!hasStartedConversation ? (
                     <p className="relative z-10 mt-0.5 max-w-[24rem] text-xs leading-5 text-foreground/68">
-                      Ask about active, suspended, and expiring contractors without leaving the page.
+                      Quick insights on contractor access and lifecycle.
                     </p>
                   ) : null}
                 </motion.div>

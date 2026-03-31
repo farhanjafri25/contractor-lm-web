@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, FilterSelect, PageHeader, SummaryPill } from '@/components/app-ui';
+import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
 import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
 const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
@@ -20,21 +20,21 @@ export default function AuditLogPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const eventType = searchParams.get('event_type') ?? '';
-  const category = searchParams.get('category') ?? '';
+  const eventTypes = searchParams.getAll('event_type').filter(Boolean);
+  const categoriesSelected = searchParams.getAll('category').filter(Boolean);
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const updateFilterParams = (updates: Record<string, string>) => {
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
     });
 
     const query = params.toString();
@@ -42,14 +42,13 @@ export default function AuditLogPage() {
     setPage(1);
   };
 
-  const params: Record<string, unknown> = { page, limit: pageSize };
-  if (eventType) params.event_type = eventType;
-  if (category) params.category = category;
+  const params: Record<string, unknown> = { page: 1, limit: 500 };
+  if (search) params.search = search;
   if (from) params.from = from;
   if (to) params.to = to;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['events', params],
+    queryKey: ['events', search, params],
     queryFn: async () => (await eventsApi.list(params)).data,
     placeholderData: (previous) => previous,
   });
@@ -60,11 +59,21 @@ export default function AuditLogPage() {
     staleTime: 60_000,
   });
 
-  const events: Record<string, unknown>[] = data?.data ?? [];
-  const total = data?.total ?? 0;
+  const allEvents: Record<string, unknown>[] = data?.data ?? [];
+  const filteredEvents = allEvents.filter((event) => {
+    const type = String(event.event_type ?? '');
+    const category = String(event.category ?? '');
+    const eventTypeMatches = eventTypes.length === 0 || eventTypes.includes(type);
+    const categoryMatches = categoriesSelected.length === 0 || categoriesSelected.includes(category);
+    return eventTypeMatches && categoryMatches;
+  });
+  const total = filteredEvents.length;
   const totalPages = Math.ceil(total / pageSize);
-  const hasFilters = Boolean(eventType || category || from || to);
-  const activeFilterCount = [eventType, category, from, to].filter(Boolean).length;
+  const safePage = totalPages > 0 ? Math.min(page, totalPages) : 1;
+  const pageStart = (safePage - 1) * pageSize;
+  const events = filteredEvents.slice(pageStart, pageStart + pageSize);
+  const hasFilters = Boolean(eventTypes.length || categoriesSelected.length || from || to);
+  const activeFilterCount = eventTypes.length + categoriesSelected.length + (from ? 1 : 0) + (to ? 1 : 0);
   const fromDate = from ? parseISO(from) : undefined;
   const toDate = to ? parseISO(to) : undefined;
 
@@ -85,9 +94,13 @@ export default function AuditLogPage() {
                 key={type}
                 label={getEventLabel(type)}
                 count={count}
-                active={eventType === type}
+                active={eventTypes.includes(type)}
                 onClick={() => {
-                  updateFilterParams({ event_type: eventType === type ? '' : type });
+                  updateFilterParams({
+                    event_type: eventTypes.includes(type)
+                      ? eventTypes.filter((value) => value !== type)
+                      : [...eventTypes, type],
+                  });
                 }}
               />
             ))}
@@ -95,30 +108,27 @@ export default function AuditLogPage() {
       ) : null}
 
       <div className="space-y-4">
-        <div className="flex justify-end">
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search activity" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ event_type: '', category: '', from: '', to: '' })}
+            onClear={() => updateFilterParams({ event_type: [], category: [], from: '', to: '' })}
           >
             <FieldBlock label="Category">
-              <FilterSelect
-                value={category}
-                onValueChange={(value) => updateFilterParams({ category: value })}
+              <MultiFilterChecklist
+                values={categoriesSelected}
+                onValuesChange={(values) => updateFilterParams({ category: values })}
                 options={categories.map((value) => ({
                   label: value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : 'All categories',
                   value,
                 }))}
-                placeholder="All categories"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Event type">
-              <FilterSelect
-                value={eventType}
-                onValueChange={(value) => updateFilterParams({ event_type: value })}
+              <MultiFilterChecklist
+                values={eventTypes}
+                onValuesChange={(values) => updateFilterParams({ event_type: values })}
                 options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
-                placeholder="All event types"
-                className="w-full"
               />
             </FieldBlock>
             <FieldBlock label="Start date">
@@ -128,7 +138,7 @@ export default function AuditLogPage() {
                     <Button
                       variant="outline"
                       data-empty={!fromDate}
-                      className="w-full justify-between border-transparent bg-card text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-card hover:text-foreground focus-visible:border-foreground/35 data-[empty=true]:text-muted-foreground/75"
+                      className="w-full justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
                     >
                       {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
@@ -154,7 +164,7 @@ export default function AuditLogPage() {
                     <Button
                       variant="outline"
                       data-empty={!toDate}
-                      className="w-full justify-between border-transparent bg-card text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-card hover:text-foreground focus-visible:border-foreground/35 data-[empty=true]:text-muted-foreground/75"
+                      className="w-full justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
                     >
                       {toDate ? format(toDate, 'PPP') : <span>End date</span>}
                       <ChevronBottom data-icon="inline-end" size={16} />
@@ -176,18 +186,96 @@ export default function AuditLogPage() {
           </FiltersPopover>
         </div>
 
+        <div className="hidden md:flex md:items-center md:gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MultiFilterDropdown
+              title="Category"
+              values={categoriesSelected}
+              onValuesChange={(values) => updateFilterParams({ category: values })}
+              options={categories.map((value) => ({
+                label: value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : 'All categories',
+                value,
+              }))}
+              placeholder="All categories"
+              className="min-w-44"
+            />
+            <MultiFilterDropdown
+              title="Event type"
+              values={eventTypes}
+              onValuesChange={(values) => updateFilterParams({ event_type: values })}
+              options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
+              placeholder="All event types"
+              className="min-w-48"
+            />
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    data-empty={!fromDate}
+                    className="min-w-44 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
+                  >
+                    {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
+                    <ChevronBottom data-icon="inline-end" size={16} />
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={fromDate}
+                  onSelect={(nextDate: Date | undefined) => {
+                    updateFilterParams({ from: nextDate ? format(nextDate, 'yyyy-MM-dd') : '' });
+                  }}
+                  defaultMonth={fromDate}
+                />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    data-empty={!toDate}
+                    className="min-w-44 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
+                  >
+                    {toDate ? format(toDate, 'PPP') : <span>End date</span>}
+                    <ChevronBottom data-icon="inline-end" size={16} />
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={toDate}
+                  onSelect={(nextDate: Date | undefined) => {
+                    updateFilterParams({ to: nextDate ? format(nextDate, 'yyyy-MM-dd') : '' });
+                  }}
+                  defaultMonth={toDate}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <SearchField
+            value={search}
+            onChange={(value) => { setSearch(value); setPage(1); }}
+            placeholder="Search activity"
+            className="ml-auto w-80"
+          />
+        </div>
+
         <DataTableShell
         footer={
           totalPages > 1 ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages} · {total.toLocaleString()} events
+                Page {safePage} of {totalPages} · {total.toLocaleString()} events
               </p>
               <div className="flex gap-2">
-                <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
+                <Button variant="secondary" size="sm" disabled={safePage === 1} onClick={() => setPage((current) => current - 1)}>
                   Previous
                 </Button>
-                <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)}>
+                <Button variant="secondary" size="sm" disabled={safePage === totalPages} onClick={() => setPage((current) => current + 1)}>
                   Next
                 </Button>
               </div>

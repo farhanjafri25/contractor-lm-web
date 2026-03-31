@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi, tenantApi } from '@/lib/api';
 
@@ -25,7 +26,34 @@ interface QuickAction {
   href: string;
 }
 
+type ManualChecklistState = Record<string, boolean>;
+
+function getManualChecklistStorageKey() {
+  if (typeof window === 'undefined') {
+    return 'getting-started:manual-done';
+  }
+
+  const tenantId = window.localStorage.getItem('tenant_id');
+  return tenantId ? `getting-started:manual-done:${tenantId}` : 'getting-started:manual-done';
+}
+
+function readManualChecklistState(storageKey: string): ManualChecklistState {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    return stored ? (JSON.parse(stored) as ManualChecklistState) : {};
+  } catch {
+    return {};
+  }
+}
+
 export function useGettingStarted() {
+  const storageKey = getManualChecklistStorageKey();
+  const [manualDoneItems, setManualDoneItems] = useState<ManualChecklistState>(() => readManualChecklistState(storageKey));
+
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async () => (await dashboardApi.getSummary()).data as DashboardSummary,
@@ -64,35 +92,48 @@ export function useGettingStarted() {
   const checklistItems: SetupChecklistItem[] = [
     {
       label: 'Add your first contractor',
-      description: 'Import or add contractors to start managing their access and documents.',
+      description: 'Import from CSV or add contractor manually—start controlling access quickly.',
       href: '/contractors/new',
-      done: hasAnyContractor,
+      done: hasAnyContractor || Boolean(manualDoneItems['Add your first contractor']),
     },
     {
       label: 'Connect Google Workspace',
-      description: 'Sync your directory to automatically discover and manage contractors.',
+      description: 'Bring your users into Tenurio and manage contractor access with real-time sync.',
       href: '/settings/directory',
-      done: isGoogleConnected,
+      done: isGoogleConnected || Boolean(manualDoneItems['Connect Google Workspace']),
     },
     {
-      label: 'Invite a sponsor',
-      description: 'Sponsors approve contractor requests and are notified about expiring agreements.',
+      label: 'Invite sponsor',
+      description: 'Assign ownership by inviting team members to manage contractor access and lifecycle.',
       href: '/settings/team?invite=sponsor',
-      done: sponsorCount > 0,
+      done: sponsorCount > 0 || Boolean(manualDoneItems['Invite sponsor']),
     },
     {
-      label: 'Configure Slack notifications',
-      description: 'Get notified in Slack when contracts are expiring or need attention.',
+      label: 'Connect Slack',
+      description: 'Get expiry reminders and approve contractor actions directly from Slack.',
       href: '/settings/slack',
-      done: isSlackConnected,
+      done: isSlackConnected || Boolean(manualDoneItems['Connect Slack']),
     },
   ];
+
+  function markChecklistItemDone(label: string) {
+    setManualDoneItems((current) => {
+      const next = { ...current, [label]: true };
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(storageKey, JSON.stringify(next));
+      }
+
+      return next;
+    });
+  }
 
   const completedCount = checklistItems.filter((item) => item.done).length;
   const allChecklistDone = completedCount === checklistItems.length;
   const nextItem = checklistItems.find((item) => !item.done) ?? checklistItems[checklistItems.length - 1];
   const progressValue = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
   const gettingStartedLoading = summaryLoading || teamLoading || profileLoading;
+  const showGettingStarted = !gettingStartedLoading && !allChecklistDone;
 
   const quickActions: QuickAction[] = [
     !hasAnyContractor ? { label: 'Import CSV', href: '/contractors/import' } : null,
@@ -107,6 +148,7 @@ export function useGettingStarted() {
     checklistItems,
     completedCount,
     allChecklistDone,
+    showGettingStarted,
     nextItem,
     progressValue,
     hasAnyContractor,
@@ -114,6 +156,7 @@ export function useGettingStarted() {
     googleSyncFailed,
     isSlackConnected,
     sponsorCount,
+    markChecklistItemDone,
     quickActions,
     showQuickActions: !gettingStartedLoading && quickActions.length > 0,
   };

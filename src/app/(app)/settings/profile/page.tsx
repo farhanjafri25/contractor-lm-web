@@ -8,7 +8,7 @@ import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { CirclePlus, IconTrashCanSimple, Pencil, RefreshCw } from '@/components/icons';
 import { SettingsPageSkeleton } from '@/components/page-skeletons';
-import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
+import { PageHeader, SettingsRow } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
@@ -283,144 +283,144 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 pt-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6 pt-6">
       <PageHeader
         title="Profile"
         description="Manage your personal account settings. Changes save automatically."
       />
 
-      <div className="space-y-12">
-      <div>
-        <input
-          ref={avatarInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileSelection}
-        />
+      <div className="space-y-20">
+        <div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelection}
+          />
 
-        <SettingsCard>
-          <SettingsRow
-            label="Profile picture"
-            align="center"
-          >
-            <div className="flex items-center justify-start gap-3 md:justify-end">
-              {resolvedAvatarPreview ? (
+          <div>
+            <SettingsRow
+              label="Profile picture"
+              align="center"
+            >
+              <div className="flex items-center justify-start gap-3 md:justify-end">
+                {resolvedAvatarPreview ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={avatarUploading || isPending}
+                    onClick={handleRemoveAvatar}
+                    aria-label="Remove profile picture"
+                    title="Remove profile picture"
+                  >
+                    <IconTrashCanSimple />
+                  </Button>
+                ) : null}
+                <AvatarUploadButton
+                  image={resolvedAvatarPreview}
+                  alt="Profile picture"
+                  loading={avatarUploading}
+                  onClick={() => avatarInputRef.current?.click()}
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Email address"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Input
+                  id="email"
+                  value={data?.email || ''}
+                  readOnly
+                  className="bg-muted/50 text-muted-foreground"
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Full name"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Input
+                  id="name"
+                  value={resolvedName}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Job title"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Input
+                  id="job_title"
+                  value={resolvedJobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  placeholder="Operations Manager"
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Department"
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Input
+                  id="department"
+                  value={resolvedDepartment}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Operations"
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Phone number"
+              noBorder
+              align="center"
+            >
+              <div className="w-full md:ml-auto md:max-w-sm">
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={resolvedPhone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+            </SettingsRow>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
+          <div>
+            <SettingsRow
+              label="Password"
+              noBorder
+              align="center"
+            >
+              <div className="flex justify-start md:justify-end">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={avatarUploading || isPending}
-                  onClick={handleRemoveAvatar}
-                  aria-label="Remove profile picture"
-                  title="Remove profile picture"
+                  variant="outline"
+                  onClick={() => toast.info('Password changes are not available in-app yet.')}
                 >
-                  <IconTrashCanSimple />
+                  Change password
                 </Button>
-              ) : null}
-              <AvatarUploadButton
-                image={resolvedAvatarPreview}
-                alt="Profile picture"
-                loading={avatarUploading}
-                onClick={() => avatarInputRef.current?.click()}
-              />
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Email address"
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                id="email"
-                value={data?.email || ''}
-                readOnly
-                className="bg-muted/50 text-muted-foreground"
-              />
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Full name"
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                id="name"
-                value={resolvedName}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
-              />
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Job title"
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                id="job_title"
-                value={resolvedJobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="Operations Manager"
-              />
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Department"
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                id="department"
-                value={resolvedDepartment}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Operations"
-              />
-            </div>
-          </SettingsRow>
-
-          <SettingsRow
-            label="Phone number"
-            noBorder
-            align="center"
-          >
-            <div className="w-full md:ml-auto md:max-w-sm">
-              <Input
-                id="phone"
-                type="tel"
-                value={resolvedPhone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 (555) 123-4567"
-              />
-            </div>
-          </SettingsRow>
-        </SettingsCard>
-      </div>
-
-      <div className="space-y-5">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
-        <SettingsCard>
-          <SettingsRow
-            label="Password"
-            noBorder
-            align="center"
-          >
-            <div className="flex justify-start md:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => toast.info('Password changes are not available in-app yet.')}
-              >
-                Change password
-              </Button>
-            </div>
-          </SettingsRow>
-        </SettingsCard>
-      </div>
+              </div>
+            </SettingsRow>
+          </div>
+        </div>
       </div>
     </div>
   );
