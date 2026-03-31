@@ -154,6 +154,6 @@ export const aiApi = {
 };
 
 export const feedbackApi = {
-    submit: (data: { category: string; message: string; rating?: number; metadata?: Record<string, any> }) =>
+    submit: (data: { category: string; message: string; rating?: number; metadata?: Record<string, unknown> }) =>
         api.post('/feedback', data),
 };

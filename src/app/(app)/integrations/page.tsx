@@ -69,7 +69,7 @@ function IntegrationsContent() {
     try {
       const response = await api.get('/integrations/google/auth');
       if (response.data?.url) {
-        window.location.href = response.data.url;
+        window.location.assign(response.data.url);
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e, 'Failed to initialize Google OAuth connection'));
@@ -83,7 +83,7 @@ function IntegrationsContent() {
     try {
       const response = await api.get('/integrations/slack/auth');
       if (response.data?.url) {
-        window.location.href = response.data.url;
+        window.location.assign(response.data.url);
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e, 'Failed to initialize Slack OAuth connection'));
