@@ -167,7 +167,7 @@ function DashboardSurface({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="card-surface-soft flex h-full flex-col bg-card ring-0">
+    <Card className="card-surface flex h-full flex-col bg-card ring-0">
       <CardHeader className="border-b border-border/60 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
