@@ -37,7 +37,7 @@ type DashboardCollectionResponse = {
   };
 };
 
-type KpiTone = 'emerald' | 'blue' | 'violet' | 'cyan' | 'danger';
+type KpiTone = 'emerald' | 'blue' | 'violet' | 'cyan' | 'amber' | 'danger';
 
 type KpiCardConfig = {
   label: string;
@@ -86,6 +86,7 @@ const KPI_STYLES: Record<KpiTone, string> = {
   blue: 'overflow-visible rounded-lg border-transparent bg-sidebar text-foreground ring-0 shadow-none [box-shadow:none]',
   violet: 'overflow-visible rounded-lg border-transparent bg-sidebar text-foreground ring-0 shadow-none [box-shadow:none]',
   cyan: 'overflow-visible rounded-lg border-transparent bg-sidebar text-foreground ring-0 shadow-none [box-shadow:none]',
+  amber: 'overflow-visible rounded-lg border-transparent bg-sidebar text-foreground ring-0 shadow-none [box-shadow:none]',
   danger: 'overflow-visible rounded-lg border-transparent bg-sidebar text-foreground ring-0 shadow-none [box-shadow:none]',
 };
 
@@ -94,6 +95,7 @@ const KPI_WRAPPER_HOVER_STYLES: Record<KpiTone, string> = {
   blue: 'group-hover:bg-blue-50 group-focus-visible:bg-blue-50 dark:group-hover:bg-blue-950/50 dark:group-focus-visible:bg-blue-950/50',
   violet: 'group-hover:bg-violet-50 group-focus-visible:bg-violet-50 dark:group-hover:bg-violet-950/50 dark:group-focus-visible:bg-violet-950/50',
   cyan: 'group-hover:bg-cyan-50 group-focus-visible:bg-cyan-50 dark:group-hover:bg-cyan-950/50 dark:group-focus-visible:bg-cyan-950/50',
+  amber: 'group-hover:bg-amber-50/70 group-focus-visible:bg-amber-50/70 dark:group-hover:bg-amber-950/35 dark:group-focus-visible:bg-amber-950/35',
   danger: 'group-hover:bg-destructive/6 group-focus-visible:bg-destructive/6 dark:group-hover:bg-destructive/15 dark:group-focus-visible:bg-destructive/15',
 };
 
@@ -102,6 +104,7 @@ const KPI_ICON_STYLES: Record<KpiTone, string> = {
   blue: 'text-muted-foreground',
   violet: 'text-muted-foreground',
   cyan: 'text-muted-foreground',
+  amber: 'text-muted-foreground',
   danger: 'text-muted-foreground',
 };
 
@@ -110,6 +113,7 @@ const KPI_TEXT_HOVER_STYLES: Record<KpiTone, string> = {
   blue: 'group-hover:text-blue-700 group-focus-visible:text-blue-700 dark:group-hover:text-blue-200 dark:group-focus-visible:text-blue-200',
   violet: 'group-hover:text-violet-700 group-focus-visible:text-violet-700 dark:group-hover:text-violet-200 dark:group-focus-visible:text-violet-200',
   cyan: 'group-hover:text-cyan-700 group-focus-visible:text-cyan-700 dark:group-hover:text-cyan-200 dark:group-focus-visible:text-cyan-200',
+  amber: 'group-hover:text-amber-700 group-focus-visible:text-amber-700 dark:group-hover:text-amber-200 dark:group-focus-visible:text-amber-200',
   danger: 'group-hover:text-destructive group-focus-visible:text-destructive',
 };
 
@@ -118,6 +122,7 @@ const KPI_INNER_STYLES: Record<KpiTone, string> = {
   blue: 'card-surface-soft bg-background text-foreground',
   violet: 'card-surface-soft bg-background text-foreground',
   cyan: 'card-surface-soft bg-background text-foreground',
+  amber: 'card-surface-soft bg-background text-foreground',
   danger: 'card-surface-soft bg-background text-foreground',
 };
 
@@ -374,7 +379,7 @@ export default function DashboardPage() {
       description: summaryLoading ? <Skeleton className="h-4 w-44 rounded-full" /> : `Ending in the next ${summary?.expiring_within_days ?? 30} days.`,
       href: '/dashboard/expiring',
       icon: CalendarClock4,
-      tone: 'cyan',
+      tone: 'amber',
     },
     {
       label: 'Overdue',
@@ -430,7 +435,7 @@ export default function DashboardPage() {
         <section className="grid gap-6 xl:grid-cols-2">
         <DashboardSurface
           title="Expiring soon"
-          description="Contracts that need attention next."
+          description="Contractors whose access is about to expire and require action."
           action={
             <Link href="/dashboard/expiring" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               View queue
@@ -506,7 +511,7 @@ export default function DashboardPage() {
 
         <DashboardSurface
           title="Activity"
-          description="Recent contractor and access events."
+          description="View recent updates and actions in your workspace."
           action={
             <Link href="/events" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               View activity

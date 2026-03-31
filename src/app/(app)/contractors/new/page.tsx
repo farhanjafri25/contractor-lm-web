@@ -178,7 +178,7 @@ export default function NewContractorPage() {
         <PageBackLink href="/contractors">Back to contractors</PageBackLink>
         <PageHeader
           title="Add contractor"
-          description="Add their details and contract dates."
+          description="Create a contractor profile with ownership and expiry to manage access lifecycle."
         />
       </div>
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -225,6 +225,32 @@ function FeedbackPopover() {
   const [message, setMessage] = useState('');
   const trimmedMessage = message.trim();
 
+  useEffect(() => {
+    function handleKeydown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.key.toLowerCase() !== 'f') {
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tagName = target.tagName.toLowerCase();
+        if (target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      setOpen(true);
+    }
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  }, []);
+
   const handleSubmit = async () => {
     if (!trimmedMessage) {
       return;
@@ -244,8 +270,11 @@ function FeedbackPopover() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="secondary" size="sm" className="hidden sm:inline-flex" type="button">
-            Feedback
+          <Button variant="secondary" size="sm" className="hidden gap-2 sm:inline-flex" type="button">
+            <span>Feedback</span>
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-border/70 bg-background/80 px-1.5 text-[11px] font-medium leading-none text-muted-foreground shadow-sm">
+              F
+            </span>
           </Button>
         }
       />
@@ -508,6 +537,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
   };
+
+  useEffect(() => {
+    function handleThemeShortcut(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tagName = target.tagName.toLowerCase();
+        if (target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+          return;
+        }
+      }
+
+      const key = event.key.toLowerCase();
+      if (key === 'd') {
+        event.preventDefault();
+        setTheme('dark');
+      } else if (key === 'l') {
+        event.preventDefault();
+        setTheme('light');
+      }
+    }
+
+    window.addEventListener('keydown', handleThemeShortcut);
+    return () => window.removeEventListener('keydown', handleThemeShortcut);
+  }, [setTheme]);
 
   return (
     <div className="min-h-screen bg-background">

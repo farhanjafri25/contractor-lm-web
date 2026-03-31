@@ -257,7 +257,7 @@ export default function OrganizationSettingsPage() {
     <div className="mx-auto w-full max-w-4xl space-y-8 pt-6">
       <PageHeader
         title="Organization"
-        description="Manage your workspace identity, company settings, and deployment preferences. Changes save automatically."
+        description="Manager your organization details and other information. Changes save automatically."
       />
 
       <div className="space-y-12">

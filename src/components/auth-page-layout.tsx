@@ -73,10 +73,10 @@ export function AuthWelcomeAside() {
       <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Welcome to Tenurio.</h1>
       <div className="space-y-4 text-sm leading-6 text-muted-foreground">
         <p>
-          Tenurio helps organizations manage contractor and external workforce access with clear ownership and
-          automatic expiry enforcement.
+          Tenurio ensures every contractor has a clear sponsor, hard end date, and automatic access expiry across
+          your directory and SaaS tools. No more forgotten access, orphan accounts, or manual cleanup.
         </p>
-        <p>Every external identity has a sponsor, a defined tenure, and controlled access across your systems.</p>
+        <p>Eliminate spreadsheet chaos and audit nightmares. See the value in your first 2 minutes.</p>
         <p className="text-foreground">Let&apos;s begin.</p>
       </div>
     </>

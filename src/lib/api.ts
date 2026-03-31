@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/v1';
+
+if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL) {
+    // eslint-disable-next-line no-console
+    console.warn(
+        '[api] NEXT_PUBLIC_API_URL is not set; falling back to http://localhost:8000/v1',
+    );
+}
 
 export const api = axios.create({
     baseURL: API_BASE,
