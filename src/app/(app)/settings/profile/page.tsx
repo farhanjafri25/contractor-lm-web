@@ -160,7 +160,7 @@ function ChangePasswordModal() {
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
           <DialogDescription>
-            To change your password, we'll send a secure reset code to <span className="font-medium text-foreground">{user?.email}</span>.
+            To change your password, we&apos;ll send a secure reset code to <span className="font-medium text-foreground">{user?.email}</span>.
           </DialogDescription>
         </DialogHeader>
 

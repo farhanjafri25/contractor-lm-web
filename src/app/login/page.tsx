@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { FieldBlock } from '@/components/app-ui';
 import { AuthPageLayout, AuthWelcomeAside } from '@/components/auth-page-layout';
 import { Eye, EyeOff } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
 
 export default function LoginPage() {
@@ -44,10 +44,7 @@ export default function LoginPage() {
       ) : null}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="email" className="sr-only">
-            Work email
-          </Label>
+        <FieldBlock label="Work email">
           <Input
             id="email"
             type="email"
@@ -56,12 +53,15 @@ export default function LoginPage() {
             placeholder="Enter your email address"
             required
           />
-        </div>
+        </FieldBlock>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="sr-only">
-            Password
-          </Label>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-foreground">Password</p>
+            <Link href="/forgot-password" className="text-sm font-normal text-muted-foreground transition-colors hover:text-foreground">
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <Input
               id="password"
@@ -87,12 +87,6 @@ export default function LoginPage() {
           {loading ? 'Signing in…' : 'Continue'}
         </Button>
       </form>
-
-        <p className="mt-4 text-sm text-muted-foreground text-center">
-          <Link href="/forgot-password" className="font-medium text-foreground hover:underline">
-            Forgot password?
-          </Link>
-        </p>
 
       <p className="max-w-md text-sm leading-6 text-muted-foreground">
         By signing in, you agree to receive product updates and onboarding communication from Tenurio.{' '}

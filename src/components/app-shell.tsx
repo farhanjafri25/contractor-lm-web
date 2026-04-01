@@ -35,10 +35,12 @@ import { TeamSwitcher } from '@/components/team-switcher';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Badge } from '@/components/ui/badge';
 import { PageTransition } from '@/components/page-transition';
 
@@ -275,28 +277,36 @@ function FeedbackPopover() {
         className="flex w-[min(24rem,calc(100vw-1rem))] flex-col gap-3 rounded-[0.8rem] border bg-background/98 p-3.5 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)] backdrop-blur-xl"
       >
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Category</p>
-          <div className="flex flex-wrap gap-1.5">
+          <Label>Category</Label>
+          <ToggleGroup
+            aria-label="Feedback category"
+            className="w-full flex-wrap"
+            spacing={2}
+            size="sm"
+            variant="outline"
+            value={[category]}
+            onValueChange={(values) => {
+              const next = values[0];
+
+              if (next === 'general' || next === 'bug' || next === 'feature_request' || next === 'support') {
+                setCategory(next);
+              }
+            }}
+          >
             {categories.map((cat) => (
-              <button
+              <ToggleGroupItem
                 key={cat.value}
-                type="button"
-                onClick={() => setCategory(cat.value)}
-                className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
-                  category === cat.value 
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" 
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                )}
+                value={cat.value}
+                className="px-2.5"
               >
                 {cat.label}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </div>
         
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Message</p>
+          <Label>Message</Label>
           <Textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}

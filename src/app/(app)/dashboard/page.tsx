@@ -492,7 +492,7 @@ export default function DashboardPage() {
           {activityPanelState === 'loading' ? (
             <DashboardListSkeleton rows={5} showTrailingValue={false} timeline />
           ) : activityPanelState === 'ready' ? (
-            <div className="space-y-3">
+            <div className="space-y-1">
               {allEvents.slice(0, 5).map((event, index, items) => {
                 const contractor = event.contractor_id as Record<string, unknown> | undefined;
                 const eventType = String(event.event_type ?? '');
@@ -503,15 +503,17 @@ export default function DashboardPage() {
                 return (
                   <div key={String(event._id)} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn('mt-1 size-2 shrink-0 rounded-full', color)} />
-                      {!isLast ? <div className="mt-1 w-px flex-1 bg-border/60" /> : null}
+                      <div className="flex h-5 items-center">
+                        <div className={cn('size-2 shrink-0 rounded-full', color)} />
+                      </div>
+                      {!isLast ? <div className="w-px flex-1 bg-border/60" /> : null}
                     </div>
-                    <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-4', !isLast && 'pb-3')}>
-                      <div className="min-w-0">
-                        <p className={cn('text-sm font-medium', isHighPriority ? 'text-foreground' : 'text-muted-foreground')}>
+                    <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+                      <div className={cn('min-w-0 space-y-1', !isLast && 'pb-3')}>
+                        <p className={cn('truncate text-sm font-semibold', isHighPriority ? 'text-foreground' : 'text-muted-foreground')}>
                           {getEventLabel(eventType)}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-sm text-muted-foreground">
                           {contractor ? String(contractor.name ?? '') : 'Tenurio'}
                         </p>
                       </div>
