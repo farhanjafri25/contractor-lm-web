@@ -88,6 +88,12 @@ export default function LoginPage() {
         </Button>
       </form>
 
+        <p className="mt-4 text-sm text-muted-foreground text-center">
+          <Link href="/forgot-password" className="font-medium text-foreground hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+
       <p className="max-w-md text-sm leading-6 text-muted-foreground">
         By signing in, you agree to receive product updates and onboarding communication from Tenurio.{' '}
         <span className="underline underline-offset-4">Privacy Policy</span>

@@ -66,6 +66,10 @@ export const authApi = {
         api.post('/auth/verify-otp', { email, otp }),
     acceptInvite: (email: string, token: string, passwordPlain: string) =>
         api.post('/auth/accept-invite', { email, token, password: passwordPlain }),
+    forgotPassword: (email: string) =>
+        api.post('/auth/forgot-password', { email }),
+    resetPassword: (email: string, otp: string, passwordPlain: string) =>
+        api.post('/auth/reset-password', { email, otp, password: passwordPlain }),
 };
 
 export const tenantApi = {

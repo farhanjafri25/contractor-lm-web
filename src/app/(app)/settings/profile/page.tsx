@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,12 +9,22 @@ import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { CirclePlus, IconTrashCanSimple, Pencil, RefreshCw } from '@/components/icons';
 import { SettingsPageSkeleton } from '@/components/page-skeletons';
-import { PageHeader, SettingsRow } from '@/components/app-ui';
+import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
 import { prepareImageForUpload } from '@/lib/image-upload';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 
 function parseProfileDetails(info: unknown) {
   if (typeof info !== 'string' || !info.trim()) {
@@ -103,6 +114,81 @@ function AvatarUploadButton({
         </div>
       )}
     </button>
+  );
+}
+
+function ChangePasswordModal() {
+  const { forgotPassword, user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleRequestReset = async () => {
+    if (!user?.email) {
+      setError('User email not found.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await forgotPassword(user.email);
+      toast.success('Password reset code sent to your email.');
+      setOpen(false);
+      router.push(`/reset-password?email=${encodeURIComponent(user.email)}`);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to request password reset.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+          >
+            Change password
+          </Button>
+        }
+      />
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+          <DialogDescription>
+            To change your password, we'll send a secure reset code to <span className="font-medium text-foreground">{user?.email}</span>.
+          </DialogDescription>
+        </DialogHeader>
+
+        {error ? (
+          <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
+
+        <DialogFooter className="mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            onClick={handleRequestReset} 
+            disabled={loading}
+          >
+            {loading ? 'Sending code…' : 'Send reset code'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -401,26 +487,22 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="space-y-5">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
-          <div>
-            <SettingsRow
-              label="Password"
-              noBorder
-              align="center"
-            >
-              <div className="flex justify-start md:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => toast.info('Password changes are not available in-app yet.')}
-                >
-                  Change password
-                </Button>
-              </div>
-            </SettingsRow>
-          </div>
-        </div>
+
+
+      <div className="space-y-5">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
+        <SettingsCard>
+          <SettingsRow
+            label="Password"
+            noBorder
+            align="center"
+          >
+            <div className="flex justify-start md:justify-end">
+              <ChangePasswordModal />
+            </div>
+          </SettingsRow>
+        </SettingsCard>
+      </div>
       </div>
     </div>
   );

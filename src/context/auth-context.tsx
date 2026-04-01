@@ -32,6 +32,8 @@ interface AuthState {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     acceptInvite: (email: string, token: string, password: string) => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
+    resetPassword: (email: string, otp: string, passwordPlain: string) => Promise<void>;
     updateUserSession: (data: Partial<User>) => void;
     logout: () => void;
 }
@@ -131,8 +133,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.href = '/login';
     };
 
+    const forgotPassword = async (email: string) => {
+        await authApi.forgotPassword(email);
+    };
+
+    const resetPassword = async (email: string, otp: string, passwordPlain: string) => {
+        await authApi.resetPassword(email, otp, passwordPlain);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, updateUserSession, logout }}>
+        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, forgotPassword, resetPassword, updateUserSession, logout }}>
             {children}
         </AuthContext.Provider>
     );
