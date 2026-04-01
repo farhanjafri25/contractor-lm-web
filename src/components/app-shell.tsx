@@ -276,7 +276,7 @@ function FeedbackPopover() {
         sideOffset={8}
         className="flex w-[min(24rem,calc(100vw-1rem))] flex-col gap-3 rounded-[0.8rem] border bg-background/98 p-3.5 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)] backdrop-blur-xl"
       >
-        <div className="space-y-2">
+        <div className="space-y-2 pb-1">
           <Label>Category</Label>
           <ToggleGroup
             aria-label="Feedback category"

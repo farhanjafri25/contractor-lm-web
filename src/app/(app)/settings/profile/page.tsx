@@ -9,7 +9,7 @@ import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { CirclePlus, IconTrashCanSimple, Pencil, RefreshCw } from '@/components/icons';
 import { SettingsPageSkeleton } from '@/components/page-skeletons';
-import { PageHeader, SettingsCard, SettingsRow } from '@/components/app-ui';
+import { PageHeader, SettingsRow } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
@@ -375,7 +375,7 @@ export default function ProfilePage() {
         description="Manage your personal account settings. Changes save automatically."
       />
 
-      <div className="space-y-20">
+      <div className="space-y-16">
         <div>
           <input
             ref={avatarInputRef}
@@ -491,17 +491,15 @@ export default function ProfilePage() {
 
       <div className="space-y-5">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Security</h2>
-        <SettingsCard>
-          <SettingsRow
-            label="Password"
-            noBorder
-            align="center"
-          >
-            <div className="flex justify-start md:justify-end">
-              <ChangePasswordModal />
-            </div>
-          </SettingsRow>
-        </SettingsCard>
+        <SettingsRow
+          label="Password"
+          noBorder
+          align="center"
+        >
+          <div className="flex justify-start md:justify-end">
+            <ChangePasswordModal />
+          </div>
+        </SettingsRow>
       </div>
       </div>
     </div>

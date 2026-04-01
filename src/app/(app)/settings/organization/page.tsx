@@ -260,7 +260,7 @@ export default function OrganizationSettingsPage() {
         description="Manager your organization details and other information. Changes save automatically."
       />
 
-      <div className="space-y-20">
+      <div className="space-y-16">
         <input
           ref={logoInputRef}
           type="file"
