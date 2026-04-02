@@ -508,7 +508,9 @@ export default function SignupPage() {
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Create an account</h1>
             <p className="text-sm leading-6 text-muted-foreground">
-              Use your work email to create an account and get your workspace set up.
+              Use your work email to create an account
+              <br />
+              and get your workspace set up.
             </p>
           </div>
           <form className="space-y-5" onSubmit={handleSignup}>

@@ -136,7 +136,7 @@ function ChangePasswordModal() {
       await forgotPassword(user.email);
       toast.success('Password reset code sent to your email.');
       setOpen(false);
-      router.push(`/reset-password?email=${encodeURIComponent(user.email)}`);
+      router.push(`/reset-password?email=${encodeURIComponent(user.email)}&codeSent=1`);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to request password reset.'));
     } finally {

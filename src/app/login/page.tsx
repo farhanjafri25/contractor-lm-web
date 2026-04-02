@@ -37,6 +37,10 @@ export default function LoginPage() {
 
   return (
     <AuthPageLayout aside={<AuthWelcomeAside />}>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Sign in</h1>
+      </div>
+
       {error ? (
         <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}

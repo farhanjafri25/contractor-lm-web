@@ -15,7 +15,7 @@ export function AuthPageLayout({
   hideHeader,
 }: {
   children: React.ReactNode;
-  aside: React.ReactNode;
+  aside?: React.ReactNode;
   footer?: React.ReactNode;
   cardClassName?: string;
   gridClassName?: string;
@@ -23,24 +23,27 @@ export function AuthPageLayout({
   asideClassName?: string;
   hideHeader?: boolean;
 }) {
+  const hasAside = aside !== undefined && aside !== null;
+
   return (
-    <div className={cn('flex flex-col bg-background px-3 sm:px-4', hideHeader ? 'h-screen overflow-hidden py-2 sm:py-3' : 'min-h-screen py-6 sm:py-8')}>
-      <div className={cn('mx-auto flex w-full max-w-6xl flex-1 flex-col', hideHeader ? 'min-h-0' : 'min-h-[calc(100vh-3rem)] sm:min-h-[calc(100vh-4rem)]')}>
+    <div className={cn('flex min-h-screen h-[100dvh] flex-col overflow-hidden bg-background px-3 sm:px-4', hideHeader ? 'py-2 sm:py-3' : 'py-3 sm:py-4')}>
+      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col">
         {!hideHeader && (
-          <header className="flex justify-center pt-3 sm:pt-6">
+          <header className="flex justify-center pt-2 sm:pt-4">
             <Link href="/" aria-label="Tenurio home">
               <Logo className="h-7 w-28 sm:h-8 sm:w-32" priority />
             </Link>
           </header>
         )}
 
-        <main className={cn('flex flex-1 items-center', hideHeader ? 'min-h-0 py-2' : 'py-8 sm:py-12 lg:py-16')}>
-          <PageTransition className="mx-auto w-full max-w-[1250px]">
-            <Card className={cn('bg-card shadow-none [box-shadow:none]', cardClassName)}>
+        <main className={cn('flex min-h-0 flex-1 items-center', hideHeader ? 'py-2' : 'py-5 sm:py-6 lg:py-8')}>
+          <PageTransition className="mx-auto min-h-0 w-full max-w-[1250px]">
+            <Card className={cn('max-h-full overflow-y-auto bg-card shadow-none [box-shadow:none]', cardClassName)}>
               <CardContent className="p-0">
                 <div
                   className={cn(
-                    'grid gap-12 px-12 py-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-36 lg:px-24 lg:py-24',
+                    'grid gap-12 px-12 py-12 lg:px-24 lg:py-24',
+                    hasAside ? 'lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-36' : 'lg:grid-cols-1',
                     gridClassName,
                   )}
                 >
@@ -48,9 +51,11 @@ export function AuthPageLayout({
                     <div className={cn('w-full max-w-md space-y-6', contentClassName)}>{children}</div>
                   </section>
 
-                  <section className="hidden items-start lg:flex">
-                    <div className={cn('max-w-xl space-y-6', asideClassName)}>{aside}</div>
-                  </section>
+                  {hasAside ? (
+                    <section className="hidden items-start lg:flex">
+                      <div className={cn('max-w-xl space-y-6', asideClassName)}>{aside}</div>
+                    </section>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
@@ -58,7 +63,7 @@ export function AuthPageLayout({
         </main>
       </div>
 
-      <footer className="flex items-center justify-between px-1 pb-2 pt-1 text-xs text-muted-foreground/70">
+      <footer className="flex shrink-0 items-center justify-between px-1 pb-1 pt-1 text-xs text-muted-foreground/70">
         {footer ?? (
           <>
             <span>&copy; {new Date().getFullYear()} Tenurio</span>
