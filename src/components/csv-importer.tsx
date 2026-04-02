@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { contractorsApi } from '@/lib/api';
+import { applicationsApi, contractorsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -14,8 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { CloudUpload, FileText, AlertTriangle, CheckCircle, Checkmark1, ArrowRight } from '@/components/icons';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { useQuery } from '@tanstack/react-query';
+import { useGettingStarted } from '@/hooks/use-getting-started';
 
 const REQUIRED_FIELDS = [
   { key: 'name', label: 'Full Name' },
@@ -33,6 +36,18 @@ const OPTIONAL_FIELDS = [
 ];
 
 const ALL_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
+
+interface TenantApplication {
+  _id: string;
+  display_name?: string;
+  app_key?: string;
+  application_id?: {
+    _id: string;
+    name: string;
+    slug: string;
+    auth_type: string;
+  };
+}
 
 const STEPS = [
   { key: 'UPLOAD', label: 'Upload' },
@@ -53,6 +68,9 @@ type BulkCreateContractor = {
   contract: {
     start_date: string;
     end_date: string;
+    create_google_account?: boolean;
+    create_slack_account?: boolean;
+    application_access?: { tenant_application_id: string }[];
   };
 };
 type BulkCreateFailure = {
@@ -162,6 +180,24 @@ export function CsvImporter() {
   const [duplicates, setDuplicates] = React.useState(0);
   const [excludedRows, setExcludedRows] = React.useState<Set<number>>(new Set());
 
+  // Access setup state
+  const [selectedAppIds, setSelectedAppIds] = React.useState<string[]>([]);
+  const [createGoogleAccount, setCreateGoogleAccount] = React.useState(false);
+  const [createSlackAccount, setCreateSlackAccount] = React.useState(false);
+
+  const { data: appsData } = useQuery({
+    queryKey: ['applications-list'],
+    queryFn: async () => (await applicationsApi.list()).data as TenantApplication[],
+    enabled: open,
+  });
+
+  const { isGoogleConnected, isSlackConnected } = useGettingStarted();
+
+  const modifiableApps = (appsData ?? []).filter((app) => {
+    const slug = app.application_id?.slug || String(app.app_key ?? '').trim().toLowerCase();
+    return slug !== 'google-workspace' && slug !== 'slack';
+  });
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const resetState = () => {
@@ -172,6 +208,9 @@ export function CsvImporter() {
     setValidationErrors([]);
     setDuplicates(0);
     setExcludedRows(new Set());
+    setSelectedAppIds([]);
+    setCreateGoogleAccount(false);
+    setCreateSlackAccount(false);
     setIsDragOver(false);
   };
 
@@ -394,7 +433,10 @@ export function CsvImporter() {
         notes: mapping['notes'] ? sanitizeString(row[mapping['notes']]) : undefined,
         contract: {
           start_date: parseDateString(sanitizeString(row[mapping['start_date']])),
-          end_date: parseDateString(sanitizeString(row[mapping['end_date']]))
+          end_date: parseDateString(sanitizeString(row[mapping['end_date']])),
+          create_google_account: createGoogleAccount,
+          create_slack_account: createSlackAccount,
+          application_access: selectedAppIds.map(id => ({ tenant_application_id: id })),
         }
       };
     });
@@ -596,17 +638,96 @@ export function CsvImporter() {
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      Batch Access Setup
+                      <Badge variant="neutral" className="font-normal">Optional</Badge>
+                    </h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Selected settings will be applied to all imported contractors.
+                    </p>
+
+                    <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                      <div className="space-y-3">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Account Provisioning</Label>
+                        <div className="space-y-2">
+                          <label className={cn(
+                            "flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 transition-colors",
+                            isGoogleConnected ? "cursor-pointer hover:bg-muted/40" : "opacity-50 cursor-not-allowed"
+                          )}>
+                             <div className="min-w-0">
+                                <p className="text-sm font-medium">Google Workspace</p>
+                                <p className="text-[11px] text-muted-foreground truncate">Create @company account</p>
+                             </div>
+                             <Switch
+                               checked={createGoogleAccount}
+                               onCheckedChange={setCreateGoogleAccount}
+                               disabled={!isGoogleConnected}
+                             />
+                          </label>
+
+                          <label className={cn(
+                            "flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 transition-colors",
+                            isSlackConnected ? "cursor-pointer hover:bg-muted/40" : "opacity-50 cursor-not-allowed"
+                          )}>
+                             <div className="min-w-0">
+                                <p className="text-sm font-medium">Slack</p>
+                                <p className="text-[11px] text-muted-foreground truncate">Invite to workspace</p>
+                             </div>
+                             <Switch
+                               checked={createSlackAccount}
+                               onCheckedChange={setCreateSlackAccount}
+                               disabled={!isSlackConnected}
+                             />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Available Apps</Label>
+                        {modifiableApps.length === 0 ? (
+                           <div className="flex h-[94px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/10 text-center">
+                              <p className="px-4 text-[11px] text-muted-foreground italic">No other managed apps found</p>
+                           </div>
+                        ) : (
+                          <div className="grid gap-2 max-h-[140px] overflow-y-auto pr-1">
+                            {modifiableApps.map((app) => {
+                              const appId = app._id;
+                              const appSlug = app.application_id?.slug || String(app.app_key ?? '').trim();
+                              const isChecked = selectedAppIds.includes(appId);
+                              return (
+                                <label
+                                  key={appId}
+                                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5 transition-colors hover:bg-muted/40"
+                                >
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={() =>
+                                      setSelectedAppIds((prev) =>
+                                        isChecked ? prev.filter((id) => id !== appId) : [...prev, appId],
+                                      )
+                                    }
+                                  />
+                                  <span className="truncate text-xs font-medium">{app.display_name || app.application_id?.name || app.app_key}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 pt-2">
                     <div className="flex items-center gap-2">
                       <div className="flex size-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
                         <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />
                       </div>
-                      <span className="text-sm font-medium text-foreground">All records validated</span>
+                      <span className="text-sm font-medium text-foreground">Validation Passed</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="emerald">{selectedCount} selected</Badge>
+                      <Badge variant="emerald">{selectedCount} contractors</Badge>
                       {duplicates > 0 && <Badge variant="warning">{duplicates} duplicates</Badge>}
-                      <Badge variant="neutral">{csvData.length} total</Badge>
                     </div>
                   </div>
 
