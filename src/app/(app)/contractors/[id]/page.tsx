@@ -391,11 +391,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const accessEntries = (accessData as unknown as AccessData)?.access ?? [];
   const tenantUsers = (Array.isArray(usersData?.data) ? usersData.data : []) as Record<string, unknown>[];
   const availableApps = (Array.isArray(appsData) ? appsData : []) as Record<string, unknown>[];
-  const modifiableApps = availableApps.filter((app) => {
-    const appRef = app.application_id as Application | undefined;
-    const slug = String(appRef?.slug ?? app.app_key ?? '').trim().toLowerCase();
-    return slug === 'google-workspace' || slug === 'slack';
-  });
+  const modifiableApps = availableApps;
   const assignedAppIds = new Set<string>(
     accessEntries.map((e) => {
       const app = e.tenant_application_id;
@@ -669,7 +665,23 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   async function doAssignAccess() {
     setActionLoading(true);
     try {
-      await accessApi.assign(contractId, selectedAppIds);
+      // Find app slugs for integration flags
+      const googleApp = availableApps.find(a => {
+        const ref = a.application_id as Application | undefined;
+        return (ref?.slug || String(a.app_key ?? '')).toLowerCase() === 'google-workspace';
+      });
+      const slackApp = availableApps.find(a => {
+        const ref = a.application_id as Application | undefined;
+        return (ref?.slug || String(a.app_key ?? '')).toLowerCase() === 'slack';
+      });
+
+      const payload = {
+        access_items: selectedAppIds.map(id => ({ tenant_application_id: id })),
+        create_google_account: googleApp ? selectedAppIds.includes(String(googleApp._id)) : undefined,
+        create_slack_account: slackApp ? selectedAppIds.includes(String(slackApp._id)) : undefined,
+      };
+
+      await accessApi.sync(contractId, payload);
       await refresh();
       closeDialog();
       toast.success('Access updated.');
