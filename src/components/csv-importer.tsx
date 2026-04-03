@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { CloudUpload, FileText, AlertTriangle, CheckCircle, Checkmark1, ArrowRight } from '@/components/icons';
+import { CloudUpload, FileText, AlertTriangle, CheckCircle, Checkmark1, ArrowRight, ChevronBottom, ChevronRight } from '@/components/icons';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useQuery } from '@tanstack/react-query';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -184,6 +184,7 @@ export function CsvImporter() {
   const [selectedAppIds, setSelectedAppIds] = React.useState<string[]>([]);
   const [createGoogleAccount, setCreateGoogleAccount] = React.useState(false);
   const [createSlackAccount, setCreateSlackAccount] = React.useState(false);
+  const [batchAccessOpen, setBatchAccessOpen] = React.useState(false);
 
   const { data: appsData } = useQuery({
     queryKey: ['applications-list'],
@@ -638,84 +639,96 @@ export function CsvImporter() {
                 </>
               ) : (
                 <>
-                  <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                    <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                      Batch Access Setup
+                  <div className="rounded-[10px] border border-border">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left"
+                      onClick={() => setBatchAccessOpen((v) => !v)}
+                    >
+                      {batchAccessOpen ? <ChevronBottom size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+                      <h4 className="text-sm font-semibold text-foreground">
+                        Batch Access Setup
+                      </h4>
                       <Badge variant="neutral" className="font-normal">Optional</Badge>
-                    </h4>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Selected settings will be applied to all imported contractors.
-                    </p>
+                    </button>
 
-                    <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                      <div className="space-y-3">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Account Provisioning</Label>
-                        <div className="space-y-2">
-                          <label className={cn(
-                            "flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 transition-colors",
-                            isGoogleConnected ? "cursor-pointer hover:bg-muted/40" : "opacity-50 cursor-not-allowed"
-                          )}>
-                             <div className="min-w-0">
-                                <p className="text-sm font-medium">Google Workspace</p>
-                                <p className="text-[11px] text-muted-foreground truncate">Create @company account</p>
-                             </div>
-                             <Switch
-                               checked={createGoogleAccount}
-                               onCheckedChange={setCreateGoogleAccount}
-                               disabled={!isGoogleConnected}
-                             />
-                          </label>
+                    {batchAccessOpen && (
+                      <div className="border-t border-border px-4 pb-4 pt-3">
+                        <p className="text-xs text-muted-foreground">
+                          Selected settings will be applied to all imported contractors.
+                        </p>
 
-                          <label className={cn(
-                            "flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 transition-colors",
-                            isSlackConnected ? "cursor-pointer hover:bg-muted/40" : "opacity-50 cursor-not-allowed"
-                          )}>
-                             <div className="min-w-0">
-                                <p className="text-sm font-medium">Slack</p>
-                                <p className="text-[11px] text-muted-foreground truncate">Invite to workspace</p>
-                             </div>
-                             <Switch
-                               checked={createSlackAccount}
-                               onCheckedChange={setCreateSlackAccount}
-                               disabled={!isSlackConnected}
-                             />
-                          </label>
+                        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+                          <div className="space-y-3">
+                            <Label className="text-xs font-medium text-muted-foreground">Account Provisioning</Label>
+                            <div className="space-y-2">
+                              <label className={cn(
+                                "flex items-center justify-between gap-3 rounded-[10px] border border-border/60 bg-background px-4 py-3 transition-colors",
+                                isGoogleConnected ? "cursor-pointer hover:bg-muted/30" : "opacity-50 cursor-not-allowed"
+                              )}>
+                                 <div className="min-w-0">
+                                    <p className="text-sm font-medium">Google Workspace</p>
+                                    <p className="text-[11px] text-muted-foreground truncate">Create @company account</p>
+                                 </div>
+                                 <Switch
+                                   checked={createGoogleAccount}
+                                   onCheckedChange={setCreateGoogleAccount}
+                                   disabled={!isGoogleConnected}
+                                 />
+                              </label>
+
+                              <label className={cn(
+                                "flex items-center justify-between gap-3 rounded-[10px] border border-border/60 bg-background px-4 py-3 transition-colors",
+                                isSlackConnected ? "cursor-pointer hover:bg-muted/30" : "opacity-50 cursor-not-allowed"
+                              )}>
+                                 <div className="min-w-0">
+                                    <p className="text-sm font-medium">Slack</p>
+                                    <p className="text-[11px] text-muted-foreground truncate">Invite to workspace</p>
+                                 </div>
+                                 <Switch
+                                   checked={createSlackAccount}
+                                   onCheckedChange={setCreateSlackAccount}
+                                   disabled={!isSlackConnected}
+                                 />
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-xs font-medium text-muted-foreground">Available Apps</Label>
+                            {modifiableApps.length === 0 ? (
+                               <div className="flex h-[94px] items-center justify-center rounded-[10px] border border-dashed border-border bg-background text-center">
+                                  <p className="px-4 text-[11px] text-muted-foreground italic">No other managed apps found</p>
+                               </div>
+                            ) : (
+                              <div className="grid gap-2 max-h-[140px] overflow-y-auto pr-1">
+                                {modifiableApps.map((app) => {
+                                  const appId = app._id;
+                                  const appSlug = app.application_id?.slug || String(app.app_key ?? '').trim();
+                                  const isChecked = selectedAppIds.includes(appId);
+                                  return (
+                                    <label
+                                      key={appId}
+                                      className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-border/60 bg-background px-4 py-3 transition-colors hover:bg-muted/30"
+                                    >
+                                      <Checkbox
+                                        checked={isChecked}
+                                        onCheckedChange={() =>
+                                          setSelectedAppIds((prev) =>
+                                            isChecked ? prev.filter((id) => id !== appId) : [...prev, appId],
+                                          )
+                                        }
+                                      />
+                                      <span className="truncate text-sm font-medium">{app.display_name || app.application_id?.name || app.app_key}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Available Apps</Label>
-                        {modifiableApps.length === 0 ? (
-                           <div className="flex h-[94px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/10 text-center">
-                              <p className="px-4 text-[11px] text-muted-foreground italic">No other managed apps found</p>
-                           </div>
-                        ) : (
-                          <div className="grid gap-2 max-h-[140px] overflow-y-auto pr-1">
-                            {modifiableApps.map((app) => {
-                              const appId = app._id;
-                              const appSlug = app.application_id?.slug || String(app.app_key ?? '').trim();
-                              const isChecked = selectedAppIds.includes(appId);
-                              return (
-                                <label
-                                  key={appId}
-                                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5 transition-colors hover:bg-muted/40"
-                                >
-                                  <Checkbox
-                                    checked={isChecked}
-                                    onCheckedChange={() =>
-                                      setSelectedAppIds((prev) =>
-                                        isChecked ? prev.filter((id) => id !== appId) : [...prev, appId],
-                                      )
-                                    }
-                                  />
-                                  <span className="truncate text-xs font-medium">{app.display_name || app.application_id?.name || app.app_key}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-4 pt-2">
