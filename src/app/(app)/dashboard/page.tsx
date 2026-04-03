@@ -292,6 +292,13 @@ export default function DashboardPage() {
     staleTime: 60_000,
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => (await tenantApi.getUserProfile()).data,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  });
+
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async () => (await dashboardApi.getSummary()).data as DashboardSummary,
@@ -328,7 +335,7 @@ export default function DashboardPage() {
   const pendingApprovals = pendingLoading
     ? '—'
     : pendingRequests?.pagination?.total ?? pendingRequests?.data?.length ?? 0;
-  const firstName = getUserFirstName(user);
+  const firstName = getUserFirstName({ ...user, name: userProfile?.name || user?.name });
   const greeting = getGreetingForHour(new Date().getHours());
   const workspaceName = deriveWorkspaceName(tenantProfile, user?.email);
   const expiringPanelState = getPanelState(expiringLoading, expiringContracts.length);
