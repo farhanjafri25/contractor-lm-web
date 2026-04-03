@@ -8,8 +8,9 @@ import { ThemeProvider } from 'next-themes';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Tenurio — Contractor Lifecycle Management',
-  description: 'Non-employee identity lifecycle management platform',
+  title: 'Tenurio - Contractor Access Management',
+  description:
+    'Automate contractor access with ownership and expiry. No spreadsheets. No blind spots.',
   applicationName: 'Tenurio',
   manifest: '/site.webmanifest',
   icons: {
@@ -20,6 +21,20 @@ export const metadata: Metadata = {
     ],
     shortcut: '/favicon.ico',
     apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'Tenurio - Contractor Access Management',
+    description:
+      'Automate contractor access with ownership and expiry. No spreadsheets. No blind spots.',
+    images: [{ url: '/tenurio-og.webp' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tenurio - Contractor Access Management',
+    description:
+      'Automate contractor access with ownership and expiry. No spreadsheets. No blind spots.',
+    images: ['/tenurio-og.webp'],
   },
 };
 
