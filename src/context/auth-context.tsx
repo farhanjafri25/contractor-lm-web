@@ -24,6 +24,8 @@ interface User {
     avatar?: string;
     avatarVersion?: number;
     role: 'admin' | 'sponsor';
+    tenant_id?: string;
+    status?: string;
 }
 
 interface AuthState {
@@ -35,6 +37,7 @@ interface AuthState {
     forgotPassword: (email: string) => Promise<void>;
     resetPassword: (email: string, otp: string, passwordPlain: string) => Promise<void>;
     updateUserSession: (data: Partial<User>) => void;
+    setSession: (access_token: string, refresh_token: string, user: User) => void;
     logout: () => void;
 }
 
@@ -73,48 +76,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const [isLoading] = useState(false);
 
-    const login = async (email: string, password: string) => {
-        const { data } = await authApi.login(email, password);
-        
-        let tId = data.user?.tenant_id;
-        if (!tId && data.access_token) {
-            const decoded = parseJwt(data.access_token);
+    const setSession = (access_token: string, refresh_token: string, user: User) => {
+        let tId = user?.tenant_id as string | undefined;
+        if (!tId && access_token) {
+            const decoded = parseJwt(access_token);
             if (decoded && decoded.tenant_id) {
                 tId = decoded.tenant_id;
             }
         }
 
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        persistUser(data.user);
-        
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+        persistUser(user);
+
         if (tId) {
             localStorage.setItem('tenant_id', tId);
             setTenantId(tId);
         }
-        setUser(data.user);
+        setUser(user);
+    };
+
+    const login = async (email: string, password: string) => {
+        const { data } = await authApi.login(email, password);
+        setSession(data.access_token, data.refresh_token, data.user);
     };
 
     const acceptInvite = async (email: string, token: string, passwordPlain: string) => {
         const { data } = await authApi.acceptInvite(email, token, passwordPlain);
-
-        let tId = data.user?.tenant_id;
-        if (!tId && data.access_token) {
-            const decoded = parseJwt(data.access_token);
-            if (decoded && decoded.tenant_id) {
-                tId = decoded.tenant_id;
-            }
-        }
-
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        persistUser(data.user);
-        
-        if (tId) {
-            localStorage.setItem('tenant_id', tId);
-            setTenantId(tId);
-        }
-        setUser(data.user);
+        setSession(data.access_token, data.refresh_token, data.user);
     };
 
     const updateUserSession = (data: Partial<User>) => {
@@ -142,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, forgotPassword, resetPassword, updateUserSession, logout }}>
+        <AuthContext.Provider value={{ user, tenantId, isLoading, login, acceptInvite, forgotPassword, resetPassword, updateUserSession, setSession, logout }}>
             {children}
         </AuthContext.Provider>
     );

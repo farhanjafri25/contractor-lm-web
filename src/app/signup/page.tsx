@@ -34,6 +34,7 @@ import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { prepareImageForUpload } from '@/lib/image-upload';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
 
 type SignupStep = 'account' | 'verify' | 'profile' | 'workspace' | 'tracking' | 'volume' | 'directory' | 'success' | 'approval';
 
@@ -303,6 +304,7 @@ function ChoiceCard({ value, label }: { value: string; label: string }) {
 }
 
 export default function SignupPage() {
+  const { setSession, user: authUser } = useAuth();
   const [step, setStep] = useState<SignupStep>('account');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -368,24 +370,9 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
 
-    try {
-      const response = await authApi.verifyOtp(email.trim(), otp.trim());
-
-      localStorage.setItem('access_token', response.data.access_token || '');
-      localStorage.setItem('refresh_token', response.data.refresh_token || '');
-      localStorage.setItem('user', JSON.stringify(response.data.user || {}));
-
-      let tenantId = response.data.user?.tenant_id;
-      if (!tenantId && response.data.access_token) {
-        const decoded = parseJwt(response.data.access_token);
-        if (decoded?.tenant_id) {
-          tenantId = decoded.tenant_id;
-        }
-      }
-
-      if (tenantId) {
-        localStorage.setItem('tenant_id', tenantId);
-      }
+      try {
+        const response = await authApi.verifyOtp(email.trim(), otp.trim());
+        setSession(response.data.access_token, response.data.refresh_token, response.data.user);
 
       if (response.data.status === 'pending_approval') {
         setSuccessMessage(response.data.message);
@@ -415,8 +402,7 @@ export default function SignupPage() {
          avatar: avatarPreview ?? undefined, // Only pass if set
       });
 
-      const userStr = localStorage.getItem('user');
-      const isPending = userStr ? JSON.parse(userStr).status === 'pending_approval' : false;
+      const isPending = authUser?.status === 'pending_approval';
 
       if (isPending) {
         setStep('approval');
