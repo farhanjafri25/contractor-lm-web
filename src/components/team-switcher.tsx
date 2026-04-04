@@ -81,14 +81,18 @@ export function TeamSwitcher({
           <p className="text-xs text-muted-foreground">{workspaceSlug ?? user?.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/settings/organization')}>
-          <SettingsGear1 size={14} />
-          Organization settings
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push('/settings/team')}>
-          <Group2 size={14} />
-          Team
-        </DropdownMenuItem>
+        {user?.role === 'admin' ? (
+          <>
+            <DropdownMenuItem onClick={() => router.push('/settings/organization')}>
+              <SettingsGear1 size={14} />
+              Organization settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings/team')}>
+              <Group2 size={14} />
+              Team
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
