@@ -9,7 +9,7 @@ import { contractorsApi } from '@/lib/api';
 import { ChevronRight, IconDotGrid1x3VerticalTight } from '@/components/icons';
 import { useAuth } from '@/context/auth-context';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
-import { DataTableShell, EmptyState, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { ClearFiltersButton, DataTableShell, EmptyState, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CsvImporter } from '@/components/csv-importer';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -107,6 +107,7 @@ export default function ContractorsPage() {
   });
   const activeFilterCount = statusFilters.length + departmentFilters.length + timingFilters.length;
   const hasSearchOrFilters = Boolean(search || activeFilterCount);
+  const clearFilters = () => updateFilterParams({ status: [], department: [], timing: [] });
 
   const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -152,7 +153,7 @@ export default function ContractorsPage() {
           <SearchField value={search} onChange={setSearch} placeholder="Search name or email" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: [], department: [], timing: [] })}
+            onClear={clearFilters}
           >
             <FieldBlock label="Status">
               <MultiFilterChecklist
@@ -176,6 +177,7 @@ export default function ContractorsPage() {
               />
             </FieldBlock>
           </FiltersPopover>
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
         </div>
 
         <div className="hidden md:flex md:items-center md:gap-3">
@@ -202,8 +204,9 @@ export default function ContractorsPage() {
               onValuesChange={(values) => updateFilterParams({ timing: values })}
               options={timingOptions}
               placeholder="Any contract date"
-              className="min-w-48"
+              className="min-w-40"
             />
+            <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
           </div>
           <SearchField
             value={search}

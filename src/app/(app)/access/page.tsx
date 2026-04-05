@@ -6,8 +6,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { accessApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
 import { CheckCheck, RotateCcw, IconDotGrid1x3VerticalTight, IconGoogle, IconSlack } from '@/components/icons';
-import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,7 +21,12 @@ const statuses = ['', 'active', 'pending', 'revoked', 'failed'];
 interface Contractor {
   _id: string;
   name?: string;
+  email?: string;
   department?: string;
+  job_title?: string;
+  avatar?: string;
+  image?: string;
+  photo?: string;
 }
 
 interface Application {
@@ -351,6 +357,7 @@ export default function AccessPage() {
 
   const activeFilterCount = statusFilters.length + appFilters.length + sourceFilters.length;
   const hasSearchOrFilters = Boolean(search || activeFilterCount);
+  const clearFilters = () => updateFilterParams({ status: [], app: [], source: [] });
 
   const groupedByContractor = filteredRecords.reduce<Record<string, GroupedByContractor>>((acc, record) => {
     const contractor = record.contractor_id as unknown as Contractor;
@@ -434,7 +441,7 @@ export default function AccessPage() {
           <SearchField value={search} onChange={setSearch} placeholder="Search access" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: [], app: [], source: [] })}
+            onClear={clearFilters}
           >
             <FieldBlock label="Status">
               <MultiFilterChecklist
@@ -461,6 +468,7 @@ export default function AccessPage() {
               />
             </FieldBlock>
           </FiltersPopover>
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
         </div>
 
         <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
@@ -492,6 +500,7 @@ export default function AccessPage() {
               placeholder="All sources"
               className="min-w-40"
             />
+            <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
           </div>
           <SearchField
             value={search}
@@ -522,8 +531,17 @@ export default function AccessPage() {
                     return (
                       <TableRow key={contractorKey}>
                         <TableCell>
-                          <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '—') : '—'}</p>
-                          <p className="text-sm text-muted-foreground">{contractor ? String(contractor.department ?? '') : ''}</p>
+                          <ContractorHoverPopover
+                            contractorId={contractor ? String(contractor._id ?? '') : undefined}
+                            name={contractor ? String(contractor.name ?? '') : undefined}
+                            email={contractor ? String(contractor.email ?? '') : undefined}
+                            department={contractor ? String(contractor.department ?? '') : undefined}
+                            jobTitle={contractor ? String(contractor.job_title ?? '') : undefined}
+                            avatar={contractor ? String(contractor.avatar ?? '') : undefined}
+                            image={contractor ? String(contractor.image ?? '') : undefined}
+                            photo={contractor ? String(contractor.photo ?? '') : undefined}
+                            subtitle={contractor ? String(contractor.department ?? '') : ''}
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">

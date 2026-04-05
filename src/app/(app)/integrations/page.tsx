@@ -161,7 +161,7 @@ function IntegrationsContent() {
           return (
             <SectionCard
               key={integration.name}
-              className="h-full [&>div:last-child]:px-5 [&>div:last-child]:py-4"
+              className="h-full [&>div:first-child]:px-4 [&>div:last-child]:px-4 [&>div:last-child]:py-4"
               title={
                 <div className="flex items-center gap-3">
                   <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-lg', integration.iconContainerClassName)}>

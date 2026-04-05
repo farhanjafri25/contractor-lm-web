@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DataTableShell, EmptyState, FieldBlock, FilterSelect, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { ClearFiltersButton, DataTableShell, EmptyState, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Checkmark2, IconCrossLarge, PeopleAdd, ShieldCheck, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ import { PendingApprovalsSkeleton, SummaryCardsSkeleton } from '@/components/pag
 
 
 const memberStatusOptions = [
-  { label: 'All members', value: 'all' },
+  { label: 'All statuses', value: '' },
   { label: 'Active', value: 'active' },
   { label: 'Invited', value: 'invited' },
   { label: 'Inactive', value: 'inactive' },
@@ -315,10 +316,7 @@ function MembersTable({
   members,
   isAdmin,
   isLoading,
-  search,
-  statusFilter,
-  onSearchChange,
-  onStatusFilterChange,
+  hasSearchOrFilters,
   onDeactivate,
   onReactivate,
   isBusy,
@@ -328,10 +326,7 @@ function MembersTable({
   members: TeamMember[];
   isAdmin: boolean;
   isLoading: boolean;
-  search: string;
-  statusFilter: string;
-  onSearchChange: (value: string) => void;
-  onStatusFilterChange: (value: string) => void;
+  hasSearchOrFilters: boolean;
   onDeactivate: (id: string) => Promise<void>;
   onReactivate: (id: string) => Promise<void>;
   isBusy: (memberId: string) => boolean;
@@ -339,26 +334,7 @@ function MembersTable({
   currentUserId?: string;
 }) {
   return (
-    <DataTableShell
-      title="Members"
-      actions={
-        <>
-          <SearchField
-            value={search}
-            onChange={onSearchChange}
-            placeholder="Search by name or email"
-            className="md:min-w-[18rem]"
-          />
-          <FilterSelect
-            value={statusFilter}
-            onValueChange={onStatusFilterChange}
-            options={memberStatusOptions}
-            placeholder="Filter by status"
-            className="md:min-w-[10rem]"
-          />
-        </>
-      }
-    >
+    <DataTableShell>
       {isLoading ? (
         <Table>
           <TableHeader>
@@ -494,8 +470,8 @@ function MembersTable({
         <EmptyState
           title="No members match this view"
           description={
-            search || statusFilter !== 'all'
-              ? 'Try clearing your search or status filter to see more people.'
+            hasSearchOrFilters
+              ? 'Try clearing your search or filters to see more people.'
               : 'Invited and active workspace members will appear here.'
           }
         />
@@ -505,11 +481,14 @@ function MembersTable({
 }
 
 export default function TeamPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [showInvite, setShowInvite] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const statusFilters = searchParams.getAll('status').filter(Boolean);
   const [actionError, setActionError] = useState('');
   const [activeAction, setActiveAction] = useState<{ type: ActionType; memberId: string } | null>(null);
   const queryClient = useQueryClient();
@@ -553,14 +532,31 @@ export default function TeamPage() {
   const filteredMembers = useMemo(() => {
     return managedMembers.filter((member) => {
       const normalizedStatus = normalizeStatus(getTextValue(member.status));
-      const statusMatches = statusFilter === 'all' || normalizedStatus === statusFilter;
+      const statusMatches = statusFilters.length === 0 || statusFilters.includes(normalizedStatus);
       return statusMatches && matchesMember(member, search);
     });
-  }, [managedMembers, search, statusFilter]);
+  }, [managedMembers, search, statusFilters]);
 
   const totalMembers = managedMembers.length;
   const invitedMembers = countByStatus(managedMembers, 'invited');
   const inactiveMembers = countByStatus(managedMembers, 'inactive');
+  const activeFilterCount = statusFilters.length;
+  const hasSearchOrFilters = Boolean(search || activeFilterCount);
+  const clearFilters = () => updateFilterParams({ status: [] });
+
+  const updateFilterParams = (updates: Record<string, string | string[]>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      params.delete(key);
+
+      const values = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+      values.forEach((nextValue) => params.append(key, nextValue));
+    });
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const refresh = async () => {
     await Promise.all([
@@ -669,20 +665,59 @@ export default function TeamPage() {
         onReject={handleReject}
       />
 
-      <MembersTable
-        members={filteredMembers}
-        isAdmin={isAdmin}
-        isLoading={isLoading}
-        search={search}
-        statusFilter={statusFilter}
-        onSearchChange={setSearch}
-        onStatusFilterChange={setStatusFilter}
-        onDeactivate={handleDeactivate}
-        onReactivate={handleReactivate}
-        isBusy={isBusy}
-        activeAction={activeAction}
-        currentUserId={user?._id}
-      />
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 md:hidden">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name or email"
+            className="flex-1"
+          />
+          <FiltersPopover
+            activeCount={activeFilterCount}
+            onClear={clearFilters}
+          >
+            <FieldBlock label="Status">
+              <MultiFilterChecklist
+                values={statusFilters}
+                onValuesChange={(values) => updateFilterParams({ status: values })}
+                options={memberStatusOptions}
+              />
+            </FieldBlock>
+          </FiltersPopover>
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
+        </div>
+
+        <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
+          <MultiFilterDropdown
+            title="Status"
+            values={statusFilters}
+            onValuesChange={(values) => updateFilterParams({ status: values })}
+            options={memberStatusOptions}
+            placeholder="All statuses"
+            className="min-w-40"
+          />
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name or email"
+            className="ml-auto w-80"
+          />
+        </div>
+
+        <MembersTable
+          members={filteredMembers}
+          isAdmin={isAdmin}
+          isLoading={isLoading}
+          hasSearchOrFilters={hasSearchOrFilters}
+          onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
+          isBusy={isBusy}
+          activeAction={activeAction}
+          currentUserId={user?._id}
+        />
+      </div>
 
       <InviteDialog open={showInvite} onOpenChange={setShowInvite} />
     </div>

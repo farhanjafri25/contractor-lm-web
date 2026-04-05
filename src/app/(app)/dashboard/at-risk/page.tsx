@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
+import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
 import { ChevronRight } from '@/components/icons';
 import { DataTableShell, PageBackLink, PageHeader, StatusBadge } from '@/components/app-ui';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ export default function AtRiskPage() {
               ? <TableLoadingRows rows={3} columns={5} />
               : suspended.map((contract) => {
                   const contractor = contract.contractor_id as Record<string, unknown> | undefined;
+                  const contractorId = contractor ? String(contractor._id ?? '') : '';
                   const suspendedAt = contract.suspended_at ? new Date(String(contract.suspended_at)) : null;
                   return (
                     <TableRow
@@ -54,8 +56,19 @@ export default function AtRiskPage() {
                       onClick={() => contractor && router.push(`/contractors/${String(contractor._id ?? '')}`)}
                     >
                       <TableCell>
-                        <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '—') : '—'}</p>
-                        <p className="text-sm text-muted-foreground">{contractor ? String(contractor.job_title ?? '') : ''}</p>
+                        <ContractorHoverPopover
+                          contractorId={contractorId || undefined}
+                          name={contractor ? String(contractor.name ?? '') : undefined}
+                          email={contractor ? String(contractor.email ?? '') : undefined}
+                          department={contractor ? String(contractor.department ?? '') : undefined}
+                          jobTitle={contractor ? String(contractor.job_title ?? '') : undefined}
+                          href={contractorId ? `/contractors/${contractorId}` : undefined}
+                          contract={contract}
+                          avatar={contractor ? String(contractor.avatar ?? '') : undefined}
+                          image={contractor ? String(contractor.image ?? '') : undefined}
+                          photo={contractor ? String(contractor.photo ?? '') : undefined}
+                          subtitle={contractor ? String(contractor.job_title ?? '') : ''}
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {contractor ? String(contractor.department ?? '—') : '—'}
@@ -99,11 +112,22 @@ export default function AtRiskPage() {
               ? <TableLoadingRows rows={2} columns={5} actionColumn />
               : failed.map((record) => {
                   const contractor = record.contractor_id as Record<string, unknown> | undefined;
+                  const contractorId = contractor ? String(contractor._id ?? '') : '';
                   const app = record.tenant_application_id as Record<string, unknown> | undefined;
                   return (
                     <TableRow key={String(record._id)}>
                       <TableCell>
-                        <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '—') : '—'}</p>
+                        <ContractorHoverPopover
+                          contractorId={contractorId || undefined}
+                          name={contractor ? String(contractor.name ?? '') : undefined}
+                          email={contractor ? String(contractor.email ?? '') : undefined}
+                          department={contractor ? String(contractor.department ?? '') : undefined}
+                          jobTitle={contractor ? String(contractor.job_title ?? '') : undefined}
+                          href={contractorId ? `/contractors/${contractorId}` : undefined}
+                          avatar={contractor ? String(contractor.avatar ?? '') : undefined}
+                          image={contractor ? String(contractor.image ?? '') : undefined}
+                          photo={contractor ? String(contractor.photo ?? '') : undefined}
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {app ? String(app.application_id ?? '—') : '—'}

@@ -9,7 +9,6 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   CheckCircle,
-  ChevronGrabberVertical,
   Group2,
   Group2Filled,
   History,
@@ -32,6 +31,7 @@ import {
   Sun,
   Connectors,
   ConnectorsFilled,
+  IconDotGrid1x3VerticalTight,
 } from '@/components/icons';
 
 import { useAuth } from '@/context/auth-context';
@@ -363,7 +363,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-primary dark:hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
           collapsed && 'mx-auto size-9 justify-center px-0',
         )}
       >
@@ -384,7 +384,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium leading-5">{displayName}</span>
             </span>
-            <ChevronGrabberVertical size={16} className="shrink-0 text-muted-foreground" />
+            <IconDotGrid1x3VerticalTight size={16} className="shrink-0 text-muted-foreground" />
           </>
         ) : null}
       </DropdownMenuTrigger>

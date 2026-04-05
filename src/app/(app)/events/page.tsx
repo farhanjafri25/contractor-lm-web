@@ -5,12 +5,13 @@ import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { eventsApi } from '@/lib/api';
+import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
 import { ChevronBottom } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
+import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
 import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
 const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
@@ -76,6 +77,7 @@ export default function AuditLogPage() {
   const activeFilterCount = eventTypes.length + categoriesSelected.length + (from ? 1 : 0) + (to ? 1 : 0);
   const fromDate = from ? parseISO(from) : undefined;
   const toDate = to ? parseISO(to) : undefined;
+  const clearFilters = () => updateFilterParams({ event_type: [], category: [], from: '', to: '' });
 
   return (
     <div className="space-y-8">
@@ -112,7 +114,7 @@ export default function AuditLogPage() {
           <SearchField value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search activity" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ event_type: [], category: [], from: '', to: '' })}
+            onClear={clearFilters}
           >
             <FieldBlock label="Category">
               <MultiFilterChecklist
@@ -184,6 +186,7 @@ export default function AuditLogPage() {
               </Popover>
             </FieldBlock>
           </FiltersPopover>
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
         </div>
 
         <div className="hidden md:flex md:items-center md:gap-3">
@@ -213,7 +216,7 @@ export default function AuditLogPage() {
                   <Button
                     variant="outline"
                     data-empty={!fromDate}
-                    className="min-w-44 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
+                    className="min-w-36 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
                   >
                     {fromDate ? format(fromDate, 'PPP') : <span>Start date</span>}
                     <ChevronBottom data-icon="inline-end" size={16} />
@@ -237,7 +240,7 @@ export default function AuditLogPage() {
                   <Button
                     variant="outline"
                     data-empty={!toDate}
-                    className="min-w-44 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
+                    className="min-w-36 justify-between border-transparent bg-background/90 text-left font-normal shadow-sm ring-1 ring-foreground/10 hover:bg-muted/50 hover:text-foreground focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 dark:bg-input/25 dark:hover:bg-input/50"
                   >
                     {toDate ? format(toDate, 'PPP') : <span>End date</span>}
                     <ChevronBottom data-icon="inline-end" size={16} />
@@ -255,6 +258,7 @@ export default function AuditLogPage() {
                 />
               </PopoverContent>
             </Popover>
+            <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
           </div>
           <SearchField
             value={search}
@@ -301,6 +305,7 @@ export default function AuditLogPage() {
                       const contractor = event.contractor_id as Record<string, unknown> | undefined;
                       const actor = event.actor_id as Record<string, unknown> | undefined;
                       const createdAt = event.created_at ? new Date(String(event.created_at)) : null;
+                      const contractorId = contractor ? String(contractor._id ?? '') : '';
                       return (
                         <TableRow key={String(event._id)}>
                           <TableCell>
@@ -316,10 +321,18 @@ export default function AuditLogPage() {
                           </TableCell>
                           <TableCell>
                             {contractor ? (
-                              <>
-                                <p className="text-foreground">{String(contractor.name ?? '—')}</p>
-                                <p className="text-sm text-muted-foreground">{String(contractor.department ?? '')}</p>
-                              </>
+                              <ContractorHoverPopover
+                                contractorId={contractorId || undefined}
+                                name={String(contractor.name ?? '') || undefined}
+                                email={String(contractor.email ?? '') || undefined}
+                                department={String(contractor.department ?? '') || undefined}
+                                jobTitle={String(contractor.job_title ?? '') || undefined}
+                                href={contractorId ? `/contractors/${contractorId}` : undefined}
+                                avatar={String(contractor.avatar ?? '') || undefined}
+                                image={String(contractor.image ?? '') || undefined}
+                                photo={String(contractor.photo ?? '') || undefined}
+                                subtitle={String(contractor.department ?? '')}
+                              />
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}

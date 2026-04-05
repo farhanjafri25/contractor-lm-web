@@ -4,6 +4,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
+import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
 import { DataTableShell, PageBackLink, PageHeader, StatusBadge, SurfaceAlert } from '@/components/app-ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 
@@ -50,6 +51,7 @@ export default function OverduePage() {
               ? <TableLoadingRows rows={4} columns={5} />
               : contracts.map((contract) => {
                   const contractor = contract.contractor_id as Record<string, unknown> | undefined;
+                  const contractorId = contractor ? String(contractor._id ?? '') : '';
                   const endDate = contract.end_date ? new Date(String(contract.end_date)) : null;
                   return (
                     <TableRow
@@ -58,8 +60,19 @@ export default function OverduePage() {
                       onClick={() => contractor && router.push(`/contractors/${String(contractor._id ?? '')}`)}
                     >
                       <TableCell>
-                        <p className="font-medium text-foreground">{contractor ? String(contractor.name ?? '—') : '—'}</p>
-                        <p className="text-sm text-muted-foreground">{contractor ? String(contractor.job_title ?? '') : ''}</p>
+                        <ContractorHoverPopover
+                          contractorId={contractorId || undefined}
+                          name={contractor ? String(contractor.name ?? '') : undefined}
+                          email={contractor ? String(contractor.email ?? '') : undefined}
+                          department={contractor ? String(contractor.department ?? '') : undefined}
+                          jobTitle={contractor ? String(contractor.job_title ?? '') : undefined}
+                          href={contractorId ? `/contractors/${contractorId}` : undefined}
+                          contract={contract}
+                          avatar={contractor ? String(contractor.avatar ?? '') : undefined}
+                          image={contractor ? String(contractor.image ?? '') : undefined}
+                          photo={contractor ? String(contractor.photo ?? '') : undefined}
+                          subtitle={contractor ? String(contractor.job_title ?? '') : ''}
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {contractor ? String(contractor.department ?? '—') : '—'}

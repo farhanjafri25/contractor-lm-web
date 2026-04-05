@@ -354,6 +354,32 @@ export function FiltersPopover({
   );
 }
 
+export function ClearFiltersButton({
+  activeCount,
+  onClear,
+  className,
+}: {
+  activeCount: number;
+  onClear: () => void;
+  className?: string;
+}) {
+  if (activeCount === 0) {
+    return null;
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={onClear}
+      className={cn('shrink-0 text-muted-foreground hover:text-foreground', className)}
+    >
+      Clear
+    </Button>
+  );
+}
+
 export function SearchField({
   value,
   onChange,
@@ -508,8 +534,9 @@ export function MultiFilterDropdown({
   className?: string;
 }) {
   const selectedOptions = options.filter((option) => values.includes(option.value));
+  const isEmpty = selectedOptions.length === 0;
   const triggerLabel =
-    selectedOptions.length === 0
+    isEmpty
       ? placeholder
       : selectedOptions.length === 1
         ? selectedOptions[0].label
@@ -521,9 +548,14 @@ export function MultiFilterDropdown({
         render={
           <Button
             variant="ghost"
-            className={cn('justify-between', filterControlClassName, className)}
+            data-empty={isEmpty}
+            className={cn(
+              'justify-between text-foreground data-[empty=true]:text-muted-foreground/75',
+              filterControlClassName,
+              className,
+            )}
           >
-            <span className={cn(selectedOptions.length === 0 && 'text-muted-foreground/75')}>{triggerLabel}</span>
+            <span>{triggerLabel}</span>
             <ChevronBottom data-icon="inline-end" size={16} />
           </Button>
         }

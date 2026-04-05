@@ -7,12 +7,13 @@ import { toast } from 'sonner';
 import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
+import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
 import { CheckCircle, Clock, XCircle } from '@/components/icons';
 import { InitialAvatar, getAvatarSeed } from '@/components/initial-avatar';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
+import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, StatusBadge } from '@/components/app-ui';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
@@ -305,6 +306,7 @@ export default function SponsorPage() {
       });
   const activeFilterCount = statusFilters.length + typeFilters.length + rangeFilters.length;
   const hasSearchOrFilters = Boolean(search || activeFilterCount);
+  const clearFilters = () => updateFilterParams({ status: [], type: [], range: [] });
 
   const updateFilterParams = (updates: Record<string, string | string[]>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -338,7 +340,7 @@ export default function SponsorPage() {
           <SearchField value={search} onChange={setSearch} placeholder="Search requests" className="flex-1" />
           <FiltersPopover
             activeCount={activeFilterCount}
-            onClear={() => updateFilterParams({ status: [], type: [], range: [] })}
+            onClear={clearFilters}
           >
             <FieldBlock label="Status">
               <MultiFilterChecklist
@@ -362,6 +364,7 @@ export default function SponsorPage() {
               />
             </FieldBlock>
           </FiltersPopover>
+          <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
         </div>
 
         <div className="hidden md:flex md:items-center md:gap-3">
@@ -390,6 +393,7 @@ export default function SponsorPage() {
               placeholder="Any time"
               className="min-w-36"
             />
+            <ClearFiltersButton activeCount={activeFilterCount} onClear={clearFilters} />
           </div>
           <SearchField
             value={search}
@@ -420,21 +424,27 @@ export default function SponsorPage() {
                     const submitter = request.sponsor_id as Record<string, unknown> | undefined;
                     const status = String(request.status ?? 'pending');
                     const requestDate = request.createdAt || request.created_at;
+                    const contractorId = contractor ? String(contractor._id ?? '') : '';
                     const contractorName = contractor ? String(contractor.name ?? '') : '';
                     const contractorEmail = contractor ? String(contractor.email ?? '') : '';
-                    const contractorSeed = getAvatarSeed(contractor?._id, contractorEmail, contractorName);
                     const submitterName = submitter ? String(submitter.name ?? submitter.full_name ?? submitter.display_name ?? '') : '';
                     const submitterEmail = submitter ? String(submitter.email ?? '') : '';
                     return (
                       <TableRow key={String(request._id)}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
-                            <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail} />
-                            <div className="space-y-0.5">
-                              <p className="font-medium text-foreground">{contractorName || '—'}</p>
-                              <p className="text-sm text-muted-foreground">{contractor ? String(contractor.department ?? '') : ''}</p>
-                            </div>
-                          </div>
+                          <ContractorHoverPopover
+                            contractorId={contractorId || undefined}
+                            name={contractorName || undefined}
+                            email={contractorEmail || undefined}
+                            department={contractor ? String(contractor.department ?? '') : undefined}
+                            jobTitle={contractor ? String(contractor.job_title ?? '') : undefined}
+                            href={contractorId ? `/contractors/${contractorId}` : undefined}
+                            contract={contract}
+                            avatar={contractor ? String(contractor.avatar ?? '') : undefined}
+                            image={contractor ? String(contractor.image ?? '') : undefined}
+                            photo={contractor ? String(contractor.photo ?? '') : undefined}
+                            subtitle={contractor ? String(contractor.department ?? '') : ''}
+                          />
                         </TableCell>
                         <TableCell className="capitalize text-muted-foreground">
                           {getActionTypeLabel(String(request.action_type ?? ''))}

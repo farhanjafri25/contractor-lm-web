@@ -7,7 +7,23 @@ import { ThemeProvider } from 'next-themes';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
+function getMetadataBase() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+    'https://www.tenurio.com';
+
+  try {
+    return new URL(configuredUrl);
+  } catch {
+    return new URL('https://www.tenurio.com');
+  }
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: 'Tenurio - Contractor Access Management',
   description:
     'Automate contractor access with ownership and expiry. No spreadsheets. No blind spots.',
