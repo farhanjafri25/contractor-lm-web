@@ -330,9 +330,10 @@ function FeedbackPopover() {
         <div className="flex justify-end pt-1">
           <Button
             type="button"
+            size="sm"
             disabled={!trimmedMessage || isSubmitting}
             onClick={handleSubmit}
-            className="min-w-[5rem]"
+            className="min-w-[6.5rem]"
           >
             {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
