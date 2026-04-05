@@ -11,18 +11,27 @@ import {
   CheckCircle,
   ChevronGrabberVertical,
   Group2,
+  Group2Filled,
   History,
+  HistoryFilled,
   HomeCircle,
+  HomeCircleFilled,
   LogOut,
   Moon,
   PeopleAdd,
+  PeopleAddFilled,
   SettingsGear1,
+  SettingsGear1Filled,
   ShieldCheck,
+  ShieldCheckFilled,
   SidebarHiddenLeftWide,
   Users,
+  UsersFilled,
   User,
+  UserFilled,
   Sun,
   Connectors,
+  ConnectorsFilled,
 } from '@/components/icons';
 
 import { useAuth } from '@/context/auth-context';
@@ -105,15 +114,15 @@ function GettingStartedProgressIcon({
 
 const NAV = [
   { href: '/getting-started', label: 'Getting Started', icon: GettingStartedProgressIcon },
-  { href: '/dashboard', label: 'Dashboard', icon: HomeCircle },
-  { href: '/contractors', label: 'Contractors', icon: Users },
-  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, roles: ['admin', 'sponsor'] },
-  { href: '/access', label: 'Access', icon: ShieldCheck, roles: ['admin'] },
-  { href: '/events', label: 'Activity', icon: History, roles: ['admin', 'sponsor'] },
-  { href: '/settings/profile', label: 'Profile', icon: User },
-  { href: '/settings/organization', label: 'Organization', icon: SettingsGear1, roles: ['admin'] },
-  { href: '/settings/team', label: 'Team', icon: Group2, roles: ['admin'] },
-  { href: '/integrations', label: 'Integrations', icon: Connectors, roles: ['admin'] },
+  { href: '/dashboard', label: 'Dashboard', icon: HomeCircle, activeIcon: HomeCircleFilled },
+  { href: '/contractors', label: 'Contractors', icon: Users, activeIcon: UsersFilled },
+  { href: '/sponsor', label: 'Requests', icon: PeopleAdd, activeIcon: PeopleAddFilled, roles: ['admin', 'sponsor'] },
+  { href: '/access', label: 'Access', icon: ShieldCheck, activeIcon: ShieldCheckFilled, roles: ['admin'] },
+  { href: '/events', label: 'Activity', icon: History, activeIcon: HistoryFilled, roles: ['admin', 'sponsor'] },
+  { href: '/settings/profile', label: 'Profile', icon: User, activeIcon: UserFilled },
+  { href: '/settings/organization', label: 'Organization', icon: SettingsGear1, activeIcon: SettingsGear1Filled, roles: ['admin'] },
+  { href: '/settings/team', label: 'Team', icon: Group2, activeIcon: Group2Filled, roles: ['admin'] },
+  { href: '/integrations', label: 'Integrations', icon: Connectors, activeIcon: ConnectorsFilled, roles: ['admin'] },
 ];
 
 const NAV_GROUPS = [
@@ -473,8 +482,10 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                 {group.label}
               </p>
             ) : null}
-            {items.map(({ href, label, icon: Icon }) => {
+            {items.map(({ href, label, icon: Icon, activeIcon }) => {
               const active = pathname.startsWith(href);
+              const NavIcon = active ? activeIcon ?? Icon : Icon;
+
               return (
                 <Link
                   key={href}
@@ -489,8 +500,13 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                   )}
                   title={collapsed ? label : undefined}
                 >
-                  <span className="flex size-[18px] shrink-0 items-center justify-center">
-                    <Icon size={href === '/getting-started' ? 16 : 18} />
+                  <span
+                    className={cn(
+                      'flex size-[18px] shrink-0 items-center justify-center',
+                      active && 'text-sidebar-foreground/70',
+                    )}
+                  >
+                    <NavIcon size={href === '/getting-started' ? 16 : 18} />
                   </span>
                   {!collapsed ? <span className="flex-1">{label}</span> : null}
                   {!collapsed && href === '/settings/team' && pendingCount > 0 ? (

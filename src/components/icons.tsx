@@ -39,6 +39,15 @@ export { IconTeam as Users } from '@central-icons-react/round-outlined-radius-3-
 export { IconTrashCanSimple as IconTrashCanSimple } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconTrashCanSimple';
 export { IconX as X } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconX';
 export { IconConnectors1 as Connectors } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconConnectors1';
+export { IconConnectors1 as ConnectorsFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconConnectors1';
+export { IconGroup2 as Group2Filled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGroup2';
+export { IconHistory as HistoryFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconHistory';
+export { IconHomeCircle as HomeCircleFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconHomeCircle';
+export { IconPeopleAdd as PeopleAddFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconPeopleAdd';
+export { IconSettingsGear1 as SettingsGear1Filled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSettingsGear1';
+export { IconShieldCheck as ShieldCheckFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconShieldCheck';
+export { IconTeam as UsersFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTeam';
+export { IconUser as UserFilled } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUser';
 
 
 export { IconExclamationTriangle as AlertTriangle } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconExclamationTriangle';
