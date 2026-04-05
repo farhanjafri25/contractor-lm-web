@@ -68,7 +68,9 @@ export function AuthPageLayout({
           <>
             <span>&copy; {new Date().getFullYear()} Tenurio</span>
             <div className="flex gap-6">
-              <span>Privacy Policy</span>
+              <Link href="https://www.tenurio.com/privacy-policy" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </Link>
               <span>Support</span>
             </div>
           </>

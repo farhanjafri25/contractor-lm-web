@@ -94,7 +94,14 @@ export default function LoginPage() {
 
       <p className="max-w-md text-sm leading-6 text-muted-foreground">
         By signing in, you agree to receive product updates and onboarding communication from Tenurio.{' '}
-        <span className="underline underline-offset-4">Privacy Policy</span>
+        <Link
+          href="https://www.tenurio.com/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4"
+        >
+          Privacy Policy
+        </Link>
       </p>
 
       <p className="text-sm text-muted-foreground">
