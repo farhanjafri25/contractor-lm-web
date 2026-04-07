@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import { sponsorApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
@@ -125,6 +126,7 @@ function ReviewDialog({
     setError('');
     try {
       await sponsorApi.review(id, decision, trimmedNote || undefined);
+      posthog.capture('sponsor_request_reviewed', { decision, request_type: String(request.action_type ?? '') });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['sponsor-actions'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-pending-requests'] }),

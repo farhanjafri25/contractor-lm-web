@@ -30,6 +30,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import posthog from 'posthog-js';
 import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { prepareImageForUpload } from '@/lib/image-upload';
@@ -355,6 +356,7 @@ export default function SignupPage() {
     try {
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await authApi.signup(email.trim(), fullName, password);
+      posthog.capture('signup_started');
       setStep('verify');
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Sign-up failed. Try again.');
@@ -373,6 +375,7 @@ export default function SignupPage() {
       try {
         const response = await authApi.verifyOtp(email.trim(), otp.trim());
         setSession(response.data.access_token, response.data.refresh_token, response.data.user);
+        posthog.capture('signup_email_verified');
 
       if (response.data.status === 'pending_approval') {
         setSuccessMessage(response.data.message);
@@ -401,6 +404,7 @@ export default function SignupPage() {
          marketing_opt_in: marketingOptIn,
          avatar: avatarPreview ?? undefined, // Only pass if set
       });
+      posthog.capture('signup_profile_completed');
 
       const isPending = authUser?.status === 'pending_approval';
 
@@ -433,6 +437,7 @@ export default function SignupPage() {
         company_size: companySize,
         logo: logoPreview ?? undefined,
       });
+      posthog.capture('signup_workspace_completed', { company_size: companySize });
       setStep('tracking');
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, "We couldn't save your workspace details. Try again.");
@@ -447,6 +452,9 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await tenantApi.updateProfile(payload);
+      if (nextStep === 'success') {
+        posthog.capture('signup_completed');
+      }
       setStep(nextStep);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save selection.'));

@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
+import posthog from 'posthog-js';
 import { tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PendingApprovalsSkeleton, SummaryCardsSkeleton } from '@/components/page-skeletons';
@@ -152,6 +153,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     try {
       // Role is hardcoded to sponsor on the backend now.
       await tenantApi.inviteUser(email.toLowerCase());
+      posthog.capture('team_member_invited');
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
       toast.success('Invite sent.');
       setEmail('');

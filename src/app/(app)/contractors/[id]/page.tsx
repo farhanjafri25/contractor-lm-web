@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import { accessApi, applicationsApi, contractorsApi, contractsApi, eventsApi, sponsorApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useAuth } from '@/context/auth-context';
@@ -558,6 +559,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionLoading(true);
     try {
       await contractsApi.suspend(contractorId, contractId, suspendReason, suspendNote || undefined);
+      posthog.capture('contract_suspended', { reason: suspendReason });
       await refresh();
       closeDialog();
       toast.success('Contract suspended.');
@@ -571,6 +573,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionLoading(true);
     try {
       await contractsApi.reactivate(contractorId, contractId, reactivateNote || undefined);
+      posthog.capture('contract_reactivated');
       await refresh();
       closeDialog();
       toast.success('Contract reactivated.');
@@ -585,6 +588,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     try {
       if (isAdmin) {
         await contractsApi.extend(contractorId, contractId, extendDate, extendNote || undefined);
+        posthog.capture('contract_extended', { new_end_date: extendDate });
       } else {
         await sponsorApi.submit({
           contract_id: contractId,
@@ -592,6 +596,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           proposed_end_date: extendDate,
           justification: extendNote || 'Extension requested by sponsor',
         });
+        posthog.capture('sponsor_request_submitted', { action_type: 'extend' });
       }
       await refresh();
       closeDialog();
@@ -606,6 +611,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     setActionLoading(true);
     try {
       await contractsApi.terminate(contractorId, contractId);
+      posthog.capture('contract_terminated');
       await refresh();
       closeDialog();
       toast.success('Contractor deactivated.');
@@ -682,6 +688,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       };
 
       await accessApi.sync(contractId, payload);
+      posthog.capture('access_assigned', { app_count: selectedAppIds.length });
       await refresh();
       closeDialog();
       toast.success('Access updated.');
@@ -699,6 +706,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         action_type: 'reactivate',
         justification: requestNote || 'Reactivation requested by sponsor',
       });
+      posthog.capture('sponsor_request_submitted', { action_type: 'reactivate' });
       await refresh();
       closeDialog();
       toast.success('Reactivation request submitted.');
@@ -716,6 +724,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         action_type: 'access_change',
         justification: requestNote || 'Access change requested by sponsor',
       });
+      posthog.capture('sponsor_request_submitted', { action_type: 'access_change' });
       await refresh();
       closeDialog();
       toast.success('Access change request submitted.');
@@ -733,6 +742,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         action_type: 'deactivate',
         justification: requestNote || 'Deactivation requested by sponsor',
       });
+      posthog.capture('sponsor_request_submitted', { action_type: 'deactivate' });
       await refresh();
       closeDialog();
       toast.success('Deactivation request submitted.');

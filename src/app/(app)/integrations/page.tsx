@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, type SVGProps } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useGettingStarted } from '@/hooks/use-getting-started';
@@ -51,9 +52,11 @@ function IntegrationsContent() {
     const error = searchParams?.get('error');
 
     if (success === 'google_connected') {
+      posthog.capture('integration_connected', { provider: 'google' });
       toast.success('Successfully connected to Google Workspace Admin!');
       window.history.replaceState(null, '', window.location.pathname);
     } else if (success === 'slack_connected') {
+      posthog.capture('integration_connected', { provider: 'slack' });
       toast.success('Successfully connected to Slack Workspace!');
       window.history.replaceState(null, '', window.location.pathname);
     }

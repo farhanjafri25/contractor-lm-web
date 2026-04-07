@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import posthog from 'posthog-js';
 import { applicationsApi, contractorsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -365,6 +366,7 @@ export function CsvImporter() {
       return { ...(res.data as BulkCreateResponse), indexMap: args.indexMap };
     },
     onSuccess: (data) => {
+      posthog.capture('csv_import_completed', { successful: data.successful, failed: data.failed });
       if (data.successful > 0) {
         toast.success(`Successfully imported ${data.successful} contractors.`);
       }

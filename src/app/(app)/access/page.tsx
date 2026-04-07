@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import { accessApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ContractorHoverPopover } from '@/components/contractor-hover-popover';
@@ -420,6 +421,7 @@ export default function AccessPage() {
 
     try {
       await accessApi.revoke(id);
+      posthog.capture('access_revoked');
       await queryClient.invalidateQueries({ queryKey: ['access-all'] });
       toast.success('Access revocation started.');
     } catch (err: unknown) {

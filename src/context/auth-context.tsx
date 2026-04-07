@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import posthog from 'posthog-js';
 import { authApi } from '@/lib/api';
 
 function parseJwt(token: string) {
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTenantId(tId);
         }
         setUser(user);
+        posthog.identify(user._id, { email: user.email, name: user.name, role: user.role, tenant_id: tId });
     };
 
     const login = async (email: string, password: string) => {
@@ -116,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        posthog.reset();
         localStorage.clear();
         setUser(null);
         setTenantId(null);

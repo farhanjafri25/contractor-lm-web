@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 import { applicationsApi, contractorsApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ChevronBottom } from '@/components/icons';
@@ -154,6 +155,10 @@ export default function NewContractorPage() {
           create_slack_account: contract.create_slack_account,
           application_access: finalAppAccess,
         },
+      });
+      posthog.capture('contractor_created', {
+        create_google_account: contract.create_google_account,
+        create_slack_account: contract.create_slack_account,
       });
       toast.success('Contractor added.');
       router.push('/contractors');
