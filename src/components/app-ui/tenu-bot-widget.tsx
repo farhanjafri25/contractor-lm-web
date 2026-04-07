@@ -227,7 +227,7 @@ export function TenuBotWidget() {
             maxWidth: isOpen ? SHELL.openWidth : SHELL.collapsedWidth,
           }}
           transition={shellTransition}
-          className="card-surface relative isolate pointer-events-auto flex w-full flex-col overflow-hidden rounded-[14px] bg-background/95 backdrop-blur-xl md:rounded-[16px]"
+          className="relative isolate pointer-events-auto flex w-full flex-col overflow-hidden rounded-[14px] bg-background/95 shadow ring-1 ring-foreground/[0.065] backdrop-blur-xl md:rounded-[16px]"
         >
           <div
             className={`pointer-events-none absolute left-1/2 top-0 z-0 h-48 w-[140%] -translate-x-1/2 -translate-y-[34%] bg-center bg-cover bg-no-repeat transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
