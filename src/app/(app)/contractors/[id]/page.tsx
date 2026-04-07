@@ -497,7 +497,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       ? [{
           key: 'delete',
           label: 'Delete',
-          description: 'Permanently remove this record.',
+          description: 'Permanently remove this contractor.',
           onSelect: () => setModal('delete'),
           variant: 'destructive' as const,
         }]
@@ -650,7 +650,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
       toast.success('Contractor deleted.');
       router.push('/contractors');
     } catch (err) {
-      handleError(err);
+      toast.error(getApiErrorMessage(err, 'Could not delete contractor. Try again.'));
       setActionLoading(false);
     }
   }
@@ -1162,7 +1162,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         open={modal === 'delete'}
         onOpenChange={(open) => !open && closeDialog()}
         title="Delete contractor"
-        description="This permanently removes this contractor record."
+        description="This permanently removes this contractor."
         footer={
           <>
             <Button type="button" variant="secondary" onClick={closeDialog}>Cancel</Button>
@@ -1174,7 +1174,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
         }
       >
         <p className="text-sm leading-6 text-muted-foreground">
-          This can&apos;t be undone. All contract history, access records, and audit logs for <strong>{profileName}</strong> will be permanently deleted.
+          This can&apos;t be undone. <strong>{profileName}</strong> and all related records will be permanently deleted.
         </p>
       </ActionDialog>
 
