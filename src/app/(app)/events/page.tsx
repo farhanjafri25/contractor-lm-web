@@ -43,7 +43,7 @@ export default function AuditLogPage() {
     setPage(1);
   };
 
-  const params: Record<string, unknown> = { page: 1, limit: 500 };
+  const params: Record<string, unknown> = { page: 1, limit: 50 };
   if (search) params.search = search;
   if (from) params.from = from;
   if (to) params.to = to;
