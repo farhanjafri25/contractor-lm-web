@@ -292,13 +292,15 @@ export function EmptyState({
   title,
   description,
   action,
+  className,
 }: {
   title: string;
   description: string;
   action?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 px-6 py-14 text-center">
+    <div className={cn("flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 px-6 py-14 text-center", className)}>
       <p className="text-lg font-semibold text-foreground">{title}</p>
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
       {action}

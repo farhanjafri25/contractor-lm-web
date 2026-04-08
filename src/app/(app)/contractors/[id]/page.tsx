@@ -854,6 +854,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
                 <EmptyState
                   title="No active contract"
                   description="This contractor record does not currently include an active contract to manage."
+                  className="border-0 bg-transparent"
                 />
               )}
             </SectionCard>
@@ -921,6 +922,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               <EmptyState
                 title="No activity yet"
                 description="Lifecycle changes, access updates, and sponsor requests will appear here once work starts moving."
+                className="border-0 bg-transparent"
               />
             )}
           </SectionCard>
@@ -999,6 +1001,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
               <EmptyState
                 title="No linked applications"
                 description="Provisioned apps will show here once this contract has system access attached."
+                className="border-0 bg-transparent"
               />
             )}
           </SectionCard>
