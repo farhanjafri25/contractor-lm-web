@@ -2,20 +2,10 @@
 
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { initPostHog } from '@/lib/posthog';
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (!initialized.current) {
-      initPostHog();
-      initialized.current = true;
-    }
-  }, []);
-
   return (
     <PHProvider client={posthog}>
       <Suspense fallback={null}>
