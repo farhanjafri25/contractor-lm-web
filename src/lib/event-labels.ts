@@ -1,16 +1,34 @@
 const EVENT_LABELS: Record<string, string> = {
+  // Contractor
   'contractor.created': 'Contractor added',
+  'contractor.onboarded': 'Contractor onboarded',
   'contractor.updated': 'Contractor updated',
+  'contractor.deleted': 'Contractor deleted',
+  'contractor.bulk_imported': 'Bulk import started',
+
+  // Access
+  'access.granted': 'Access granted',
+  'access.revoked': 'Access removed',
+  'access.revocation_failed': 'Access removal failed',
+
+  // Contract
   'contract.extended': 'Contract extended',
   'contract.suspended': 'Contract suspended',
   'contract.reactivated': 'Contract reactivated',
   'contract.expired': 'Contract expired',
   'contract.terminated': 'Contract ended',
-  'access.provisioned': 'Access granted',
-  'access.revoked': 'Access removed',
-  'sponsor.action.submitted': 'Request sent',
-  'sponsor.action.approved': 'Request approved',
-  'sponsor.action.rejected': 'Request rejected',
+
+  // Extension/Sponsor Flow
+  'onboarding.requested': 'Onboarding request sent',
+  'extension.request_submitted': 'Extension requested',
+  'extension.request_approved': 'Extension approved',
+  'extension.request_rejected': 'Extension rejected',
+  'sponsor.reminder_sent': 'Reminder sent to sponsor',
+  'sponsor.no_response': 'Sponsor failed to respond',
+
+  // Directory
+  'directory_sync.success': 'Directory sync successful',
+  'directory_sync.failed': 'Directory sync failed',
 };
 
 function titleCase(value: string) {

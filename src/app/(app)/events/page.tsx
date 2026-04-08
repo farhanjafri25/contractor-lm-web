@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
 import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
-const categories = ['', 'contractor', 'contract', 'access', 'sponsor'];
+const categories = ['', 'contractor', 'contract', 'access', 'sponsor', 'extension', 'directory_sync'];
 const pageSize = 25;
 
 export default function AuditLogPage() {
@@ -43,7 +43,7 @@ export default function AuditLogPage() {
     setPage(1);
   };
 
-  const params: Record<string, unknown> = { page: 1, limit: 50 };
+  const params: Record<string, unknown> = { page: 1, limit: 100 };
   if (search) params.search = search;
   if (from) params.from = from;
   if (to) params.to = to;
@@ -63,9 +63,10 @@ export default function AuditLogPage() {
   const allEvents: Record<string, unknown>[] = data?.data ?? [];
   const filteredEvents = allEvents.filter((event) => {
     const type = String(event.event_type ?? '');
-    const category = String(event.category ?? '');
+    // Derive category from event_type prefix since it's not in the base schema
+    const derivedCategory = type.split('.')[0];
+    const categoryMatches = categoriesSelected.length === 0 || categoriesSelected.includes(derivedCategory);
     const eventTypeMatches = eventTypes.length === 0 || eventTypes.includes(type);
-    const categoryMatches = categoriesSelected.length === 0 || categoriesSelected.includes(category);
     return eventTypeMatches && categoryMatches;
   });
   const total = filteredEvents.length;
@@ -86,12 +87,12 @@ export default function AuditLogPage() {
         description="Track contractor, contract, access, and sponsor events as work moves through the workspace."
       />
 
-      {statsData?.by_type ? (
+      {statsData?.by_event_type ? (
         <div className="flex flex-wrap gap-3">
-          {Object.entries(statsData.by_type as Record<string, number>)
-            .sort(([, left], [, right]) => right - left)
+          {(statsData.by_event_type as Array<{ event_type: string; count: number }>)
+            .sort((left, right) => right.count - left.count)
             .slice(0, 8)
-            .map(([type, count]) => (
+            .map(({ event_type: type, count }) => (
               <SummaryPill
                 key={type}
                 label={getEventLabel(type)}
