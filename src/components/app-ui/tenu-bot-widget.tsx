@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 import { MinusLarge, PaperPlane } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { aiApi } from '@/lib/api';
@@ -346,7 +347,7 @@ export function TenuBotWidget() {
                             : 'rounded-bl-md pl-2 text-foreground'
                         }`}
                       >
-                        <ReactMarkdown breaks>{message.content}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkBreaks]}>{message.content}</ReactMarkdown>
                       </div>
                     </div>
                   ))}
