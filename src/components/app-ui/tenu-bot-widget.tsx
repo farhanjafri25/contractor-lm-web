@@ -68,9 +68,11 @@ export function TenuBotWidget() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [isScrolledFromTop, setIsScrolledFromTop] = useState(false);
 
-  const composerInputRef = useRef<HTMLInputElement>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef(false);
 
   const visibleMessages = messages.filter((message) => message.role !== 'system' && message.role !== 'tool');
@@ -116,6 +118,22 @@ export function TenuBotWidget() {
   useEffect(() => {
     if (!isOpen) return;
 
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setIsScrolledFromTop(container.scrollTop > 10);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
     messagesEndRef.current?.scrollIntoView({
       behavior: prefersReducedMotion ? 'auto' : 'smooth',
     });
@@ -143,6 +161,16 @@ export function TenuBotWidget() {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen || isLoading) return;
+
+    const timeout = setTimeout(() => {
+      composerInputRef.current?.focus();
+    }, 50);
+
+    return () => clearTimeout(timeout);
+  }, [isOpen, isLoading]);
+
+  useEffect(() => {
     if (!isOpen) return;
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -163,6 +191,10 @@ export function TenuBotWidget() {
   const closePanel = () => {
     returnFocusRef.current = true;
     setIsOpen(false);
+    setInput('');
+    if (composerInputRef.current) {
+      composerInputRef.current.style.height = 'auto';
+    }
   };
 
   const handleSend = async () => {
@@ -173,6 +205,9 @@ export function TenuBotWidget() {
 
     setMessages(newMessages);
     setInput('');
+    if (composerInputRef.current) {
+      composerInputRef.current.style.height = 'auto';
+    }
     setIsLoading(true);
 
     try {
@@ -295,7 +330,8 @@ export function TenuBotWidget() {
                   ...revealTransition,
                   delay: isOpen && !prefersReducedMotion ? TIMING.messagesReveal / 1000 : 0,
                 }}
-                className="flex-1 overflow-y-auto px-3 py-3 scroll-pb-4 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)]"
+                ref={messagesContainerRef}
+                className={`flex-1 overflow-y-auto px-3 py-3 scroll-pb-4 ${isScrolledFromTop ? '[-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.22)_10px,black_34px,black_100%)]' : ''}`}
               >
                 <div className="space-y-4">
                   {visibleMessages.map((message, index) => (
@@ -304,13 +340,13 @@ export function TenuBotWidget() {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[86%] space-y-2 rounded-[18px] border-[0.5px] border-black/8 px-3 py-2.5 text-sm shadow-xs dark:border-white/8 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
+                        className={`max-w-[86%] wrap-break-word space-y-2 rounded-[18px] px-3 py-2.5 text-sm [&>p]:whitespace-pre-wrap [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:font-semibold ${
                           message.role === 'user'
-                            ? 'rounded-br-md bg-primary text-primary-foreground'
-                            : 'rounded-bl-md bg-background/92 text-foreground dark:bg-input/45'
+                            ? 'rounded-br-md border-[0.5px] border-black/8 bg-background/92 text-foreground shadow-xs dark:border-white/8 dark:bg-input/45'
+                            : 'rounded-bl-md pl-2 text-foreground'
                         }`}
                       >
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                        <ReactMarkdown breaks>{message.content}</ReactMarkdown>
                       </div>
                     </div>
                   ))}
@@ -336,21 +372,27 @@ export function TenuBotWidget() {
             </div>
           </motion.div>
 
-          <div className={`relative z-10 bg-background ${isOpen ? 'px-2 pt-0.5 pb-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
+          <div className={`relative z-10 shrink-0 bg-background ${isOpen ? 'max-h-[50%] px-2 pt-0.5 pb-2' : 'flex flex-1 flex-col justify-end p-0'}`}>
             <div
-              className={`border border-border/70 bg-background ${isOpen ? 'flex items-end gap-2 rounded-[12px] p-1.5' : 'flex h-full items-center gap-2 rounded-[10px] py-px pr-[3px] pl-px'}`}
+              className={`border border-border/70 bg-background ${isOpen ? 'flex items-end gap-2 rounded-[12px] p-1.5' : 'flex h-full items-center gap-2 rounded-2xl py-px pr-0.75 pl-px'}`}
               onPointerDownCapture={() => {
                 if (!isOpen) {
                   openPanel();
                 }
               }}
             >
-              <input
+              <textarea
                 ref={composerInputRef}
-                type="text"
                 value={input}
-                readOnly={!isOpen}
-                onChange={(event) => setInput(event.target.value)}
+                readOnly={!isOpen || isLoading}
+                rows={1}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  if (isOpen) {
+                    event.target.style.height = 'auto';
+                    event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+                  }
+                }}
                 onKeyDown={(event) => {
                   if (!isOpen) {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -366,19 +408,19 @@ export function TenuBotWidget() {
                     }
                     return;
                   }
-                  if (event.key !== 'Enter') return;
-
-                  event.preventDefault();
-                  void handleSend();
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSend();
+                  }
                 }}
                 placeholder="Ask me about contractors..."
-                className={`bg-transparent text-left text-sm text-foreground outline-none placeholder:text-muted-foreground ${isOpen ? 'min-h-9 flex-1 px-3 py-1.5' : 'h-full min-h-0 flex-1 px-3 py-0'}`}
+                className={`resize-none bg-transparent text-left text-sm text-foreground outline-none placeholder:text-muted-foreground ${isOpen ? 'min-h-9 max-h-30 flex-1 overflow-y-auto px-3 py-1.5 -translate-y-px' : 'self-center flex-1 overflow-hidden whitespace-nowrap px-3'}`}
                 aria-label="Ask Tenu-Bot about contractors"
-                disabled={isLoading}
               />
 
               <Button
                 type="button"
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   if (!isOpen) {
                     openPanel();
@@ -386,6 +428,7 @@ export function TenuBotWidget() {
                   }
 
                   void handleSend();
+                  composerInputRef.current?.focus();
                 }}
                 disabled={isSendDisabled}
                 tabIndex={isOpen ? 0 : -1}
