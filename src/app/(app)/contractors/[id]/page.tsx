@@ -146,21 +146,21 @@ function getTimelineEventMeta(type: string) {
     };
   }
 
-  if (type === 'sponsor.action.submitted') {
+  if (type === 'extension.request_submitted' || type === 'termination.request_submitted' || type === 'onboarding.requested') {
     return {
       icon: FileText,
       className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
     };
   }
 
-  if (type === 'sponsor.action.approved') {
+  if (type === 'extension.request_approved' || type === 'termination.request_approved') {
     return {
       icon: CheckCircle,
       className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
     };
   }
 
-  if (type === 'sponsor.action.rejected') {
+  if (type === 'extension.request_rejected' || type === 'termination.request_rejected') {
     return {
       icon: XCircle,
       className: 'bg-muted/40 text-muted-foreground',

@@ -23,6 +23,9 @@ const EVENT_LABELS: Record<string, string> = {
   'extension.request_submitted': 'Extension requested',
   'extension.request_approved': 'Extension approved',
   'extension.request_rejected': 'Extension rejected',
+  'termination.request_submitted': 'Termination requested',
+  'termination.request_approved': 'Termination approved',
+  'termination.request_rejected': 'Termination rejected',
   'sponsor.reminder_sent': 'Reminder sent to sponsor',
   'sponsor.no_response': 'Sponsor failed to respond',
 
