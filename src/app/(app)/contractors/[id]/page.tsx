@@ -422,20 +422,23 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     return null;
   };
 
+  // Check if contract is effectively active
+  const isActiveStatus = activeContract?.status === 'active' || activeContract?.status === 'extended';
+
   // Admin action conditions
-  const canSuspend = activeContract?.status === 'active' && isAdmin;
-  const canExtend = activeContract?.status === 'active';
-  const canTerminate = activeContract?.status === 'active' && isAdmin;
+  const canSuspend = isActiveStatus && isAdmin;
+  const canExtend = isActiveStatus;
+  const canTerminate = isActiveStatus && isAdmin;
   const canReactivate = activeContract?.status === 'suspended' && isAdmin;
   const canEdit = isAdmin;
   const canDelete = isAdmin;
   const canChangeSponsor = isAdmin;
-  const canAssignAccess = activeContract?.status === 'active' && isAdmin;
+  const canAssignAccess = isActiveStatus && isAdmin;
 
   // Sponsor action conditions
   const canRequestReactivate = !isAdmin && activeContract?.status === 'suspended';
-  const canRequestAccess = !isAdmin && activeContract?.status === 'active';
-  const canRequestDeactivate = !isAdmin && activeContract?.status === 'active';
+  const canRequestAccess = !isAdmin && isActiveStatus;
+  const canRequestDeactivate = !isAdmin && isActiveStatus;
   const canEditBasic = !isAdmin && Boolean(activeContract);
 
   const hasManageActions = Boolean(
