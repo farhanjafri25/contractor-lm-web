@@ -36,7 +36,7 @@ import {
 
 import { useAuth } from '@/context/auth-context';
 import { useGettingStarted } from '@/hooks/use-getting-started';
-import { tenantApi, feedbackApi } from '@/lib/api';
+import { tenantApi, feedbackApi, sponsorApi } from '@/lib/api';
 import { InitialAvatar, getAvatarSeed, getAvatarTone } from '@/components/initial-avatar';
 import { cn } from '@/lib/utils';
 import { Logo, LogoMark } from '@/components/logo';
@@ -453,6 +453,12 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
   });
   const pendingCount = pendingData?.data?.length || 0;
 
+  const { data: pendingRequestsData } = useQuery({
+    queryKey: ['pending-requests'],
+    queryFn: async () => (await sponsorApi.list({ status: 'pending' })).data,
+  });
+  const pendingRequestsCount = pendingRequestsData?.data?.length || 0;
+
   const visible = useMemo(
     () =>
       NAV.filter((item) => {
@@ -518,6 +524,16 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                       )}
                     >
                       {pendingCount}
+                    </span>
+                  ) : null}
+                  {!collapsed && href === '/sponsor' && pendingRequestsCount > 0 ? (
+                    <span
+                      className={cn(
+                        'rounded-sm px-1.5 py-0.5 text-[10px] font-medium',
+                        active ? 'bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground' : 'bg-sidebar-accent text-sidebar-accent-foreground',
+                      )}
+                    >
+                      {pendingRequestsCount}
                     </span>
                   ) : null}
                 </Link>
