@@ -739,7 +739,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     try {
       await sponsorApi.submit({
         contract_id: contractId,
-        action_type: 'deactivate',
+        action_type: 'terminate',
         justification: requestNote || 'Deactivation requested by sponsor',
       });
       posthog.capture('sponsor_request_submitted', { action_type: 'deactivate' });
