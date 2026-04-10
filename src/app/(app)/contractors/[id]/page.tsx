@@ -146,21 +146,37 @@ function getTimelineEventMeta(type: string) {
     };
   }
 
-  if (type === 'extension.request_submitted' || type === 'termination.request_submitted' || type === 'onboarding.requested') {
+  if (
+    type === 'extension.request_submitted' || 
+    type === 'termination.request_submitted' || 
+    type === 'reactivation.request_submitted' || 
+    type === 'access.request_submitted' || 
+    type === 'onboarding.requested'
+  ) {
     return {
       icon: FileText,
       className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
     };
   }
 
-  if (type === 'extension.request_approved' || type === 'termination.request_approved') {
+  if (
+    type === 'extension.request_approved' || 
+    type === 'termination.request_approved' || 
+    type === 'reactivation.request_approved' || 
+    type === 'access.request_approved'
+  ) {
     return {
       icon: CheckCircle,
       className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
     };
   }
 
-  if (type === 'extension.request_rejected' || type === 'termination.request_rejected') {
+  if (
+    type === 'extension.request_rejected' || 
+    type === 'termination.request_rejected' || 
+    type === 'reactivation.request_rejected' || 
+    type === 'access.request_rejected'
+  ) {
     return {
       icon: XCircle,
       className: 'bg-muted/40 text-muted-foreground',

@@ -26,6 +26,12 @@ const EVENT_LABELS: Record<string, string> = {
   'termination.request_submitted': 'Termination requested',
   'termination.request_approved': 'Termination approved',
   'termination.request_rejected': 'Termination rejected',
+  'reactivation.request_submitted': 'Reactivation requested',
+  'reactivation.request_approved': 'Reactivation approved',
+  'reactivation.request_rejected': 'Reactivation rejected',
+  'access.request_submitted': 'Access change requested',
+  'access.request_approved': 'Access change approved',
+  'access.request_rejected': 'Access change rejected',
   'sponsor.reminder_sent': 'Reminder sent to sponsor',
   'sponsor.no_response': 'Sponsor failed to respond',
 
