@@ -229,6 +229,14 @@ function getContractWindowCopy(endDate: unknown, status: string) {
     return 'Timeline unavailable.';
   }
 
+  if (status.toLowerCase().includes('terminated')) {
+    return 'Contract terminated';
+  }
+
+  if (status.toLowerCase().includes('expired')) {
+    return 'Contract expired';
+  }
+
   const days = differenceInCalendarDays(date, new Date());
   if (days > 1) {
     return `${days} days remaining`;
@@ -455,7 +463,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const canRequestReactivate = !isAdmin && activeContract?.status === 'suspended';
   const canRequestAccess = !isAdmin && isActiveStatus;
   const canRequestDeactivate = !isAdmin && isActiveStatus;
-  const canEditBasic = !isAdmin && Boolean(activeContract);
+  const canEditBasic = !isAdmin && isActiveStatus;
 
   const hasManageActions = Boolean(
     canTerminate || canReactivate ||
