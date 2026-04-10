@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, 
 import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
 import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
 
-const categories = ['', 'contractor', 'contract', 'access', 'sponsor', 'extension', 'directory_sync'];
+const categories = ['contractor', 'contract', 'access', 'sponsor', 'extension', 'directory_sync'];
 const pageSize = 25;
 
 export default function AuditLogPage() {
@@ -61,13 +61,44 @@ export default function AuditLogPage() {
   });
 
   const allEvents: Record<string, unknown>[] = data?.data ?? [];
+  const lowerSearch = search.trim().toLowerCase();
+  
+  // Dynamically derive available event types restricted by the chosen categories
+  const validEventTypes = new Set<string>();
+  allEvents.forEach((event) => {
+    const type = String(event.event_type ?? '');
+    const derivedCategory = type.split('.')[0];
+    if (categoriesSelected.length === 0 || categoriesSelected.includes(derivedCategory)) {
+      validEventTypes.add(type);
+    }
+  });
+
+  const dynamicEventTypeOptions = Array.from(validEventTypes)
+    .sort((a, b) => getEventLabel(a).localeCompare(getEventLabel(b)))
+    .map((value) => ({ label: getEventLabel(value), value }));
+
   const filteredEvents = allEvents.filter((event) => {
     const type = String(event.event_type ?? '');
     // Derive category from event_type prefix since it's not in the base schema
     const derivedCategory = type.split('.')[0];
     const categoryMatches = categoriesSelected.length === 0 || categoriesSelected.includes(derivedCategory);
     const eventTypeMatches = eventTypes.length === 0 || eventTypes.includes(type);
-    return eventTypeMatches && categoryMatches;
+    
+    let searchMatches = true;
+    if (lowerSearch) {
+       const contractor = event.contractor_id as Record<string, unknown> | undefined;
+       const actor = event.actor_id as Record<string, unknown> | undefined;
+       const searchString = `
+         ${getEventLabel(type)} 
+         ${contractor?.name || ''} 
+         ${contractor?.email || ''} 
+         ${actor?.email || ''} 
+         ${actor?.name || ''} 
+       `.toLowerCase();
+       searchMatches = searchString.includes(lowerSearch);
+    }
+    
+    return eventTypeMatches && categoryMatches && searchMatches;
   });
   const total = filteredEvents.length;
   const totalPages = Math.ceil(total / pageSize);
@@ -78,7 +109,10 @@ export default function AuditLogPage() {
   const activeFilterCount = eventTypes.length + categoriesSelected.length + (from ? 1 : 0) + (to ? 1 : 0);
   const fromDate = from ? parseISO(from) : undefined;
   const toDate = to ? parseISO(to) : undefined;
-  const clearFilters = () => updateFilterParams({ event_type: [], category: [], from: '', to: '' });
+  const clearFilters = () => {
+    updateFilterParams({ event_type: [], category: [], from: '', to: '' });
+    setSearch('');
+  };
 
   return (
     <div className="space-y-8">
@@ -131,7 +165,7 @@ export default function AuditLogPage() {
               <MultiFilterChecklist
                 values={eventTypes}
                 onValuesChange={(values) => updateFilterParams({ event_type: values })}
-                options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
+                options={dynamicEventTypeOptions}
               />
             </FieldBlock>
             <FieldBlock label="Start date">
@@ -207,7 +241,7 @@ export default function AuditLogPage() {
               title="Event type"
               values={eventTypes}
               onValuesChange={(values) => updateFilterParams({ event_type: values })}
-              options={[{ label: 'All event types', value: '' }, ...eventTypeOptions]}
+              options={dynamicEventTypeOptions}
               placeholder="All event types"
               className="min-w-48"
             />
