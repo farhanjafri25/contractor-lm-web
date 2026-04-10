@@ -181,6 +181,22 @@ function ReviewDialog({
                   {requestDate ? new Date(String(requestDate)).toLocaleString() : 'Unknown'}
                 </p>
               </div>
+              {request.action_type === 'extend' && request.proposed_end_date ? (
+                <div className="space-y-1 sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">Proposed End Date</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(String(request.proposed_end_date)).toLocaleDateString()}
+                  </p>
+                </div>
+              ) : null}
+              {request.justification ? (
+                <div className="space-y-1 sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">Justification / Reason</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap rounded-md bg-muted/40 p-3 flex border border-border/40 mt-1">
+                    {String(request.justification)}
+                  </p>
+                </div>
+              ) : null}
             </div>
           </div>
 
