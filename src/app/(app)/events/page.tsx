@@ -44,12 +44,11 @@ export default function AuditLogPage() {
   };
 
   const params: Record<string, unknown> = { page: 1, limit: 100 };
-  if (search) params.search = search;
   if (from) params.from = from;
   if (to) params.to = to;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['events', search, params],
+    queryKey: ['events', params],
     queryFn: async () => (await eventsApi.list(params)).data,
     placeholderData: (previous) => previous,
   });
