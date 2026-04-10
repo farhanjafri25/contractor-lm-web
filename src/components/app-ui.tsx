@@ -563,13 +563,15 @@ export function MultiFilterDropdown({
         }
       />
       <PopoverContent align="start" className="w-60 gap-1 p-2.5">
-        <PopoverHeader className="flex-row items-center justify-between gap-3 pl-1 pr-0">
+        <PopoverHeader className="mb-2 flex-row items-center justify-between gap-3 pl-1 pr-0">
           <PopoverTitle>{title}</PopoverTitle>
           <Button type="button" variant="ghost" size="sm" className="px-1.5" onClick={() => onValuesChange([])} disabled={values.length === 0}>
             Clear
           </Button>
         </PopoverHeader>
-        <MultiFilterChecklist options={options} values={values} onValuesChange={onValuesChange} />
+        <div className="max-h-[300px] overflow-y-auto pr-1">
+          <MultiFilterChecklist options={options} values={values} onValuesChange={onValuesChange} />
+        </div>
       </PopoverContent>
     </Popover>
   );
