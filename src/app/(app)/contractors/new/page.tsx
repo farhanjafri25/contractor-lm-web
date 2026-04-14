@@ -250,7 +250,7 @@ export default function NewContractorPage() {
                     <button
                       type="button"
                       data-empty={!startDate}
-                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 md:text-sm"
+                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow,transform] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.97] data-[empty=true]:text-muted-foreground/75 md:text-sm"
                     >
                       <span className="flex items-center justify-between gap-1.5">
                         <span>{startDate ? format(startDate, 'PPP') : 'Choose a start date'}</span>
@@ -279,7 +279,7 @@ export default function NewContractorPage() {
                     <button
                       type="button"
                       data-empty={!endDate}
-                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75 md:text-sm"
+                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow,transform] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.97] data-[empty=true]:text-muted-foreground/75 md:text-sm"
                     >
                       <span className="flex items-center justify-between gap-1.5">
                         <span>{endDate ? format(endDate, 'PPP') : 'Choose an end date'}</span>

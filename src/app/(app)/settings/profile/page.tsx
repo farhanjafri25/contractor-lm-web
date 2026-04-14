@@ -95,7 +95,7 @@ function AvatarUploadButton({
       onClick={onClick}
       aria-label={image ? 'Change profile picture' : 'Upload profile picture'}
       disabled={loading}
-      className="group relative block size-16 overflow-hidden rounded-full border border-transparent bg-muted shadow-sm ring-1 ring-foreground/10 transition-[border-color,box-shadow,color] hover:border-foreground/20"
+      className="group relative block size-16 overflow-hidden rounded-full border border-transparent bg-muted shadow-sm ring-1 ring-foreground/10 transition-[border-color,box-shadow,color,transform] hover:border-foreground/20 active:scale-[0.97]"
     >
       {loading ? (
         <div className="flex size-full items-center justify-center bg-background/70 text-foreground">

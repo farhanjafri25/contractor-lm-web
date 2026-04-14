@@ -644,7 +644,7 @@ export function CsvImporter() {
                   <div className="rounded-[10px] border border-border">
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left"
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left transition-transform active:scale-[0.97]"
                       onClick={() => setBatchAccessOpen((v) => !v)}
                     >
                       {batchAccessOpen ? <ChevronBottom size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}

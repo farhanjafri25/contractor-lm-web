@@ -237,7 +237,7 @@ function ResetPasswordForm() {
                 <button
                   type="button"
                   onClick={handleSendCode}
-                  className="shrink-0 font-medium text-foreground transition-colors hover:text-primary/70"
+                  className="shrink-0 font-medium text-foreground transition-[color,transform] hover:text-primary/70 active:scale-[0.97]"
                   disabled={sendingCode}
                 >
                   {sendingCode ? 'Sending…' : 'Resend code'}
@@ -262,7 +262,7 @@ function ResetPasswordForm() {
                     <button
                       type="button"
                       onClick={handleUseDifferentEmail}
-                      className="font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      className="font-medium text-muted-foreground transition-[color,transform] hover:text-foreground active:scale-[0.97]"
                     >
                       Use a different email
                     </button>
@@ -292,7 +292,7 @@ function ResetPasswordForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[color,transform] hover:bg-accent hover:text-foreground active:scale-[0.97]"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

@@ -1,10 +1,10 @@
 import Link from 'next/link';
 
 const primaryActionClassName =
-  'inline-flex h-7 w-full shrink-0 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] border border-white/10 bg-primary px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-primary-foreground shadow-md shadow-black/15 ring-[0.5px] ring-(--button-ring) [--button-ring:color-mix(in_oklab,black_15%,var(--color-primary))] transition-all outline-none select-none hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px dark:border-transparent dark:[--button-ring:color-mix(in_oklab,white_15%,var(--color-primary))] sm:w-auto';
+  'inline-flex h-7 w-full shrink-0 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] border border-white/10 bg-primary px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-primary-foreground shadow-md shadow-black/15 ring-[0.5px] ring-(--button-ring) [--button-ring:color-mix(in_oklab,black_15%,var(--color-primary))] transition-all outline-none select-none hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.97] active:translate-y-px dark:border-transparent dark:[--button-ring:color-mix(in_oklab,white_15%,var(--color-primary))] sm:w-auto';
 
 const secondaryActionClassName =
-  'inline-flex h-7 w-full shrink-0 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] border border-transparent bg-card px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-secondary-foreground ring-1 ring-foreground/10 transition-all outline-none select-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px dark:bg-background dark:hover:bg-muted sm:w-auto';
+  'inline-flex h-7 w-full shrink-0 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] border border-transparent bg-card px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-secondary-foreground ring-1 ring-foreground/10 transition-all outline-none select-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.97] active:translate-y-px dark:bg-background dark:hover:bg-muted sm:w-auto';
 
 function NotFoundMark() {
   return (

@@ -408,7 +408,7 @@ export function SearchField({
         <button
           type="button"
           onClick={() => onChange('')}
-          className="absolute right-2 top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-95"
+          className="absolute right-2 top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-[0.97]"
           aria-label="Clear search"
         >
           <IconCrossLarge size={12} />
@@ -609,7 +609,7 @@ export function SummaryPill({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium transition-colors',
+        'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium transition-[transform,background-color,color] active:scale-[0.97]',
         active
           ? 'border-primary/25 bg-primary/10 text-foreground [box-shadow:var(--shadow-2xs)]'
           : 'border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground',

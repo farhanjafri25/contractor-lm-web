@@ -172,7 +172,7 @@ function GettingStartedContent() {
                 type="button"
                 onClick={() => setSelectedLabel(item.label)}
                 className={cn(
-                  'flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-colors',
+                  'flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-[transform,background-color,color] active:scale-[0.97]',
                   isActive && !item.done ? 'bg-muted/70' : 'hover:bg-muted/35',
                 )}
               >
