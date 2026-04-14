@@ -363,7 +363,7 @@ function SidebarProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-primary dark:hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sidebar-foreground outline-none transition-[transform,background-color,color] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] hover:bg-sidebar-primary hover:translate-x-px dark:hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40',
           collapsed && 'mx-auto size-9 justify-center px-0',
         )}
       >
@@ -499,18 +499,18 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                   href={href}
                   onClick={onNavigate}
                   className={cn(
-                    'flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium transition-colors',
+                    'flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium transition-[transform,background-color,color,box-shadow] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)]',
                     collapsed && 'size-8 justify-center px-0 mx-auto',
                     active
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      ? 'translate-x-px bg-sidebar-primary text-sidebar-primary-foreground'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-px',
                   )}
                   title={collapsed ? label : undefined}
                 >
                   <span
                     className={cn(
-                      'flex size-[18px] shrink-0 items-center justify-center',
-                      active && 'text-sidebar-foreground/70',
+                      'flex size-[18px] shrink-0 items-center justify-center transition-transform [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)]',
+                      active && 'scale-[1.04] text-sidebar-foreground/70',
                     )}
                   >
                     <NavIcon size={href === '/getting-started' ? 16 : 18} />
@@ -519,7 +519,7 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                   {!collapsed && href === '/settings/team' && pendingCount > 0 ? (
                     <span
                       className={cn(
-                        'rounded-sm px-1.5 py-0.5 text-[10px] font-medium',
+                        'motion-nav-badge rounded-sm px-1.5 py-0.5 text-[10px] font-medium',
                         active ? 'bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground' : 'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                     >
@@ -529,7 +529,7 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
                   {!collapsed && href === '/sponsor' && pendingRequestsCount > 0 ? (
                     <span
                       className={cn(
-                        'rounded-sm px-1.5 py-0.5 text-[10px] font-medium',
+                        'motion-nav-badge rounded-sm px-1.5 py-0.5 text-[10px] font-medium',
                         active ? 'bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground' : 'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                     >
@@ -612,7 +612,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen">
         <aside
           className={cn(
-            'hidden shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:sticky md:top-0 md:block md:h-screen',
+            'hidden shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] [transition-duration:var(--duration-page)] [transition-timing-function:var(--ease-out)] md:sticky md:top-0 md:block md:h-screen',
             collapsed ? 'w-16' : 'w-56',
           )}
         >

@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableLoadingRows, TableRow } from '@/components/ui/table';
-import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField, SummaryPill } from '@/components/app-ui';
-import { eventTypeOptions, getEventLabel } from '@/lib/event-labels';
+import { ClearFiltersButton, DataTableShell, FieldBlock, FiltersPopover, MultiFilterChecklist, MultiFilterDropdown, PageHeader, SearchField } from '@/components/app-ui';
+import { getEventLabel } from '@/lib/event-labels';
 
 const categories = ['contractor', 'contract', 'access', 'sponsor', 'extension', 'directory_sync'];
 const pageSize = 25;
@@ -51,12 +51,6 @@ export default function AuditLogPage() {
     queryKey: ['events', params],
     queryFn: async () => (await eventsApi.list(params)).data,
     placeholderData: (previous) => previous,
-  });
-
-  const { data: statsData } = useQuery({
-    queryKey: ['event-stats'],
-    queryFn: async () => (await eventsApi.getStats()).data,
-    staleTime: 60_000,
   });
 
   const allEvents: Record<string, unknown>[] = data?.data ?? [];
@@ -119,30 +113,6 @@ export default function AuditLogPage() {
         title="Activity"
         description="Track contractor, contract, access, and sponsor events as work moves through the workspace."
       />
-
-      {statsData?.by_event_type ? (
-        <div className="flex flex-wrap gap-3">
-          {(statsData.by_event_type as Array<{ event_type: string; count: number }>)
-            .sort((left, right) => right.count - left.count)
-            .slice(0, 8)
-            .map(({ event_type: type, count }) => (
-              <SummaryPill
-                key={type}
-                label={getEventLabel(type)}
-                count={count}
-                active={eventTypes.includes(type)}
-                onClick={() => {
-                  updateFilterParams({
-                    event_type: eventTypes.includes(type)
-                      ? eventTypes.filter((value) => value !== type)
-                      : [...eventTypes, type],
-                  });
-                }}
-              />
-            ))}
-        </div>
-      ) : null}
-
       <div className="space-y-4">
         <div className="flex items-center gap-2 md:hidden">
           <SearchField value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search activity" className="flex-1" />

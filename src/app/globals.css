@@ -103,6 +103,13 @@
 }
 
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-overlay: 160ms;
+  --duration-sheet: 220ms;
+  --duration-page: 180ms;
   --background: #ffffff;
   --foreground: #1c1d1f;
   --card: #ffffff;
@@ -255,6 +262,102 @@
 }
 
 @layer components {
+  .motion-overlay-backdrop {
+    transition-duration: var(--duration-overlay);
+    transition-property: opacity;
+    transition-timing-function: var(--ease-out);
+  }
+
+  .motion-overlay-backdrop[data-starting-style],
+  .motion-overlay-backdrop[data-ending-style] {
+    opacity: 0;
+  }
+
+  .motion-popover-content {
+    transition-duration: var(--duration-overlay);
+    transition-property: transform, opacity;
+    transition-timing-function: var(--ease-out);
+  }
+
+  .motion-popover-content[data-starting-style],
+  .motion-popover-content[data-ending-style] {
+    opacity: 0;
+  }
+
+  .motion-popover-content[data-side='bottom'][data-starting-style],
+  .motion-popover-content[data-side='bottom'][data-ending-style] {
+    transform: translateY(-6px) scale(0.96);
+  }
+
+  .motion-popover-content[data-side='top'][data-starting-style],
+  .motion-popover-content[data-side='top'][data-ending-style] {
+    transform: translateY(6px) scale(0.96);
+  }
+
+  .motion-popover-content[data-side='left'][data-starting-style],
+  .motion-popover-content[data-side='left'][data-ending-style],
+  .motion-popover-content[data-side='inline-start'][data-starting-style],
+  .motion-popover-content[data-side='inline-start'][data-ending-style] {
+    transform: translateX(6px) scale(0.96);
+  }
+
+  .motion-popover-content[data-side='right'][data-starting-style],
+  .motion-popover-content[data-side='right'][data-ending-style],
+  .motion-popover-content[data-side='inline-end'][data-starting-style],
+  .motion-popover-content[data-side='inline-end'][data-ending-style] {
+    transform: translateX(-6px) scale(0.96);
+  }
+
+  .motion-dialog-content {
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    transition-duration: var(--duration-sheet);
+    transition-property: transform, opacity;
+    transition-timing-function: var(--ease-out);
+  }
+
+  .motion-dialog-content[data-starting-style],
+  .motion-dialog-content[data-ending-style] {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.97);
+  }
+
+  .motion-sheet-content {
+    transition-duration: var(--duration-sheet);
+    transition-property: transform, opacity;
+    transition-timing-function: var(--ease-drawer);
+  }
+
+  .motion-sheet-content[data-starting-style],
+  .motion-sheet-content[data-ending-style] {
+    opacity: 0;
+  }
+
+  .motion-sheet-content[data-side='bottom'][data-starting-style],
+  .motion-sheet-content[data-side='bottom'][data-ending-style] {
+    transform: translateY(1.5rem);
+  }
+
+  .motion-sheet-content[data-side='top'][data-starting-style],
+  .motion-sheet-content[data-side='top'][data-ending-style] {
+    transform: translateY(-1.5rem);
+  }
+
+  .motion-sheet-content[data-side='left'][data-starting-style],
+  .motion-sheet-content[data-side='left'][data-ending-style] {
+    transform: translateX(-1.5rem);
+  }
+
+  .motion-sheet-content[data-side='right'][data-starting-style],
+  .motion-sheet-content[data-side='right'][data-ending-style] {
+    transform: translateX(1.5rem);
+  }
+
+  .motion-nav-badge {
+    animation: nav-badge-in var(--duration-overlay) var(--ease-out);
+    transform-origin: center;
+  }
+
   .card-surface {
     @apply border bg-background ring-0;
     border-color: var(--card-surface-stroke);
@@ -322,5 +425,28 @@
 @keyframes skeleton-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes nav-badge-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-overlay-backdrop,
+  .motion-popover-content,
+  .motion-dialog-content,
+  .motion-sheet-content,
+  .motion-nav-badge {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
   }
 }

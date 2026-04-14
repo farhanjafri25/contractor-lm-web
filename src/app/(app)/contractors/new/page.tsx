@@ -243,64 +243,68 @@ export default function NewContractorPage() {
 
         <SectionCard title="Contract" description="Set the contract dates and access for this contractor.">
           <div className="grid gap-5 md:grid-cols-2">
-            <FieldBlock label="Start date">
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <button
-                      type="button"
-                      data-empty={!startDate}
-                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow,transform] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.97] data-[empty=true]:text-muted-foreground/75 md:text-sm"
-                    >
-                      <span className="flex items-center justify-between gap-1.5">
-                        <span>{startDate ? format(startDate, 'PPP') : 'Choose a start date'}</span>
-                        <ChevronBottom size={16} className="shrink-0 text-muted-foreground" />
-                      </span>
-                    </button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(nextDate: Date | undefined) =>
-                      updateContractField('start_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+            <div className="min-w-0">
+              <FieldBlock label="Start date">
+                <Popover>
+                  <PopoverTrigger
+                    render={
+                      <button
+                        type="button"
+                        data-empty={!startDate}
+                        className="relative block h-8 w-full min-w-0 overflow-hidden rounded-lg border border-transparent bg-card px-2.5 py-1 pr-9 text-left text-sm leading-none font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75"
+                      >
+                        <span className="block min-w-0 truncate whitespace-nowrap tabular-nums leading-6">
+                          {startDate ? format(startDate, 'PPP') : 'Choose a start date'}
+                        </span>
+                        <ChevronBottom size={16} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      </button>
                     }
-                    defaultMonth={startDate}
                   />
-                </PopoverContent>
-              </Popover>
-              {fieldErrors.start_date ? <p className="text-xs text-destructive">{fieldErrors.start_date}</p> : null}
-            </FieldBlock>
-            <FieldBlock label="End date">
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <button
-                      type="button"
-                      data-empty={!endDate}
-                      className="h-8 w-full min-w-0 rounded-lg border border-transparent bg-card px-2.5 py-1 text-left text-base font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow,transform] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.97] data-[empty=true]:text-muted-foreground/75 md:text-sm"
-                    >
-                      <span className="flex items-center justify-between gap-1.5">
-                        <span>{endDate ? format(endDate, 'PPP') : 'Choose an end date'}</span>
-                        <ChevronBottom size={16} className="shrink-0 text-muted-foreground" />
-                      </span>
-                    </button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(nextDate: Date | undefined) =>
-                      updateContractField('end_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={(nextDate: Date | undefined) =>
+                        updateContractField('start_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                      }
+                      defaultMonth={startDate}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {fieldErrors.start_date ? <p className="text-xs text-destructive">{fieldErrors.start_date}</p> : null}
+              </FieldBlock>
+            </div>
+            <div className="min-w-0">
+              <FieldBlock label="End date">
+                <Popover>
+                  <PopoverTrigger
+                    render={
+                      <button
+                        type="button"
+                        data-empty={!endDate}
+                        className="relative block h-8 w-full min-w-0 overflow-hidden rounded-lg border border-transparent bg-card px-2.5 py-1 pr-9 text-left text-sm leading-none font-normal shadow-sm ring-1 ring-foreground/10 transition-[color,box-shadow] outline-none hover:bg-card focus-visible:border-foreground/35 focus-visible:ring-3 focus-visible:ring-ring/25 data-[empty=true]:text-muted-foreground/75"
+                      >
+                        <span className="block min-w-0 truncate whitespace-nowrap tabular-nums leading-6">
+                          {endDate ? format(endDate, 'PPP') : 'Choose an end date'}
+                        </span>
+                        <ChevronBottom size={16} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      </button>
                     }
-                    defaultMonth={endDate}
                   />
-                </PopoverContent>
-              </Popover>
-              {fieldErrors.end_date ? <p className="text-xs text-destructive">{fieldErrors.end_date}</p> : null}
-            </FieldBlock>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={(nextDate: Date | undefined) =>
+                        updateContractField('end_date', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                      }
+                      defaultMonth={endDate}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {fieldErrors.end_date ? <p className="text-xs text-destructive">{fieldErrors.end_date}</p> : null}
+              </FieldBlock>
+            </div>
             <div className="md:col-span-2">
               <FieldBlock label="Notes">
                 <Textarea

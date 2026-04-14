@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import Link from 'next/link';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AuthPageLayout, AuthWelcomeAside } from '@/components/auth-page-layout';
@@ -34,10 +35,39 @@ import posthog from 'posthog-js';
 import { authApi, tenantApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { prepareImageForUpload } from '@/lib/image-upload';
+import { UI_DURATIONS, UI_EASINGS } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 type SignupStep = 'account' | 'verify' | 'profile' | 'workspace' | 'tracking' | 'volume' | 'directory' | 'success' | 'approval';
+
+/* ─────────────────────────────────────────────────────────
+ * SIGNUP FLOW STORYBOARD
+ *
+ * Read top-to-bottom. Each `at` value is ms after step change.
+ *
+ *    0ms   current step eases out in the navigation direction
+ *   40ms   next step fades in and slides from that direction
+ *  180ms   layout and actions settle into place
+ * ───────────────────────────────────────────────────────── */
+
+const STEP_ORDER: Record<SignupStep, number> = {
+  account: 0,
+  verify: 1,
+  profile: 2,
+  workspace: 3,
+  tracking: 4,
+  volume: 5,
+  directory: 6,
+  success: 7,
+  approval: 7,
+};
+
+const SIGNUP_TRANSITION = {
+  offsetX: 28,
+  offsetY: 12,
+  scale: 0.985,
+};
 
 const LOGO_SIZE_LIMIT = 10 * 1024 * 1024;
 const BILLING_COUNTRIES = [
@@ -48,23 +78,6 @@ const BILLING_COUNTRIES = [
   { label: 'Germany', value: 'Germany' },
   { label: 'India', value: 'India' },
 ];
-
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split('')
-        .map((char) => `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`)
-        .join(''),
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
 
 function slugify(value: string) {
   return value
@@ -99,6 +112,60 @@ function getInitials(value: string) {
     .join('');
 
   return parts || 'TW';
+}
+
+function SignupStepFrame({
+  stepKey,
+  className,
+  children,
+  direction,
+  prefersReducedMotion,
+  emphasis = 'default',
+}: {
+  stepKey: SignupStep;
+  className?: string;
+  children: React.ReactNode;
+  direction: 1 | -1;
+  prefersReducedMotion: boolean;
+  emphasis?: 'default' | 'celebration';
+}) {
+  const initial =
+    emphasis === 'celebration'
+      ? { opacity: 0, y: SIGNUP_TRANSITION.offsetY, scale: SIGNUP_TRANSITION.scale }
+      : {
+          opacity: 0,
+          x: direction > 0 ? SIGNUP_TRANSITION.offsetX : -SIGNUP_TRANSITION.offsetX,
+          y: 6,
+          scale: SIGNUP_TRANSITION.scale,
+        };
+
+  const exit =
+    emphasis === 'celebration'
+      ? { opacity: 0, y: 6, scale: 0.99 }
+      : {
+          opacity: 0,
+          x: direction > 0 ? -18 : 18,
+          y: 6,
+          scale: 0.99,
+        };
+
+  return (
+    <motion.div
+      key={stepKey}
+      className={className}
+      initial={prefersReducedMotion ? false : initial}
+      animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+      exit={prefersReducedMotion ? { opacity: 1 } : exit}
+      transition={{
+        opacity: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+        x: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+        y: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+        scale: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 const SIDEBAR_NAV = [
@@ -307,6 +374,7 @@ function ChoiceCard({ value, label }: { value: string; label: string }) {
 export default function SignupPage() {
   const { setSession, user: authUser } = useAuth();
   const [step, setStep] = useState<SignupStep>('account');
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -337,6 +405,7 @@ export default function SignupPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   // The step arrays control mapping to visual layouts (Workspace preview vs Welcome side)
   const isWorkspaceStep = ['workspace', 'tracking', 'volume', 'directory'].includes(step);
@@ -348,6 +417,14 @@ export default function SignupPage() {
     setWorkspaceHandle((current) => current || slugify(derivedName));
   };
 
+  const moveToStep = (nextStep: SignupStep) => {
+    const currentIndex = STEP_ORDER[step] ?? 0;
+    const nextIndex = STEP_ORDER[nextStep] ?? currentIndex;
+
+    setStepDirection(nextIndex >= currentIndex ? 1 : -1);
+    setStep(nextStep);
+  };
+
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
@@ -357,7 +434,7 @@ export default function SignupPage() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await authApi.signup(email.trim(), fullName, password);
       posthog.capture('signup_started');
-      setStep('verify');
+      moveToStep('verify');
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Sign-up failed. Try again.');
       setError(message);
@@ -380,10 +457,10 @@ export default function SignupPage() {
       if (response.data.status === 'pending_approval') {
         setSuccessMessage(response.data.message);
         setTenantName(response.data.tenant_name);
-        setStep('approval');
+        moveToStep('approval');
       } else {
         seedWorkspaceDetails(email);
-        setStep('profile');
+        moveToStep('profile');
       }
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, 'Code did not match. Try again.');
@@ -409,9 +486,9 @@ export default function SignupPage() {
       const isPending = authUser?.status === 'pending_approval';
 
       if (isPending) {
-        setStep('approval');
+        moveToStep('approval');
       } else {
-        setStep('workspace');
+        moveToStep('workspace');
       }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save profile.'));
@@ -438,7 +515,7 @@ export default function SignupPage() {
         logo: logoPreview ?? undefined,
       });
       posthog.capture('signup_workspace_completed', { company_size: companySize });
-      setStep('tracking');
+      moveToStep('tracking');
     } catch (err: unknown) {
       const message = getApiErrorMessage(err, "We couldn't save your workspace details. Try again.");
       setError(message);
@@ -455,7 +532,7 @@ export default function SignupPage() {
       if (nextStep === 'success') {
         posthog.capture('signup_completed');
       }
-      setStep(nextStep);
+      moveToStep(nextStep);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save selection.'));
     } finally {
@@ -497,8 +574,14 @@ export default function SignupPage() {
         </div>
       ) : null}
 
+      <AnimatePresence mode="wait" initial={false}>
       {step === 'account' ? (
-        <div className="space-y-6">
+        <SignupStepFrame
+          stepKey="account"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Create an account</h1>
             <p className="text-sm leading-6 text-muted-foreground">
@@ -558,11 +641,16 @@ export default function SignupPage() {
               Sign in
             </Link>
           </p>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'verify' ? (
-        <div className="space-y-6">
+        <SignupStepFrame
+          stepKey="verify"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Check your email</h1>
             <p className="text-sm leading-6 text-muted-foreground">Enter the 6-digit code we sent to {email}.</p>
@@ -578,7 +666,7 @@ export default function SignupPage() {
               </InputOTP>
             </FieldBlock>
             <div className="flex justify-between gap-3">
-              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('account'); }}>
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); moveToStep('account'); }}>
                 Back
               </Button>
               <Button type="submit" size="lg" disabled={loading || otp.length !== 6}>
@@ -586,11 +674,16 @@ export default function SignupPage() {
               </Button>
             </div>
           </form>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'profile' ? (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <SignupStepFrame
+          stepKey="profile"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-3">Step 1 of 5</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Let&apos;s get to know you</h1>
@@ -646,7 +739,7 @@ export default function SignupPage() {
             </label>
 
             <div className="flex justify-between gap-3">
-              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('verify'); }}>
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); moveToStep('verify'); }}>
                 Back
               </Button>
               <Button type="submit" size="lg" disabled={loading}>
@@ -654,11 +747,16 @@ export default function SignupPage() {
               </Button>
             </div>
           </form>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'workspace' ? (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+        <SignupStepFrame
+          stepKey="workspace"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-3">Step 2 of 5</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Create your workspace</h1>
@@ -728,7 +826,7 @@ export default function SignupPage() {
             </div>
 
             <div className="flex justify-between gap-3">
-              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); setStep('profile'); }}>
+              <Button type="button" variant="outline" size="lg" onClick={() => { setError(''); moveToStep('profile'); }}>
                 Back
               </Button>
               <Button type="submit" size="lg" disabled={loading}>
@@ -736,11 +834,16 @@ export default function SignupPage() {
               </Button>
             </div>
           </form>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'tracking' ? (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+        <SignupStepFrame
+          stepKey="tracking"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-3">Step 3 of 5</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">How do you currently track contractor access?</h1>
@@ -751,7 +854,7 @@ export default function SignupPage() {
             ))}
           </RadioGroup>
           <div className="flex justify-between gap-3">
-            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('workspace'); }}>
+            <Button variant="outline" size="lg" onClick={() => { setError(''); moveToStep('workspace'); }}>
               Back
             </Button>
             <Button
@@ -761,11 +864,16 @@ export default function SignupPage() {
               {loading ? '...' : 'Continue'}
             </Button>
           </div>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'volume' ? (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+        <SignupStepFrame
+          stepKey="volume"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-3">Step 4 of 5</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">How many contractors does your team manage?</h1>
@@ -776,7 +884,7 @@ export default function SignupPage() {
             ))}
           </RadioGroup>
           <div className="flex justify-between gap-3">
-            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('tracking'); }}>
+            <Button variant="outline" size="lg" onClick={() => { setError(''); moveToStep('tracking'); }}>
               Back
             </Button>
             <Button
@@ -786,11 +894,16 @@ export default function SignupPage() {
               {loading ? '...' : 'Continue'}
             </Button>
           </div>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'directory' ? (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+        <SignupStepFrame
+          stepKey="directory"
+          className="space-y-6"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+        >
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-3">Step 5 of 5</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Which directory does your company use?</h1>
@@ -801,7 +914,7 @@ export default function SignupPage() {
             ))}
           </RadioGroup>
           <div className="flex justify-between gap-3">
-            <Button variant="outline" size="lg" onClick={() => { setError(''); setStep('volume'); }}>
+            <Button variant="outline" size="lg" onClick={() => { setError(''); moveToStep('volume'); }}>
               Back
             </Button>
             <Button
@@ -811,11 +924,17 @@ export default function SignupPage() {
               {loading ? '...' : 'Go to dashboard'}
             </Button>
           </div>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'success' ? (
-        <div className="space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+        <SignupStepFrame
+          stepKey="success"
+          className="space-y-6 text-center"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+          emphasis="celebration"
+        >
           <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-primary/10 text-primary">
             <CheckCircle size={32} />
           </div>
@@ -828,11 +947,17 @@ export default function SignupPage() {
           <Link href="/dashboard" className="block mt-6">
             <Button className="w-full" size="lg">Go to Dashboard</Button>
           </Link>
-        </div>
+        </SignupStepFrame>
       ) : null}
 
       {step === 'approval' ? (
-        <div className="space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+        <SignupStepFrame
+          stepKey="approval"
+          className="space-y-6 text-center"
+          direction={stepDirection}
+          prefersReducedMotion={prefersReducedMotion}
+          emphasis="celebration"
+        >
           <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-primary/10 text-primary">
              <CheckCircle size={32} />
           </div>
@@ -847,8 +972,9 @@ export default function SignupPage() {
           <Link href="/login" className="block mt-6">
             <Button className="w-full" size="lg">Return to Login</Button>
           </Link>
-        </div>
+        </SignupStepFrame>
       ) : null}
+      </AnimatePresence>
     </AuthPageLayout>
   );
 }

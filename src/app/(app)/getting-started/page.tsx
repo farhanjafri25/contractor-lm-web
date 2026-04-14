@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { useEffect, Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -11,8 +11,24 @@ import { CheckCircle } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UI_DURATIONS, UI_EASINGS } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useGettingStarted } from '@/hooks/use-getting-started';
+
+/* ─────────────────────────────────────────────────────────
+ * GETTING STARTED STORYBOARD
+ *
+ * Read top-to-bottom. Each `at` value is ms after item change.
+ *
+ *    0ms   active checklist row settles into its selected state
+ *   40ms   detail panel starts fading and lifting into place
+ *  180ms   title, description, and actions fully settle
+ * ───────────────────────────────────────────────────────── */
+
+const PANEL_TRANSITION = {
+  offsetY: 12,
+  scale: 0.985,
+};
 
 function LoadingState() {
   return (
@@ -64,6 +80,7 @@ function GettingStartedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [connecting, setConnecting] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const success = searchParams?.get('success');
@@ -135,6 +152,7 @@ function GettingStartedContent() {
     checklistItems[0];
   const activeItemCtaLabel =
     activeItem?.label === 'Add your first contractor' ? 'Add contractor' : activeItem?.label ?? 'Get started';
+  const activePanelKey = allChecklistDone ? 'workspace-ready' : activeItem?.label ?? 'getting-started';
 
   function handleMarkAsDone() {
     if (!activeItem || activeItem.done) {
@@ -172,17 +190,17 @@ function GettingStartedContent() {
                 type="button"
                 onClick={() => setSelectedLabel(item.label)}
                 className={cn(
-                  'flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-[transform,background-color,color] active:scale-[0.97]',
-                  isActive && !item.done ? 'bg-muted/70' : 'hover:bg-muted/35',
+                  'flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-[transform,background-color,color,box-shadow] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] active:scale-[0.97]',
+                  isActive && !item.done ? 'scale-[1.01] bg-muted/70 shadow-sm' : 'hover:bg-muted/35',
                 )}
               >
                 <div
                   className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                    'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-[transform,background-color,color,box-shadow] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)]',
                     item.done
-                      ? 'bg-emerald-500/12 text-emerald-600'
+                      ? 'scale-[1.01] bg-emerald-500/12 text-emerald-600'
                       : isActive
-                        ? 'bg-blue-500 text-white'
+                        ? 'scale-[1.03] bg-blue-500 text-white shadow-sm'
                         : 'bg-muted text-muted-foreground',
                   )}
                 >
@@ -205,52 +223,65 @@ function GettingStartedContent() {
           })}
         </div>
 
-        <div className="rounded-[28px] bg-muted/30 px-8 py-8 lg:min-h-[280px] lg:px-10 lg:py-10">
-          <div className="max-w-xl space-y-4">
-            <div className="space-y-1.5">
-              <p className="text-2xl font-semibold tracking-tight text-foreground">
-                {allChecklistDone ? 'Your workspace is ready' : activeItem?.label}
-              </p>
-              <p className="text-sm leading-7 text-muted-foreground">
-                {allChecklistDone
-                  ? 'Everything essential is connected. You can revisit any setup area when your process changes.'
-                  : activeItem?.description}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {activeItem?.label === 'Connect Google Workspace' ? (
-                <Button
-                  size="sm"
-                  onClick={handleConnectGoogle}
-                  disabled={connecting}
-                >
-                  {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
-                </Button>
-              ) : activeItem?.label === 'Connect Slack' ? (
-                <Button
-                  size="sm"
-                  onClick={handleConnectSlack}
-                  disabled={connecting}
-                >
-                  {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  render={<Link href={activeItem?.href ?? '/dashboard'} />}
-                  nativeButton={false}
-                >
-                  {activeItemCtaLabel}
-                </Button>
-              )}
+        <div className="overflow-hidden rounded-[28px] bg-muted/30 px-8 py-8 lg:min-h-[280px] lg:px-10 lg:py-10">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activePanelKey}
+              className="max-w-xl space-y-4"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: PANEL_TRANSITION.offsetY, scale: PANEL_TRANSITION.scale }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 8, scale: PANEL_TRANSITION.scale }}
+              transition={{
+                opacity: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+                y: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+                scale: { duration: UI_DURATIONS.page, ease: UI_EASINGS.out },
+              }}
+            >
+              <div className="space-y-1.5">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {allChecklistDone ? 'Your workspace is ready' : activeItem?.label}
+                </p>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  {allChecklistDone
+                    ? 'Everything essential is connected. You can revisit any setup area when your process changes.'
+                    : activeItem?.description}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                {activeItem?.label === 'Connect Google Workspace' ? (
+                  <Button
+                    size="sm"
+                    onClick={handleConnectGoogle}
+                    disabled={connecting}
+                  >
+                    {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Google' : 'Connect Workspace'}
+                  </Button>
+                ) : activeItem?.label === 'Connect Slack' ? (
+                  <Button
+                    size="sm"
+                    onClick={handleConnectSlack}
+                    disabled={connecting}
+                  >
+                    {connecting ? 'Connecting...' : activeItem.done ? 'Reauthorize Slack' : 'Connect Slack'}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    render={<Link href={activeItem?.href ?? '/dashboard'} />}
+                    nativeButton={false}
+                  >
+                    {activeItemCtaLabel}
+                  </Button>
+                )}
 
-              {!allChecklistDone && activeItem && !activeItem.done ? (
-                <Button size="sm" variant="secondary" type="button" onClick={handleMarkAsDone}>
-                  Mark as done
-                </Button>
-              ) : null}
-            </div>
-          </div>
+                {!allChecklistDone && activeItem && !activeItem.done ? (
+                  <Button size="sm" variant="secondary" type="button" onClick={handleMarkAsDone}>
+                    Mark as done
+                  </Button>
+                ) : null}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>

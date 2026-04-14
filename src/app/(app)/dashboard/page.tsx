@@ -226,10 +226,10 @@ function KpiCard({
   const content = (
     <Card
       className={cn(
-        'h-full p-px transition-colors ring-0 dark:ring-0',
+        'h-full p-px ring-0 transition-[transform,background-color,color,box-shadow] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] dark:ring-0',
         KPI_STYLES[tone],
         href ? KPI_WRAPPER_HOVER_STYLES[tone] : '',
-        href ? 'cursor-pointer' : 'cursor-default',
+        href ? 'cursor-pointer group-hover:-translate-y-0.5 group-focus-visible:-translate-y-0.5' : 'cursor-default',
       )}
     >
       <div className="flex flex-col">
@@ -239,7 +239,7 @@ function KpiCard({
           )}
         >
           <div className="flex items-center gap-1.5">
-            <div className={cn('flex size-5 items-center justify-center transition-colors', KPI_ICON_STYLES[tone], href ? KPI_TEXT_HOVER_STYLES[tone] : '')}>
+            <div className={cn('flex size-5 items-center justify-center transition-[transform,color] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)]', KPI_ICON_STYLES[tone], href ? `${KPI_TEXT_HOVER_STYLES[tone]} group-hover:scale-[1.04] group-focus-visible:scale-[1.04]` : '')}>
               <Icon size={16} />
             </div>
             <p className={cn('text-base font-semibold text-foreground transition-colors', href ? KPI_TEXT_HOVER_STYLES[tone] : '')}>{label}</p>
@@ -248,14 +248,14 @@ function KpiCard({
             <ChevronRight
               size={16}
               className={cn(
-                'text-foreground/60 opacity-0 transition-[opacity,color] group-hover:opacity-100 group-focus-visible:opacity-100',
+                'text-foreground/60 opacity-0 transition-[transform,opacity,color] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:translate-x-0.5 group-focus-visible:opacity-100',
                 KPI_TEXT_HOVER_STYLES[tone],
               )}
             />
           ) : null}
         </div>
         <div>
-          <div className={cn('flex flex-col rounded-lg px-5 py-4', KPI_INNER_STYLES[tone])}>
+          <div className={cn('flex flex-col rounded-lg px-5 py-4 transition-transform [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)]', KPI_INNER_STYLES[tone], href ? 'group-hover:-translate-y-0.5 group-focus-visible:-translate-y-0.5' : '')}>
             <div className="text-2xl font-semibold tracking-tight text-foreground">
               {value}
             </div>

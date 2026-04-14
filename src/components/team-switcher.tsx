@@ -47,7 +47,7 @@ export function TeamSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-background px-2 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]',
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-background px-2 text-left text-sidebar-foreground outline-none transition-[transform,background-color,color] [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] hover:bg-sidebar-accent/70 hover:translate-x-px focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 [border-color:var(--card-surface-stroke)] [box-shadow:var(--shadow-card-surface)]',
           collapsed && 'mx-auto size-9 justify-center px-0',
           className,
         )}

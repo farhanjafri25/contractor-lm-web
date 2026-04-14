@@ -266,7 +266,7 @@ export default function ContractorsPage() {
                               aria-label={`Open contractor ${contractorName || contractorEmail}`}
                             >
                               <InitialAvatar seed={contractorSeed} label={contractorName || contractorEmail} />
-                              <div className="space-y-0.5">
+                              <div className="space-y-0.5 transition-transform [transition-duration:var(--duration-overlay)] [transition-timing-function:var(--ease-out)] group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5">
                                 <p className="font-medium text-foreground transition-colors group-hover:text-primary">
                                   {contractorName}
                                 </p>
